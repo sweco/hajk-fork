@@ -34,6 +34,8 @@ namespace MapService.Models
 
         public double[] extent { get; set; }
 
+        public bool constrainOnlyCenter { get; set; }
+
         public string logo { get; set; }
 
         public string geoserverLegendOptions { get; set; }
@@ -41,6 +43,10 @@ namespace MapService.Models
 		public bool mapselector { get; set; }
 
         public bool mapcleaner { get; set; }
+
+        public bool drawerVisible { get; set; }
+
+        public bool drawerPermanent { get; set; }
 
         public Colors colors { get; set; }
     }

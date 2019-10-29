@@ -36,13 +36,13 @@ class Draw extends React.PureComponent {
     return (
       <BaseWindowPlugin
         {...this.props}
-        type={this.constructor.name}
+        type="Draw"
         custom={{
           icon: <DrawIcon />,
           title: "Rita",
           description: "Rita, mät, importera och exportera",
-          height: "auto",
-          width: 400,
+          height: 600,
+          width: 285,
           top: undefined,
           left: undefined,
           onWindowShow: this.onWindowShow,

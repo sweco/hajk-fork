@@ -1,13 +1,21 @@
 import React from "react";
+import propTypes from "prop-types";
+
 import BaseWindowPlugin from "../BaseWindowPlugin";
 
 import PrintIcon from "@material-ui/icons/Print";
 
-import ExportView from "./ExportView";
+import ExportPdfSettings from "./components/ExportPdfSettings.js";
 import ExportModel from "./ExportModel";
 import Observer from "react-event-observer";
 
 class Export extends React.PureComponent {
+  static propTypes = {
+    app: propTypes.object.isRequired,
+    map: propTypes.object.isRequired,
+    options: propTypes.object.isRequired
+  };
+
   constructor(props) {
     super(props);
 
@@ -22,29 +30,43 @@ class Export extends React.PureComponent {
   }
 
   onWindowShow = () => {
-    this.exportModel.displayPreview = true;
+    this.localObserver.publish("showPreviewLayer");
   };
 
   onWindowHide = () => {
-    this.exportModel.displayPreview = false;
+    this.localObserver.publish("hidePreviewLayer");
   };
 
   render() {
     return (
       <BaseWindowPlugin
         {...this.props}
-        type={this.constructor.name}
+        type="Export"
         custom={{
           icon: <PrintIcon />,
           title: "Exportera",
           description: "Exportera kartan till andra format",
-          height: "auto",
-          width: 400,
-          top: undefined,
-          left: undefined
+          height: 365,
+          width: 315,
+          onWindowShow: this.onWindowShow,
+          onWindowHide: this.onWindowHide
         }}
       >
-        <ExportView model={this.exportModel} />
+        {/**
+          * In the future, when we develop export for other formats,
+          * such as TIFF, we can use ExportView here. ExportView 
+          * will have tab buttons that will select between the different
+          * export modes. But for now, we can as well just render the
+          * PDF exporter here.
+        
+        <ExportView
+          model={this.exportModel}
+          localObserver={this.localObserver}
+        /> */}
+        <ExportPdfSettings
+          model={this.exportModel}
+          localObserver={this.localObserver}
+        />
       </BaseWindowPlugin>
     );
   }

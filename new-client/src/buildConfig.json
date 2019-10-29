@@ -13,9 +13,9 @@
     "layerswitcher",
     "location",
     "measure",
+    "routing",
     "search",
-    "streetview",
-    "suggest"
+    "streetview"
   ],
   "allTools": [
     "anchor",
@@ -31,6 +31,7 @@
     "layerswitcher",
     "location",
     "measure",
+    "routing",
     "search",
     "streetview",
     "suggest"

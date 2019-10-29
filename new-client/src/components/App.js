@@ -7,8 +7,8 @@ import Observer from "react-event-observer";
 
 import AppModel from "./../models/AppModel.js";
 import Window from "./Window.js";
+import CookieNotice from "./CookieNotice";
 import Alert from "./Alert";
-import Loader from "./Loader";
 import PluginWindows from "./PluginWindows";
 
 import Zoom from "../controls/Zoom";
@@ -23,11 +23,13 @@ import {
   Drawer,
   Hidden,
   IconButton,
-  Tooltip
+  Tooltip,
+  Fab
 } from "@material-ui/core";
 
 import LockIcon from "@material-ui/icons/Lock";
 import LockOpenIcon from "@material-ui/icons/LockOpen";
+import MenuIcon from "@material-ui/icons/Menu";
 
 // A global that holds our windows, for use see components/Window.js
 document.windows = [];
@@ -130,7 +132,22 @@ const styles = theme => {
   };
 };
 
+/**
+ * The main React Component of Hajk. Rendered by index.js.
+ *
+ * @class App
+ * @extends {React.PureComponent}
+ */
 class App extends React.PureComponent {
+  static propTypes = {
+    /** List of plugins that has been activated in this instance of Hajk */
+    activeTools: PropTypes.array.isRequired,
+    /** CSS class declarations used in this component */
+    classes: PropTypes.object.isRequired,
+    /** Contains activeMap, layersConfig as well as objects that hold appConfig and mapConfig*/
+    config: PropTypes.object.isRequired
+  };
+
   constructor(props) {
     super(props);
     this.state = {
@@ -139,8 +156,12 @@ class App extends React.PureComponent {
       mapClickDataResult: {},
 
       // Drawer-related states
-      drawerVisible: false,
-      drawerPermanent: false,
+      drawerVisible: props.config.mapConfig.map.drawerVisible || false,
+      // For drawerPermanent===true, drawerVisible must be true too – we can't lock the Drawer if it's invisible at start.
+      drawerPermanent:
+        (props.config.mapConfig.map.drawerVisible &&
+          props.config.mapConfig.map.drawerPermanent) ||
+        false,
       drawerMouseOverLock: false
     };
     this.globalObserver = new Observer();
@@ -215,7 +236,9 @@ class App extends React.PureComponent {
     const open =
       this.state.mapClickDataResult &&
       this.state.mapClickDataResult.features &&
-      this.state.mapClickDataResult.features.length > 0;
+      this.state.mapClickDataResult.features.length > 0
+        ? true
+        : false;
     const features =
       this.state.mapClickDataResult && this.state.mapClickDataResult.features;
 
@@ -227,7 +250,7 @@ class App extends React.PureComponent {
         position="right"
         mode="window"
         width={400}
-        top={0}
+        height={300}
         features={features}
         map={this.appModel.getMap()}
         onDisplay={feature => {
@@ -307,6 +330,39 @@ class App extends React.PureComponent {
     }
   }
 
+  /**
+   * In the case of a disabled Search plugin, we must
+   * ensure that the button that toggles Drawer is still visible.
+   * We do it by providing it as a standalone button.
+   *
+   * For the FAB to show, there are 2 conditions that must be met:
+   *  - There must be some plugins enabled in application, and
+   *  - Search plugin must be disabled
+   */
+  renderStandaloneDrawerToggler() {
+    const tooltipText = this.state.drawerPermanent
+      ? "Du måste först låsa upp verktygspanelen för kunna klicka på den här knappen. Tryck på hänglåset till vänster."
+      : "Visa verktygspanelen";
+    return (
+      Object.keys(this.appModel.plugins).length > 0 &&
+      this.appModel.plugins.search === undefined && (
+        <Tooltip title={tooltipText}>
+          <span>
+            <Fab
+              onClick={this.toggleDrawer(!this.state.drawerVisible)}
+              color="primary"
+              size="medium"
+              disabled={this.state.drawerPermanent}
+              aria-label="menu"
+            >
+              <MenuIcon />
+            </Fab>
+          </span>
+        </Tooltip>
+      )
+    );
+  }
+
   render() {
     const { classes, config } = this.props;
 
@@ -319,13 +375,18 @@ class App extends React.PureComponent {
         }}
       >
         <>
+          <CookieNotice
+            globalObserver={this.globalObserver}
+            defaultCookieNoticeMessage={
+              this.props.config.mapConfig.map.defaultCookieNoticeMessage
+            }
+          />
           <Alert
             open={this.state.alert}
             message={this.state.alertMessage}
             parent={this}
             title="Meddelande"
           />
-          <Loader visible={this.state.loading} />
           <div
             className={cslx(classes.flexBox, {
               [classes.shiftedLeft]: this.state.drawerPermanent
@@ -334,6 +395,7 @@ class App extends React.PureComponent {
             <header
               className={cslx(classes.header, classes.pointerEventsOnChildren)}
             >
+              {this.renderStandaloneDrawerToggler()}
               {this.renderSearchPlugin()}
             </header>
             <main className={classes.main}>
@@ -448,9 +510,5 @@ class App extends React.PureComponent {
     );
   }
 }
-
-App.propTypes = {
-  classes: PropTypes.object.isRequired
-};
 
 export default withStyles(styles)(App);

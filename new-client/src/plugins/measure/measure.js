@@ -43,13 +43,13 @@ class Measure extends React.PureComponent {
     return (
       <BaseWindowPlugin
         {...this.props}
-        type={this.constructor.name}
+        type="Measure"
         custom={{
           icon: <MeasureIcon />,
           title: "Mät",
           description: "Mät längder och ytor",
-          height: 300,
-          width: 300,
+          height: 200,
+          width: 250,
           top: undefined,
           left: undefined,
           onWindowShow: this.onWindowShow,

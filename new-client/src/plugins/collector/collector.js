@@ -45,15 +45,13 @@ class Collector extends React.Component {
     return (
       <BaseWindowPlugin
         {...this.props}
-        type={this.constructor.name}
+        type="Collector"
         custom={{
           icon: <RateReviewIcon />,
           title: "Tyck till",
           description: "Vi vill veta vad du tycker!",
           height: 450,
           width: 430,
-          top: 210,
-          left: undefined,
           onWindowHide: this.onWindowHide
         }}
       >

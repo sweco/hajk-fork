@@ -1,5 +1,5 @@
 import React from "react";
-import PropTypes from "prop-types";
+import propTypes from "prop-types";
 import { withStyles } from "@material-ui/core/styles";
 import PanelHeader from "./PanelHeader";
 import { Rnd } from "react-rnd";
@@ -107,6 +107,25 @@ const styles = theme => {
 };
 
 class Window extends React.PureComponent {
+  static propTypes = {
+    children: propTypes.object,
+    classes: propTypes.object.isRequired,
+    features: propTypes.array,
+    globalObserver: propTypes.object.isRequired,
+    height: propTypes.oneOfType([propTypes.number, propTypes.string])
+      .isRequired,
+    layerswitcherConfig: propTypes.object,
+    map: propTypes.object,
+    mode: propTypes.string.isRequired,
+    onClose: propTypes.func.isRequired,
+    onDisplay: propTypes.func,
+    onResize: propTypes.func,
+    open: propTypes.bool.isRequired,
+    position: propTypes.string.isRequired,
+    title: propTypes.string.isRequired,
+    width: propTypes.number.isRequired
+  };
+
   constructor(props) {
     super(props);
     document.windows.push(this);
@@ -138,6 +157,20 @@ class Window extends React.PureComponent {
     }
   }
 
+  /**
+   * In LayerSwitcher plugin's settings, there's an option that allows
+   * user to show or hide the so called "breadcrumbs": small boxes, one
+   * for each active layer, that show up at the bottom of the screen.
+   *
+   * If breadcrumbs are activated, we should ensure that our Windows
+   * don't hide breadcrumbs, by reducing Windows' default height slightly.
+   *
+   * This helper is used to determine whether breadcrumbs are activated
+   * or not.
+   *
+   * @returns boolean
+   * @memberof Window
+   */
   areBreadcrumbsActivated() {
     return this.props.layerswitcherConfig &&
       this.props.layerswitcherConfig.hasOwnProperty("options")
@@ -147,37 +180,44 @@ class Window extends React.PureComponent {
 
   updatePosition() {
     const { width, height, position } = this.props;
-    // const { width, height, left, top, position } = this.props;
     const parent = this.rnd.getSelfElement().parentElement;
 
-    // If Breadcrumbs are activated (in LayerSwitcher's config), we must make
-    // sure that our Windows leave some space at the bottom for the Breadcrumbs.
-    const spaceForBreadcrumbs = this.areBreadcrumbsActivated() ? -42 : 0;
-
     //FIXME: JW - Not the best solution for parent resize to set top/left to 0/0, but it ensures we don't get a window outside of the parent
-    this.left = parent.getBoundingClientRect().left + 16;
-    this.top = parent.getBoundingClientRect().top + 78; // Nasty hack, but ensure that Window is placed below Search bar
-    // this.left = left;
-    // this.top = top;
-    this.width = width;
-    this.height =
-      -16 -
-      78 +
-      spaceForBreadcrumbs +
-      (height === "auto" ? parent.clientHeight : height); // When determining height, we must take into account that we set some top value, and still want to keep some space to the bottom
-    if (position === "right") {
-      this.left = parent.getBoundingClientRect().right - width;
+    this.left = 16; // Make sure we respect padding
+    this.top = 16 + 62; // Respect padding + nasty hack to ensure that Window is placed below Search bar
+    this.width = width || 400;
+    this.height = height || 300;
+
+    // If "auto" height is set, it means we want the Window to take up maximum space available
+    if (this.height === "auto") {
+      // If Breadcrumbs are activated (in LayerSwitcher's config), we must make
+      // sure that our Windows leave some space at the bottom for the Breadcrumbs.
+      const spaceForBreadcrumbs = this.areBreadcrumbsActivated() ? 42 : 0;
+      this.height =
+        parent.clientHeight - // Maximum height of parent element
+        16 - // Reduce height with top margin
+        16 - // Reduce height with bottom margin
+        62 - // Reduce with space for Search bar
+        spaceForBreadcrumbs; // If Breadcrumbs are active, make space for them as well
     }
+
+    // If Window renders on the right, there are some things that we need to compensate for
+    if (position === "right") {
+      this.left = parent.getBoundingClientRect().width - width - 16 - 56; // -16 to take care of usual right padding, -56 to not cover the Control buttons that are on the right
+      this.top = this.top - 62; // We won't overlap Search bar if Window is placed to the right, so don't take Search bar's height into account
+      this.height = this.height + 62; // Same as above
+    }
+
+    // Mobile screens are another special case: here our Window should take up max space available
     if (getIsMobile()) {
       this.left = 0;
       this.top = 0;
       this.height = window.innerHeight;
       this.width = document.body.clientWidth;
     }
-    this.left = this.left !== undefined ? this.left : 8;
 
+    this.left = this.left !== undefined ? this.left : 16;
     this.mode = "window";
-    this.right = window.innerWidth - (this.left + parseFloat(this.width));
 
     this.setState(
       {
@@ -185,7 +225,7 @@ class Window extends React.PureComponent {
         top: this.top,
         width: this.width,
         height: this.height,
-        mode: "window"
+        mode: this.mode
       },
       () => {
         this.rnd.updatePosition({
@@ -325,17 +365,10 @@ class Window extends React.PureComponent {
   }
 
   render() {
-    const {
-      classes,
-      title,
-      children,
-      features,
-      open,
-      localObserver
-    } = this.props;
+    const { children, classes, features, open, title } = this.props;
+    const { left, top, width, height } = this.state;
 
-    var { left, top, width, height } = this.state;
-    var resizeBottom = true,
+    let resizeBottom = true,
       resizeBottomLeft = true,
       resizeBottomRight = true,
       resizeLeft = true,
@@ -343,6 +376,7 @@ class Window extends React.PureComponent {
       resizeTop = true,
       resizeTopLeft = true,
       resizeTopRight = true;
+
     if (isMobile) {
       resizeBottom = resizeBottomLeft = resizeBottomRight = resizeRight = resizeTopLeft = resizeTopRight = resizeLeft = false;
     } else {
@@ -402,8 +436,8 @@ class Window extends React.PureComponent {
           topRight: resizeTopRight
         }}
         className={classes.window}
-        minWidth={300}
-        minHeight={this.mode === "minimized" ? 42 : 300}
+        minWidth={200}
+        minHeight={this.mode === "minimized" ? 42 : 200}
         size={{
           width: width,
           height: height
@@ -417,10 +451,8 @@ class Window extends React.PureComponent {
       >
         <div className={classes.panelContent}>
           <PanelHeader
-            localObserver={localObserver}
             onClose={this.close}
             title={title}
-            top={top}
             onMaximize={this.maximize}
             onMinimize={this.minimize}
             mode={this.mode}
@@ -446,9 +478,5 @@ class Window extends React.PureComponent {
     );
   }
 }
-
-Window.propTypes = {
-  classes: PropTypes.object.isRequired
-};
 
 export default withStyles(styles)(Window);

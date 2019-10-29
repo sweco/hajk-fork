@@ -49,8 +49,11 @@ class MapOptions extends Component {
         center: config.center,
         logo: config.logo,
         extent: config.extent,
+        constrainOnlyCenter: config.constrainOnlyCenter,
         mapselector: config.mapselector,
         mapcleaner: config.mapcleaner,
+        drawerVisible: config.drawerVisible,
+        drawerPermanent: config.drawerPermanent,
         title: config.title ? config.title : "",
         geoserverLegendOptions: config.geoserverLegendOptions
           ? config.geoserverLegendOptions
@@ -83,8 +86,11 @@ class MapOptions extends Component {
       center: mapConfig.center,
       logo: mapConfig.logo,
       extent: mapConfig.extent,
+      constrainOnlyCenter: mapConfig.constrainOnlyCenter,
       mapselector: mapConfig.mapselector,
       mapcleaner: mapConfig.mapcleaner,
+      drawerVisible: mapConfig.drawerVisible,
+      drawerPermanent: mapConfig.drawerPermanent,
       geoserverLegendOptions: mapConfig.geoserverLegendOptions
     });
   }
@@ -190,8 +196,11 @@ class MapOptions extends Component {
           valid = false;
         }
         break;
+      case "constrainOnlyCenter":
       case "mapselector":
       case "mapcleaner":
+      case "drawerVisible":
+      case "drawerPermanent":
         if (value !== true && value !== false) {
           valid = false;
         }
@@ -229,8 +238,11 @@ class MapOptions extends Component {
         config.center = this.getValue("center");
         config.logo = this.getValue("logo");
         config.extent = this.getValue("extent");
+        config.constrainOnlyCenter = this.getValue("constrainOnlyCenter");
         config.mapselector = this.getValue("mapselector");
         config.mapcleaner = this.getValue("mapcleaner");
+        config.drawerVisible = this.getValue("drawerVisible");
+        config.drawerPermanent = this.getValue("drawerPermanent");
         config.geoserverLegendOptions = this.getValue("geoserverLegendOptions");
         this.props.model.updateMapConfig(config, success => {
           var msg = success
@@ -451,6 +463,26 @@ class MapOptions extends Component {
               />
             </div>
             <div>
+              <label htmlFor="input_constrainOnlyCenter">
+                Lätta på extent{" "}
+                <i
+                  className="fa fa-question-circle"
+                  data-toggle="tooltip"
+                  title="Styr ol.Views 'constrainOnlyCenter'-parameter. Om sant kommer endast centrumkoordinaten att begränsas till extent."
+                />
+              </label>
+              <input
+                id="input_constrainOnlyCenter"
+                type="checkbox"
+                ref="input_constrainOnlyCenter"
+                onChange={e => {
+                  this.setState({ constrainOnlyCenter: e.target.checked });
+                }}
+                checked={this.state.constrainOnlyCenter}
+              />
+              &nbsp;
+            </div>
+            <div>
               <label>
                 Legend options{" "}
                 <a
@@ -512,6 +544,53 @@ class MapOptions extends Component {
                   this.setState({ mapcleaner: e.target.checked });
                 }}
                 checked={this.state.mapcleaner}
+              />
+              &nbsp;
+            </div>
+            <div>
+              <label htmlFor="input_drawerVisible">
+                Starta med sidopanelen synlig{" "}
+                <i
+                  className="fa fa-question-circle"
+                  data-toggle="tooltip"
+                  title="Om aktiv kommer sidopanelen att vara synlig när kartan laddat"
+                />
+              </label>
+              <input
+                id="input_drawerVisible"
+                type="checkbox"
+                ref="input_drawerVisible"
+                onChange={e => {
+                  this.setState({ drawerVisible: e.target.checked });
+                  // If visible gets unchecked, ensure that permanent is unchecked too
+                  if (e.target.checked === false) {
+                    this.setState({
+                      drawerPermanent: false
+                    });
+                  }
+                }}
+                checked={this.state.drawerVisible}
+              />
+              &nbsp;
+            </div>
+            <div>
+              <label htmlFor="input_drawerPermanent">
+                Låt sidopanelen vara låst vid start{" "}
+                <i
+                  className="fa fa-question-circle"
+                  data-toggle="tooltip"
+                  title="Om aktiv kommer sidopanelen att vara låst vid skärmens kant vid start (gäller ej mobila enheter)"
+                />
+              </label>
+              <input
+                id="input_drawerPermanent"
+                type="checkbox"
+                ref="input_drawerPermanent"
+                onChange={e => {
+                  this.setState({ drawerPermanent: e.target.checked });
+                }}
+                checked={this.state.drawerPermanent}
+                disabled={this.state.drawerVisible !== true}
               />
               &nbsp;
             </div>

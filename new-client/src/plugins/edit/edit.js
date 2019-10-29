@@ -27,12 +27,12 @@ class Edit extends React.PureComponent {
     return (
       <BaseWindowPlugin
         {...this.props}
-        type={this.constructor.name}
+        type="Edit"
         custom={{
           icon: <FormatShapesIcon />,
           title: "Redigera",
           description: "Redigera objekt i kartan (WFS)",
-          height: "auto",
+          height: 400,
           width: 400,
           top: undefined,
           left: undefined,

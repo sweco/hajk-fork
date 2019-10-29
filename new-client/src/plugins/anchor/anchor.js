@@ -26,13 +26,13 @@ class Anchor extends React.PureComponent {
     return (
       <BaseWindowPlugin
         {...this.props}
-        type={this.constructor.name}
+        type="Anchor"
         custom={{
           icon: <OpenInNewIcon />,
           title: "Dela",
           description: "Skapa en länk och dela det du ser i kartan med andra",
-          height: 350,
-          width: 200,
+          height: 230,
+          width: 530,
           top: undefined,
           left: undefined
         }}

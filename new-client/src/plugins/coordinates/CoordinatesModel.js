@@ -1,17 +1,15 @@
-import { MousePosition } from "ol/control";
 import { transform } from "ol/proj";
 import Feature from "ol/Feature";
 import Vector from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Point from "ol/geom/Point.js";
-import { Circle as CircleStyle, Style, Icon } from "ol/style";
+import { Style, Icon } from "ol/style";
 
 class CoordinatesModel {
   constructor(settings) {
     this.map = settings.map;
-    this.app = settings.app;
-    this.options = settings.options;
     this.localObserver = settings.localObserver;
+    this.transformations = settings.options.transformations;
 
     this.source = new VectorSource();
     this.vector = new Vector({
@@ -20,30 +18,19 @@ class CoordinatesModel {
     });
 
     this.map.addLayer(this.vector);
+    this.coordinates = undefined;
+    this.transformedCoordinates = [];
   }
 
-  get getMap() {
-    return this.map;
-  }
+  addMarker = () => {
+    if (!this.activated) {
+      return;
+    }
 
-  get getSource() {
-    return this.source;
-  }
-
-  get getVector() {
-    return this.vector;
-  }
-
-  addMarker = evt => {
-    this.setCoordinates(evt.coordinate);
-
-    var source = this.getSource;
-    var vectorLayer = this.getVector;
-
-    var feature = new Feature({
-      geometry: new Point(evt.coordinate)
+    let feature = new Feature({
+      geometry: new Point(this.coordinates)
     });
-    var styleMarker = new Style({
+    let styleMarker = new Style({
       image: new Icon({
         anchor: [0.5, 1],
         scale: 0.15,
@@ -51,31 +38,96 @@ class CoordinatesModel {
       })
     });
     feature.setStyle(styleMarker);
-    vectorLayer.getSource().clear();
-    source.addFeature(feature);
+    this.vector.getSource().clear();
+    this.source.addFeature(feature);
   };
 
-  setCoordinates(coordinates) {
-    this.localObserver.publish("setCoordinates", coordinates);
+  transform(coordinates, to) {
+    let from = this.map.getView().getProjection();
+    return transform(coordinates, from, to);
   }
 
-  activate = () => {
-    var map = this.getMap;
+  setCoordinates = () => {
+    if (!this.activated) {
+      return;
+    }
+    this.localObserver.publish("setCoordinates", this.coordinates);
+    this.localObserver.publish("hideSnackbar");
+  };
 
-    map.on("singleclick", e => {
+  presentCoordinates() {
+    let coordinates = this.coordinates;
+    let transformedCoordinates = [];
+    let transformations = this.transformations;
+
+    if (transformations.length) {
+      transformations.map((transformation, i) => {
+        transformedCoordinates = {
+          code: transformation.code || "",
+          default: transformation.default || false,
+          hint: transformation.hint || "",
+          title: transformation.title || "",
+          xtitle: transformation.xtitle || "",
+          ytitle: transformation.ytitle || "",
+          inverseAxis: transformation.inverseAxis || false,
+          coordinates: this.transform(coordinates, transformation.code) || ""
+        };
+
+        this.transformedCoordinates[i] = transformedCoordinates;
+
+        this.localObserver.publish(
+          "setTransformedCoordinates",
+          this.transformedCoordinates
+        );
+
+        return this.transformedCoordinates;
+      });
+    } else {
+      transformedCoordinates = {
+        code: "EPSG:4326",
+        default: false,
+        hint: "",
+        title: "WGS84",
+        xtitle: "Lng",
+        ytitle: "Lat",
+        inverseAxis: true,
+        coordinates: this.transform(coordinates, "EPSG:4326")
+      };
+
+      this.transformedCoordinates = [transformedCoordinates];
+
+      this.localObserver.publish(
+        "setTransformedCoordinates",
+        this.transformedCoordinates
+      );
+
+      return this.transformedCoordinates;
+    }
+  }
+
+  getCoordinates() {
+    return this.coordinates;
+  }
+
+  activate() {
+    this.map.on("singleclick", e => {
       this.coordinates = e.coordinate;
-      this.addMarker(e);
+      this.setCoordinates();
+      this.addMarker();
+      this.presentCoordinates();
     });
     this.activated = true;
-  };
+    this.localObserver.publish("showSnackbar");
+  }
 
-  deactivate = () => {
-    var map = this.getMap;
+  deactivate() {
+    this.map.un("singleclick", this.setCoordinates);
+    this.vector.getSource().clear();
 
-    map.un("singleclick", this.addMarker);
     this.activated = false;
-    this.getVector.getSource().clear();
-  };
+    this.localObserver.publish("hideSnackbar");
+    this.localObserver.publish("setTransformedCoordinates", []);
+  }
 }
 
 export default CoordinatesModel;

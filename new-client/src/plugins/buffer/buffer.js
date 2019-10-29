@@ -32,12 +32,12 @@ class Buffer extends React.PureComponent {
     return (
       <BaseWindowPlugin
         {...this.props}
-        type={this.constructor.name}
+        type="Buffer"
         custom={{
           icon: <BufferIcon />,
           title: "Buffra",
           description: "Skapa en buffer runt objekt utvalda objekt i kartan",
-          height: 400,
+          height: 650,
           width: 400,
           top: undefined,
           left: undefined,

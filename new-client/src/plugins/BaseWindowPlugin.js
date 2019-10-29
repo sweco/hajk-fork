@@ -1,4 +1,5 @@
 import React from "react";
+import propTypes from "prop-types";
 import { createPortal } from "react-dom";
 import { withStyles } from "@material-ui/core/styles";
 import { withTheme } from "@material-ui/styles";
@@ -20,6 +21,17 @@ class BaseWindowPlugin extends React.PureComponent {
     windowVisible: false
   };
 
+  static propTypes = {
+    app: propTypes.object.isRequired,
+    children: propTypes.object.isRequired,
+    classes: propTypes.object.isRequired,
+    custom: propTypes.object.isRequired,
+    map: propTypes.object.isRequired,
+    options: propTypes.object.isRequired,
+    theme: propTypes.object.isRequired,
+    type: propTypes.string.isRequired
+  };
+
   constructor(props) {
     super(props);
     this.type = props.type.toLowerCase() || undefined;
@@ -27,21 +39,23 @@ class BaseWindowPlugin extends React.PureComponent {
     this.title = props.options.title || props.custom.title;
     this.description = props.options.description || props.custom.description;
 
-    this.width = props.custom.width || 400;
-    this.height = props.custom.height || "auto";
+    // Try to get values from admin's option. Fallback to customs from Plugin defaults, or finally to hard-coded values.
+    this.width = props.options.width || props.custom.width || 400;
+    this.height = props.options.height || props.custom.height || "auto";
+    this.position = props.options.position || props.custom.position || "left";
 
-    this.top = props.custom.top || props.theme.spacing(2);
-
-    // Determine the left margin. If target=toolbar|right, set left margin
-    // to almost 0. If target=left however, we don't want to display
-    // the window on top of Widget button, so we place the window on the
-    // right side of the screen.
-    this.left =
-      props.options.target === "left"
-        ? (window.innerWidth - this.width) / 2
-        : props.theme.spacing(2);
-
+    // Register Window in our global register
     props.app.registerWindowPlugin(this);
+
+    // Subscribe to a global event that makes it possible to show/hide Windows.
+    // First we prepare a unique event name for each plugin so it looks like 'showSomeplugin'.
+    const eventName = `show${this.type.charAt(0).toUpperCase() +
+      this.type.slice(1)}`;
+    // Next, subscribe to that event, expect 'opts' array.
+    // To find all places where this event is publish, search for 'globalObserver.publish("show'
+    props.app.globalObserver.subscribe(eventName, opts => {
+      this.showWindow(opts);
+    });
   }
 
   componentDidMount() {
@@ -53,18 +67,35 @@ class BaseWindowPlugin extends React.PureComponent {
   }
 
   handleButtonClick = e => {
-    this.props.app.onWindowOpen(this);
+    this.showWindow({
+      hideOtherPluginWindows: true,
+      runCallback: true
+    });
+    this.props.app.globalObserver.publish("hideDrawer");
+  };
+
+  showWindow = opts => {
+    const hideOtherPluginWindows = opts.hideOtherPluginWindows || true,
+      runCallback = opts.runCallback || true;
+
+    // Don't continue if visibility hasn't changed
+    if (this.state.windowVisible === true) {
+      return null;
+    }
+
+    hideOtherPluginWindows === true && this.props.app.onWindowOpen(this);
+
     this.setState(
       {
         windowVisible: true
       },
       () => {
         // If there's a callback defined in custom, run it
-        typeof this.props.custom.onWindowShow === "function" &&
+        runCallback === true &&
+          typeof this.props.custom.onWindowShow === "function" &&
           this.props.custom.onWindowShow();
       }
     );
-    this.props.app.globalObserver.publish("hideDrawer");
   };
 
   closeWindow = () => {
@@ -90,8 +121,7 @@ class BaseWindowPlugin extends React.PureComponent {
           onResize={this.props.custom.onResize}
           width={this.width}
           height={this.height}
-          top={this.top}
-          left={this.left}
+          position={this.position}
           mode={mode}
           layerswitcherConfig={this.props.app.config.mapConfig.tools.find(
             t => t.type === "layerswitcher"

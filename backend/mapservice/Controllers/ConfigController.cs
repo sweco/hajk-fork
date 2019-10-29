@@ -442,7 +442,9 @@ namespace MapService.Controllers
 					geoserverLegendOptions = "",
                     mapselector = true,
                     mapcleaner = true,
-					logo = "",
+                    drawerVisible = false,
+                    drawerPermanent = false,
+                    logo = "",
 					colors = new Colors()
 					{
 						primaryColor = "#1B78CC",
@@ -450,7 +452,8 @@ namespace MapService.Controllers
 					},
 					center = new int[] { 414962, 6583005 },
 					extent = new double[] { 150202, 6382100, 209944, 6471028 },
-					origin = new double[] { 0, 0 },
+                    constrainOnlyCenter = false,
+                    origin = new double[] { 0, 0 },
 					resolutions = new double[] {
 						4096.0,
 						2048.0,

@@ -9,52 +9,62 @@ import Observer from "react-event-observer";
 
 class Coordinates extends React.PureComponent {
   state = {
-    coordinate: ""
+    coordinates: null,
+    transformedCoordinates: []
   };
 
   constructor(props) {
     super(props);
 
     this.localObserver = Observer();
-    // this.localObserver.subscribe("layerAdded", layer => {});
     this.localObserver.subscribe("setCoordinates", coordinates => {
       this.setState({
         coordinates: coordinates
       });
     });
 
+    this.localObserver.subscribe(
+      "setTransformedCoordinates",
+      transformedCoordinates => {
+        this.setState({
+          transformedCoordinates: transformedCoordinates
+        });
+      }
+    );
+
     this.coordinatesModel = new CoordinatesModel({
       map: props.map,
-      app: props.app,
       options: props.options,
       localObserver: this.localObserver
     });
   }
 
+  onWindowShow = () => {
+    this.coordinatesModel.activate();
+  };
+
+  onWindowHide = () => {
+    this.coordinatesModel.deactivate();
+  };
+
   render() {
     return (
       <BaseWindowPlugin
         {...this.props}
-        type={this.constructor.name}
+        type="Coordinates"
         custom={{
           icon: <ExploreIcon />,
           title: "Visa koordinat",
           description: "Visa koordinater för given plats",
           height: 300,
           width: 400,
-          top: undefined,
-          left: undefined,
-          onWindowShow: this.coordinatesModel.activate,
-          onWindowHide: this.coordinatesModel.deactivate
+          onWindowShow: this.onWindowShow,
+          onWindowHide: this.onWindowHide
         }}
       >
         <CoordinatesView
-          app={this.props.app}
-          map={this.props.map}
-          options={this.props.options}
           model={this.coordinatesModel}
           localObserver={this.localObserver}
-          coordinates={this.state.coordinates}
         />
       </BaseWindowPlugin>
     );
