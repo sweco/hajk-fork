@@ -1,4 +1,4 @@
-import * as signalR from "@aspnet/signalr";
+import * as signalR from "@microsoft/signalr";
 import { WFS } from "ol/format";
 import GeometryType from "ol/geom/GeometryType";
 import IsLike from "ol/format/filter/IsLike";

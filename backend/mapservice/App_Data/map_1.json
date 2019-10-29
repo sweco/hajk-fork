@@ -387,7 +387,7 @@
         "target": "toolbar",
         "visibleAtStart": false,
         "visibleForGroups": [],
-        "hubUrl": "http://localhost/markishub",
+        "hubUrl": "http://localhost:81/markishub",
         "markerImg": "/marker_x2.png",
         "sources": [
           {
