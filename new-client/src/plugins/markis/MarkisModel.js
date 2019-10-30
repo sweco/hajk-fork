@@ -75,6 +75,7 @@ class MarkisModel {
       }
     });
     this.vectorLayer.set("type", "markisResultLayer");
+    this.vectorLayer.set("queryable", true);
     this.drawSource = new VectorSource({ wrapX: false });
     this.drawLayer = new VectorLayer({
       source: this.drawSource,
@@ -238,6 +239,9 @@ class MarkisModel {
                   });
                 }
                 jsonResult.source = this.sources[i];
+              });
+              jsonResults = jsonResults.filter(function(e) {
+                return e.features.length > 0;
               });
               setTimeout(() => {
                 return this.localObserver.publish("searchComplete");
