@@ -61,6 +61,7 @@ class MarkisModel {
     this.sources = settings.options.sources;
     this.wfsParser = new WFS();
     this.controllers = [];
+    this.globalObserver = settings.globalObserver;
     this.vectorLayer = new VectorLayer({
       source: new VectorSource({}),
       style: () => {
@@ -117,14 +118,16 @@ class MarkisModel {
     this.connection.on(
       "ShowContractFromMarkis",
       function(_, showMessage) {
+        this.localObserver.publish("toggleCreateButton", { enabled: false });
         console.log("Recieved show message:", showMessage);
-        var messageObj = JSON.parse(showMessage);
-        if (messageObj.objectid) {
-          this.localObserver.publish(
-            "markisEvent",
-            "Söker på " + messageObj.objectid
-          );
-          this.doSearch(messageObj.objectid);
+        var showObj = JSON.parse(showMessage);
+        if (showObj.objectid) {
+          this.localObserver.publish("toggleView", "visningsläge");
+          this.localObserver.publish("updateContractInformation", {
+            objectId: showObj.objectid,
+            objectType: ""
+          });
+          this.doSearch(showObj.objectid);
         } else {
           this.localObserver.publish(
             "markisErrorEvent",
@@ -140,7 +143,33 @@ class MarkisModel {
         console.log("Recieved create message: ", createMessage);
         var createObject = JSON.parse(createMessage);
         if (createObject.objectid && createObject.objecttype) {
-          console.log("test");
+          this.search(createObject.objectid, result => {
+            if (this.getNumberOfResults(result) > 0) {
+              this.localObserver.publish(
+                "contractAlreadyExistsError",
+                "Avtalet som du försöker skapa en ny geometri för finns redan!"
+              );
+              this.highlightImpact(result);
+              this.localObserver.publish("toggleView", "visningsläge");
+              this.localObserver.publish("updateContractInformation", {
+                objectId: createObject.objectid,
+                objectType: ""
+              });
+              this.localObserver.publish("toggleCreateButton", {
+                enabled: false
+              });
+            } else {
+              this.vectorLayer.getSource().clear();
+              this.localObserver.publish("toggleView", "editeringsläge");
+              this.localObserver.publish("updateContractInformation", {
+                objectId: createObject.objectid,
+                objectType: createObject.objecttype
+              });
+              this.localObserver.publish("toggleCreateButton", {
+                enabled: true
+              });
+            }
+          });
         } else {
           this.localObserver.publish(
             "markisErrorEvent",
@@ -222,7 +251,6 @@ class MarkisModel {
   search(searchInput, callback) {
     this.timeout = setTimeout(() => {
       this.vectorLayer.getSource().clear();
-      console.log("Search started");
       var promises = [];
       this.controllers.splice(0, this.controllers.length);
 
@@ -230,18 +258,12 @@ class MarkisModel {
         const { promise, controller } = this.lookUp(source, searchInput);
         promises.push(promise);
         this.controllers.push(controller);
-        console.log(this.controllers);
       });
-
-      var timeout = this.timeout;
 
       Promise.all(promises)
         .then(responses => {
           Promise.all(responses.map(result => result.json()))
             .then(jsonResults => {
-              if (this.timeout !== timeout) {
-                return this.localObserver.publish("searchComplete");
-              }
               jsonResults.forEach((jsonResult, i) => {
                 if (jsonResult.features.length > 0) {
                   arraySort({

@@ -13,20 +13,15 @@ import Observer from "react-event-observer";
 class Markis extends React.PureComponent {
   constructor(props) {
     super(props);
-
     this.localObserver = Observer();
 
     this.sessionId = this.getUrlParams("sid");
 
-    this.localObserver.subscribe("markisEvent", message => {
-      console.log("Markis", message);
-    });
-    this.localObserver.subscribe("markisErrorEvent", message => {
-      console.log("MarkisError:", message);
-    });
-
-    this.localObserver.subscribe("searchComplete", message => {
-      console.log("Sökning på Markisbegrepp färdig.", message);
+    this.localObserver.subscribe("toggleView", message => {
+      props.app.globalObserver.publish("showMarkis", {
+        runCallBack: false,
+        hideOtherPluginWindows: false
+      });
     });
 
     this.markisModel = new MarkisModel({
@@ -54,13 +49,13 @@ class Markis extends React.PureComponent {
     return (
       <BaseWindowPlugin
         {...this.props} // Pass on all props
-        type={this.constructor.name}
+        type="markis"
         custom={{
           icon: <BugReportIcon />, // Custom icon for this plugin
           title: "Markis", // Custom title, etc
           description: "Markisanslutning",
-          height: 450, // Custom height/width etc | Use "auto" for automatic or leave undefined
-          width: 400,
+          height: 300, // Custom height/width etc | Use "auto" for automatic or leave undefined
+          width: 250,
           top: undefined, // If undefined, it will fallback to BaseWindowPlugin's defaults
           left: undefined
         }}
