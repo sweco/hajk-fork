@@ -116,24 +116,35 @@ class MarkisModel {
 
     this.connection.on(
       "ShowContractFromMarkis",
-      function(_, jsonMessage) {
-        console.log(
-          "Recieved message from signalR and message was:",
-          jsonMessage
-        );
-        var messageObj = JSON.parse(jsonMessage);
-        var markisObjId = messageObj.objectid;
-        if (
-          markisObjId !== undefined &&
-          markisObjId !== null &&
-          markisObjId !== ""
-        ) {
-          this.localObserver.publish("markisEvent", "Söker på " + markisObjId);
-          this.doSearch(markisObjId);
+      function(_, showMessage) {
+        console.log("Recieved show message:", showMessage);
+        var messageObj = JSON.parse(showMessage);
+        if (messageObj.objectid) {
+          this.localObserver.publish(
+            "markisEvent",
+            "Söker på " + messageObj.objectid
+          );
+          this.doSearch(messageObj.objectid);
         } else {
           this.localObserver.publish(
             "markisErrorEvent",
-            "Markis skickade inget riktigt sökbegrepp"
+            "Markis skickade ej giltligt avtalsnummer"
+          );
+        }
+      }.bind(this)
+    );
+
+    this.connection.on(
+      "CreateContractFromMarkis",
+      function(_, createMessage) {
+        console.log("Recieved create message: ", createMessage);
+        var createObject = JSON.parse(createMessage);
+        if (createObject.objectid && createObject.objecttype) {
+          console.log("test");
+        } else {
+          this.localObserver.publish(
+            "markisErrorEvent",
+            "Markis skickade ej giltligt avtalsnummer eller typ"
           );
         }
       }.bind(this)
