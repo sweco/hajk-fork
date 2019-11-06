@@ -63,6 +63,8 @@ class MarkisModel {
     this.wfstSources = settings.options.wfstSources;
     this.editFeature = undefined;
     this.editSource = undefined;
+    this.sourceName = undefined;
+    this.geomCreated = false;
     this.markisParameters = {
       objectId: undefined,
       objectType: undefined,
@@ -154,21 +156,23 @@ class MarkisModel {
   }
 
   getContractSource() {
-    var prefix = this.markisParameters.objectId.slice(0, 2).toUpperCase();
-    if (prefix.match(/^(AA|AB|AJ|AL|KI|AN)$/)) {
-      return "arrende_nyttjanderatt";
-    } else if (prefix.match(/^(EX|FV|MA|MR|OP)$/)) {
-      return "avtal_special";
-    } else if (prefix.match(/^(HB|HL)$/)) {
-      return "byggnader_fk";
-    } else if (prefix.match(/^(KN)$/)) {
-      return "kommunal_nyttjanderatt";
-    } else if (prefix.match(/^(LT)$/)) {
-      return "TRF_ledningsratt";
-    } else if (prefix.match(/^(NB)$/)) {
-      return "arrende_med_byggnad";
-    } else if (prefix.match(/^(TE)$/)) {
-      return "markistest:column_test_sweco";
+    if (this.markisParameters.objectId.length === 10) {
+      var prefix = this.markisParameters.objectId.slice(0, 2).toUpperCase();
+      if (prefix.match(/^(AA|AB|AJ|AL|KI|AN)$/)) {
+        return "arrende_nyttjanderatt";
+      } else if (prefix.match(/^(EX|FV|MA|MR|OP)$/)) {
+        return "avtal_special";
+      } else if (prefix.match(/^(HB|HL)$/)) {
+        return "byggnader_fk";
+      } else if (prefix.match(/^(KN)$/)) {
+        return "kommunal_nyttjanderatt";
+      } else if (prefix.match(/^(LT)$/)) {
+        return "TRF_ledningsratt";
+      } else if (prefix.match(/^(NB)$/)) {
+        return "arrende_med_byggnad";
+      } else if (prefix.match(/^(TE)$/)) {
+        return "markistest:column_test_sweco";
+      }
     }
   }
 
@@ -215,18 +219,31 @@ class MarkisModel {
     this.draw = new Draw({
       source: this.vectorSource,
       style: this.getSketchStyle(),
-      type: GeometryType.MULTI_POLYGON,
+      type: GeometryType.POLYGON,
       geometryName: this.geometryName
     });
     this.draw.on("drawend", event => {
       event.feature.modification = "added";
+      this.geomCreated = true;
       this.editAttributes(event.feature);
-      this.editFeature.setProperties({
-        avtalsnr: this.markisParameters.objectId
-      });
+      this.setFeatureProperties();
       this.map.removeInteraction(this.draw);
     });
     this.map.addInteraction(this.draw);
+  }
+
+  setFeatureProperties() {
+    this.editFeature.setProperties({
+      [this.editSource.columnNames.contractId]: this.markisParameters.objectId,
+      [this.editSource.columnNames.createdBy]: this.markisParameters.createdBy,
+      [this.editSource.columnNames.regDate]: this.getTimeStampDate()
+    });
+  }
+
+  getTimeStampDate() {
+    return new Date(new Date().toString().split("GMT")[0] + " UTC")
+      .toISOString()
+      .split(".")[0];
   }
 
   deActivateAdd() {
@@ -333,6 +350,15 @@ class MarkisModel {
     this.vectorLayer.getSource().clear();
   }
 
+  reset() {
+    Object.assign(this.markisParameters, {
+      objectId: undefined,
+      createdBy: undefined
+    });
+    this.sourceName = undefined;
+    this.geomCreated = false;
+  }
+
   connectToHub(sessionId) {
     this.sessionId = sessionId;
     this.connection = new signalR.HubConnectionBuilder()
@@ -351,13 +377,14 @@ class MarkisModel {
     this.connection.on(
       "ShowContractFromMarkis",
       function(_, showMessage) {
+        this.reset();
         this.localObserver.publish("toggleCreateButton", { enabled: false });
         var showObj = JSON.parse(showMessage);
         if (showObj.objectid) {
           this.localObserver.publish("toggleView", "visningsläge");
           this.localObserver.publish("updateContractInformation", {
             objectId: showObj.objectid,
-            objectType: ""
+            createdBy: ""
           });
           this.doSearch(showObj.objectid);
         } else {
@@ -372,10 +399,12 @@ class MarkisModel {
     this.connection.on(
       "CreateContractFromMarkis",
       function(_, createMessage) {
+        this.reset();
         var createObject = JSON.parse(createMessage);
-        if (createObject.objectid && createObject.objecttype) {
+        if (createObject.objectid && createObject.userName) {
           Object.assign(this.markisParameters, {
-            objectId: createObject.objectid
+            objectId: createObject.objectid,
+            createdBy: createObject.userName
           });
           this.search(createObject.objectid, result => {
             if (this.getNumberOfResults(result) > 0) {
@@ -387,15 +416,15 @@ class MarkisModel {
               this.localObserver.publish("toggleView", "visningsläge");
               this.localObserver.publish("updateContractInformation", {
                 objectId: this.markisParameters.objectId,
-                objectType: ""
+                createdBy: this.markisParameters.createdBy
               });
               this.localObserver.publish("toggleCreateButton", {
                 enabled: false
               });
             } else {
               this.vectorLayer.getSource().clear();
-              var contractSource = this.getContractSource();
-              if (contractSource) {
+              this.sourceName = this.getContractSource();
+              if (this.sourceName) {
                 this.localObserver.publish("toggleView", "editeringsläge");
                 this.localObserver.publish("updateContractInformation", {
                   objectId: this.markisParameters.objectId,
