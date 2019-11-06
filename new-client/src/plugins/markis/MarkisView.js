@@ -41,7 +41,7 @@ class MarkisView extends React.PureComponent {
     test: false,
     mode: "visningsläge",
     contractId: "",
-    contractType: "",
+    createdBy: "",
     enableCreate: false,
     inCreation: false,
     formValues: {}
@@ -70,7 +70,7 @@ class MarkisView extends React.PureComponent {
     this.localObserver.subscribe("updateContractInformation", information => {
       this.setState({
         contractId: information.objectId,
-        contractType: information.objectType
+        createdBy: information.createdBy
       });
     });
     this.localObserver.subscribe("contractAlreadyExistsError", message => {
@@ -145,6 +145,7 @@ class MarkisView extends React.PureComponent {
           className={classes.textField}
           margin="normal"
           variant="outlined"
+          disabled={!this.props.model.geomCreated}
           value={value}
           onChange={e => {
             this.checkText(field.name, e.target.value);
@@ -189,7 +190,7 @@ class MarkisView extends React.PureComponent {
     this.setState({
       inCreation: true
     });
-    this.model.setEditLayer("markistest:column_test_sweco");
+    this.model.setEditLayer(this.props.model.sourceName);
     this.model.activateAdd();
   };
 
@@ -213,7 +214,7 @@ class MarkisView extends React.PureComponent {
       inCreation: false,
       mode: "visningsläge",
       contractId: "",
-      contractType: "",
+      createdBy: "",
       enableCreate: false,
       formValues: {}
     });
