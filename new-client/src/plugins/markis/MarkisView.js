@@ -5,6 +5,10 @@ import Button from "@material-ui/core/Button";
 import { withSnackbar } from "notistack";
 import Typography from "@material-ui/core/Typography";
 import TextField from "@material-ui/core/TextField";
+import FormControl from "@material-ui/core/FormControl";
+import NativeSelect from "@material-ui/core/NativeSelect";
+import FormLabel from "@material-ui/core/FormLabel";
+import Input from "@material-ui/core/Input";
 
 const styles = theme => ({
   container: {
@@ -97,6 +101,14 @@ class MarkisView extends React.PureComponent {
     });
   }
 
+  checkSelect(name, value) {
+    var formValues = Object.assign({}, this.state.formValues);
+    formValues[name] = value;
+    this.setState({
+      formValues: formValues
+    });
+  }
+
   updateFeature() {
     var props = this.props.model.editFeature.getProperties();
     Object.keys(this.state.formValues).forEach(key => {
@@ -137,22 +149,57 @@ class MarkisView extends React.PureComponent {
         value = field.defaultValue;
       }
     }
-    return (
-      <>
-        <TextField
-          id={field.id}
-          label={field.name}
-          className={classes.textField}
-          margin="normal"
-          variant="outlined"
-          disabled={!this.props.model.geomCreated}
-          value={value}
-          onChange={e => {
-            this.checkText(field.name, e.target.value);
-          }}
-        />
-      </>
-    );
+
+    switch (field.textType) {
+      case "fritext":
+        return (
+          <>
+            <TextField
+              id={field.id}
+              label={field.name}
+              className={classes.textField}
+              margin="normal"
+              variant="outlined"
+              disabled={!this.props.model.geomCreated}
+              value={value}
+              onChange={e => {
+                this.checkText(field.name, e.target.value);
+              }}
+            />
+          </>
+        );
+      case "lista":
+        let options = null;
+        if (Array.isArray(field.values)) {
+          options = field.values.map((val, i) => (
+            <option key={i} value={val}>
+              {val}
+            </option>
+          ));
+        }
+        return (
+          <div className={classes.root}>
+            <FormControl component="fieldset" className={classes.formControl}>
+              <FormLabel component="legend">{field.name}</FormLabel>
+              <NativeSelect
+                value={value}
+                input={<Input name={field.name} id={field.name} />}
+                onChange={e => {
+                  this.checkSelect(field.name, e.target.value);
+                }}
+              >
+                <option value="">-Välj värde-</option>
+                {options}
+              </NativeSelect>
+            </FormControl>
+          </div>
+        );
+
+      case null:
+        return <span>{value}</span>;
+      default:
+        return <span>{value}</span>;
+    }
   }
   createForm() {
     var markup = this.model.editSource.editableFields.map((field, i) => {
@@ -191,6 +238,7 @@ class MarkisView extends React.PureComponent {
       inCreation: true
     });
     this.model.setEditLayer(this.props.model.sourceName);
+    this.model.toggleLayer(this.props.model.sourceName, true);
     this.model.activateAdd();
   };
 
@@ -199,6 +247,7 @@ class MarkisView extends React.PureComponent {
       inCreation: false
     });
     this.model.deActivateAdd();
+    this.model.toggleLayer(this.props.model.sourceName, false);
   };
 
   saveCreated = () => {
@@ -206,6 +255,8 @@ class MarkisView extends React.PureComponent {
     this.model.save();
     this.props.enqueueSnackbar("Avtalsgeometrin skapades utan problem!");
     this.model.deActivateAdd();
+    this.model.toggleLayer(this.props.model.sourceName, false);
+    this.model.refreshLayer(this.props.model.sourceName);
     this.reset();
   };
 
