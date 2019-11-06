@@ -10,7 +10,6 @@ import GeoJSON from "ol/format/GeoJSON";
 import { arraySort } from "./../../utils/ArraySort.js";
 import { Stroke, Style, Circle, Fill, Icon } from "ol/style.js";
 import { Draw } from "ol/interaction";
-import { all as strategyAll } from "ol/loadingstrategy";
 import X2JS from "x2js";
 
 const fetchConfig = {
@@ -57,6 +56,8 @@ class MarkisModel {
     this.app = settings.app;
     this.localObserver = settings.localObserver;
     this.hubUrl = settings.options.hubUrl;
+    this.defaultStatus = settings.options.defaultStatus;
+    this.defaultHandlopNr = settings.options.defaultHandlopNr;
     this.isConnected = false;
     this.connection = undefined;
     this.sources = settings.options.sources;
@@ -136,12 +137,12 @@ class MarkisModel {
     this.wfstSource = this.wfstSources.find(
       wfstSource => wfstSource.layers[0] === layerName
     );
-    this.vectorSource = new VectorSource({
-      loader: extent => this.loadData(this.wfstSource, extent, done),
-      strategy: strategyAll,
-      projection: this.wfstSource.projection
-    });
-
+    // this.vectorSource = new VectorSource({
+    //   loader: extent => this.loadData(this.wfstSource, extent, done),
+    //   strategy: strategyAll,
+    //   projection: this.wfstSource.projection
+    // });
+    this.vectorSource = new VectorSource({});
     this.editLayer = new Vector({
       source: this.vectorSource,
       style: this.getSketchStyle()
@@ -155,11 +156,69 @@ class MarkisModel {
     this.editFeature = null;
   }
 
+  toggleLayer(layerName, visible) {
+    var foundLayer = this.map
+      .getLayers()
+      .getArray()
+      .find(layer => {
+        var match = false;
+        if (layer.getSource().getParams) {
+          let params = layer.getSource().getParams();
+          if (typeof params === "object") {
+            let paramName = params.LAYERS.split(":");
+            let layerSplit = layerName.split(":");
+            if (paramName.length === 2 && layerSplit.length === 2) {
+              match = layerName === params.LAYERS;
+            }
+            if (paramName.length === 1) {
+              match = layerSplit[1] === params.LAYERS;
+            }
+          }
+        }
+        return match;
+      });
+
+    if (foundLayer) {
+      foundLayer.setProperties({ visible: visible });
+    }
+  }
+
+  refreshLayer(layerName) {
+    var source,
+      foundLayer = this.map
+        .getLayers()
+        .getArray()
+        .find(layer => {
+          var match = false;
+          if (layer.getSource().getParams) {
+            let params = layer.getSource().getParams();
+            if (typeof params === "object") {
+              let paramName = params.LAYERS.split(":");
+              let layerSplit = layerName.split(":");
+              if (paramName.length === 2 && layerSplit.length === 2) {
+                match = layerName === params.LAYERS;
+              }
+              if (paramName.length === 1) {
+                match = layerSplit[1] === params.LAYERS;
+              }
+            }
+          }
+          return match;
+        });
+
+    if (foundLayer) {
+      source = foundLayer.getSource();
+      source.changed();
+      source.updateParams({ time: Date.now() });
+      this.map.updateSize();
+    }
+  }
+
   getContractSource() {
     if (this.markisParameters.objectId.length === 10) {
       var prefix = this.markisParameters.objectId.slice(0, 2).toUpperCase();
       if (prefix.match(/^(AA|AB|AJ|AL|KI|AN)$/)) {
-        return "arrende_nyttjanderatt";
+        return "fk.belastning.v1:arrende_nyttjanderatt";
       } else if (prefix.match(/^(EX|FV|MA|MR|OP)$/)) {
         return "avtal_special";
       } else if (prefix.match(/^(HB|HL)$/)) {
@@ -236,7 +295,9 @@ class MarkisModel {
     this.editFeature.setProperties({
       [this.editSource.columnNames.contractId]: this.markisParameters.objectId,
       [this.editSource.columnNames.createdBy]: this.markisParameters.createdBy,
-      [this.editSource.columnNames.regDate]: this.getTimeStampDate()
+      [this.editSource.columnNames.regDate]: this.getTimeStampDate(),
+      [this.editSource.columnNames.status]: this.defaultStatus,
+      [this.editSource.columnNames.handlopnr]: this.defaultHandlopNr
     });
   }
 
