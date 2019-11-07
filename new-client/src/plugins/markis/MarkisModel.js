@@ -220,17 +220,15 @@ class MarkisModel {
       if (prefix.match(/^(AA|AB|AJ|AL|KI|AN)$/)) {
         return "fk.belastning.v1:arrende_nyttjanderatt";
       } else if (prefix.match(/^(EX|FV|MA|MR|OP)$/)) {
-        return "avtal_special";
-      } else if (prefix.match(/^(HB|HL)$/)) {
-        return "byggnader_fk";
+        return "fk.belastning.v1:avtal_special";
       } else if (prefix.match(/^(KN)$/)) {
-        return "kommunal_nyttjanderatt";
+        return "fk.belastning.v1:kommunal_nyttjanderatt";
       } else if (prefix.match(/^(LT)$/)) {
-        return "TRF_ledningsratt";
+        return "fk.belastning.v1:trf_ledningsratt";
       } else if (prefix.match(/^(NB)$/)) {
-        return "arrende_med_byggnad";
-      } else if (prefix.match(/^(TE)$/)) {
-        return "markistest:column_test_sweco";
+        return "fk.belastning.v1:arrende_med_byggnad";
+      } else if (prefix.match(/^(SE)$/)) {
+        return "fk.belastning.v1:avtal_servitut";
       }
     }
   }
