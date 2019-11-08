@@ -11,6 +11,7 @@ import { arraySort } from "./../../utils/ArraySort.js";
 import { Stroke, Style, Circle, Fill, Icon } from "ol/style.js";
 import { Draw } from "ol/interaction";
 import X2JS from "x2js";
+import { handleClick } from "../../models/Click.js";
 
 const fetchConfig = {
   credentials: "same-origin"
@@ -61,6 +62,7 @@ class MarkisModel {
     this.isConnected = false;
     this.connection = undefined;
     this.sources = settings.options.sources;
+    this.estateLayerName = settings.options.estateLayerName;
     this.wfstSources = settings.options.wfstSources;
     this.editFeature = undefined;
     this.editSource = undefined;
@@ -233,6 +235,44 @@ class MarkisModel {
     }
   }
 
+  //Only handles single select and is restricted to polygon and multipolygon atm
+  onSelectFeatures = (evt, selectionDone, callback) => {
+    handleClick(evt, evt.map, response => {
+      this.vectorSource.clear();
+      if (response.features.length > 0) {
+        var geometryType = response.features[0].getGeometry().getType();
+
+        if (
+          geometryType === GeometryType.POLYGON ||
+          geometryType === GeometryType.MULTI_POLYGON
+        ) {
+          if (response.features.length > 0) {
+            this.editFeature = response.features[0];
+            this.editFeature.modification = "added";
+            this.vectorSource.addFeatures([this.editFeature]);
+            this.geomCreated = true;
+            this.localObserver.publish("editFeature", this.editFeature);
+            this.activateEstateSelection(selectionDone, callback);
+          }
+        } else {
+          this.editFeature = undefined;
+          this.localObserver.publish("editFeature", this.editFeature);
+          this.activateEstateSelection(selectionDone, callback);
+        }
+      } else {
+        this.editFeature = undefined;
+        this.localObserver.publish("editFeature", this.editFeature);
+        this.activateEstateSelection(selectionDone, callback);
+      }
+    });
+  };
+
+  activateEstateSelection = (selectionDone, callback) => {
+    this.map.once("singleclick", e => {
+      this.onSelectFeatures(e, selectionDone, callback);
+    });
+  };
+
   loadDataSuccess = data => {
     var format = new WFS();
     var features;
@@ -359,6 +399,10 @@ class MarkisModel {
       serializer = new XMLSerializer(),
       src = this.editSource,
       payload = node ? serializer.serializeToString(node) : undefined;
+    if (payload.search("<geometry>")) {
+      payload = payload.replace("<geometry>", "<geom>");
+      payload = payload.replace("</geometry>", "</geom>");
+    }
 
     if (payload) {
       fetch(src.posturl, {
