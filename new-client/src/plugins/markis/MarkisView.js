@@ -30,7 +30,8 @@ const styles = theme => ({
     marginBottom: theme.spacing(1)
   },
   createButtons: {
-    margin: theme.spacing(1)
+    margin: theme.spacing(1),
+    width: 90
   },
   textField: {
     marginLeft: 0,
@@ -90,6 +91,13 @@ class MarkisView extends React.PureComponent {
         editFeature: this.props.model.editFeature,
         editSource: this.props.model.editSource
       });
+      this.model.setFeatureProperties();
+      if (this.state.editFeature.getProperties().fastighet) {
+        this.checkText(
+          "akt_id",
+          this.state.editFeature.getProperties().fastighet
+        );
+      }
     });
   }
 
@@ -160,7 +168,7 @@ class MarkisView extends React.PureComponent {
               className={classes.textField}
               margin="normal"
               variant="outlined"
-              disabled={!this.props.model.geomCreated}
+              disabled={!this.state.editFeature}
               value={value}
               onChange={e => {
                 this.checkText(field.name, e.target.value);
@@ -183,6 +191,7 @@ class MarkisView extends React.PureComponent {
               <FormLabel component="legend">{field.name}</FormLabel>
               <NativeSelect
                 value={value}
+                disabled={!this.state.editFeature}
                 input={<Input name={field.name} id={field.name} />}
                 onChange={e => {
                   this.checkSelect(field.name, e.target.value);
@@ -244,9 +253,11 @@ class MarkisView extends React.PureComponent {
 
   abortCreation = () => {
     this.setState({
-      inCreation: false
+      inCreation: false,
+      editFeature: undefined
     });
     this.model.deActivateAdd();
+    this.model.toggleLayer(this.props.model.estateLayerName, false);
     this.model.toggleLayer(this.props.model.sourceName, false);
   };
 
@@ -255,7 +266,7 @@ class MarkisView extends React.PureComponent {
     this.model.save();
     this.props.enqueueSnackbar("Avtalsgeometrin skapades utan problem!");
     this.model.deActivateAdd();
-    this.model.toggleLayer(this.props.model.sourceName, false);
+    this.model.toggleLayer(this.props.model.estateLayerName, false);
     this.model.refreshLayer(this.props.model.sourceName);
     this.reset();
   };
@@ -272,7 +283,19 @@ class MarkisView extends React.PureComponent {
   }
 
   renderInfoText() {
-    if (this.state.mode === "editeringsläge") {
+    if (this.state.mode === "editeringsläge" && !this.state.inCreation) {
+      return (
+        <Typography>
+          Du kan nu skapa en ny geometri kopplad till avtalsnummer:
+          <br />
+          <b>{this.state.contractId}</b>
+          <br />
+          <br />
+          Du kan antingen skapa en geometri på frihand, eller utifrån en
+          fastighet.
+        </Typography>
+      );
+    } else if (this.state.mode === "editeringsläge" && this.state.inCreation) {
       return (
         <Typography>
           Du kan nu skapa en ny geometri kopplad till avtalsnummer:
@@ -302,6 +325,15 @@ class MarkisView extends React.PureComponent {
     });
   };
 
+  createFromEstate = () => {
+    this.setState({
+      inCreation: true
+    });
+    this.model.setEditLayer(this.props.model.sourceName);
+    this.model.toggleLayer(this.model.estateLayerName, true);
+    this.model.activateEstateSelection();
+  };
+
   renderBtns() {
     const { classes } = this.props;
     const enableCreateBtn = (
@@ -311,7 +343,18 @@ class MarkisView extends React.PureComponent {
         disabled={!this.state.enableCreate}
         onClick={this.openCreateDialog}
       >
-        Skapa geometri
+        Rita geometri
+      </Button>
+    );
+
+    const createFromEstateBtn = (
+      <Button
+        variant="contained"
+        className={classes.createButtons}
+        disabled={!this.state.enableCreate}
+        onClick={this.createFromEstate}
+      >
+        Välj fastighet
       </Button>
     );
 
@@ -330,8 +373,9 @@ class MarkisView extends React.PureComponent {
         variant="contained"
         className={classes.createButtons}
         onClick={this.saveCreated}
+        disabled={!this.state.editFeature}
       >
-        Spara
+        Skapa
       </Button>
     );
 
@@ -347,7 +391,12 @@ class MarkisView extends React.PureComponent {
 
     if (this.state.mode === "editeringsläge") {
       if (!this.state.inCreation) {
-        return <div>{enableCreateBtn}</div>;
+        return (
+          <div>
+            {enableCreateBtn}
+            {createFromEstateBtn}
+          </div>
+        );
       } else {
         return (
           <div>
