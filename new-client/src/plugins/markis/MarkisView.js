@@ -263,12 +263,32 @@ class MarkisView extends React.PureComponent {
 
   saveCreated = () => {
     this.updateFeature();
-    this.model.save();
-    this.props.enqueueSnackbar("Avtalsgeometrin skapades utan problem!");
-    this.model.deActivateAdd();
-    this.model.toggleLayer(this.props.model.estateLayerName, false);
-    this.model.refreshLayer(this.props.model.sourceName);
-    this.reset();
+    this.model.save(r => {
+      console.log("done", r);
+      if (
+        r &&
+        r.TransactionResponse &&
+        r.TransactionResponse.TransactionSummary &&
+        r.TransactionResponse.TransactionSummary.totalInserted &&
+        Number(
+          r.TransactionResponse.TransactionSummary.totalInserted.toString()
+        ) > 0
+      ) {
+        this.props.enqueueSnackbar("Avtalsgeometrin skapades utan problem!");
+        this.model.deActivateAdd();
+        this.model.toggleLayer(this.props.model.estateLayerName, false);
+        this.model.refreshLayer(this.props.model.sourceName);
+        this.reset();
+      } else {
+        this.showAdvancedSnackbar(
+          "Avtalsgeometrin gick inte att spara. Fösök igen senare."
+        );
+        this.model.deActivateAdd();
+        this.model.toggleLayer(this.props.model.estateLayerName, false);
+        this.model.refreshLayer(this.props.model.sourceName);
+        this.reset();
+      }
+    });
   };
 
   reset() {
