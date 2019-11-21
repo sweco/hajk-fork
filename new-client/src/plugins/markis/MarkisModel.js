@@ -415,7 +415,7 @@ class MarkisModel {
       })
         .then(response => {
           response.text().then(wfsResponseText => {
-            this.parseWFSTresponse(wfsResponseText);
+            done(this.parseWFSTresponse(wfsResponseText));
           });
         })
         .catch(response => {
