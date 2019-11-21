@@ -22,13 +22,9 @@ class CoordinatesModel {
     this.transformedCoordinates = [];
   }
 
-  addMarker = () => {
-    if (!this.activated) {
-      return;
-    }
-
+  addMarker = coordinates => {
     let feature = new Feature({
-      geometry: new Point(this.coordinates)
+      geometry: new Point(coordinates)
     });
     let styleMarker = new Style({
       image: new Icon({
@@ -47,81 +43,60 @@ class CoordinatesModel {
     return transform(coordinates, from, to);
   }
 
-  setCoordinates = () => {
-    if (!this.activated) {
-      return;
-    }
-    this.localObserver.publish("setCoordinates", this.coordinates);
-    this.localObserver.publish("hideSnackbar");
-  };
-
-  presentCoordinates() {
-    let coordinates = this.coordinates;
-    let transformedCoordinates = [];
+  activate() {
     let transformations = this.transformations;
+    this.activated = true;
 
-    if (transformations.length) {
-      transformations.map((transformation, i) => {
-        transformedCoordinates = {
-          code: transformation.code || "",
-          default: transformation.default || false,
-          hint: transformation.hint || "",
-          title: transformation.title || "",
-          xtitle: transformation.xtitle || "",
-          ytitle: transformation.ytitle || "",
-          inverseAxis: transformation.inverseAxis || false,
-          coordinates: this.transform(coordinates, transformation.code) || ""
-        };
+    this.map.on("singleclick", e => {
+      if (!this.activated) {
+        return;
+      }
 
-        this.transformedCoordinates[i] = transformedCoordinates;
+      this.coordinates = e.coordinate;
+      this.addMarker(this.coordinates);
+      let transformedCoordinates;
 
-        this.localObserver.publish(
-          "setTransformedCoordinates",
-          this.transformedCoordinates
-        );
+      if (transformations.length) {
+        transformedCoordinates = transformations.map((transformation, i) => {
+          let container = {};
 
-        return this.transformedCoordinates;
-      });
-    } else {
-      transformedCoordinates = {
-        code: "EPSG:4326",
-        default: false,
-        hint: "",
-        title: "WGS84",
-        xtitle: "Lng",
-        ytitle: "Lat",
-        inverseAxis: true,
-        coordinates: this.transform(coordinates, "EPSG:4326")
-      };
+          container.code = transformation.code || "";
+          container.default = transformation.default || false;
+          container.hint = transformation.hint || "";
+          container.title = transformation.title || "";
+          container.xtitle = transformation.xtitle || "";
+          container.ytitle = transformation.ytitle || "";
+          container.inverseAxis = transformation.inverseAxis || false;
+          container.coordinates =
+            this.transform(this.coordinates, transformation.code) || "";
 
-      this.transformedCoordinates = [transformedCoordinates];
+          return container;
+        });
+      } else {
+        transformedCoordinates = [
+          {
+            code: "EPSG:4326",
+            default: false,
+            hint: "",
+            title: "WGS84",
+            xtitle: "Lng",
+            ytitle: "Lat",
+            inverseAxis: true,
+            coordinates: this.transform(this.coordinates, "EPSG:4326")
+          }
+        ];
+      }
 
       this.localObserver.publish(
         "setTransformedCoordinates",
-        this.transformedCoordinates
+        transformedCoordinates
       );
-
-      return this.transformedCoordinates;
-    }
-  }
-
-  getCoordinates() {
-    return this.coordinates;
-  }
-
-  activate() {
-    this.map.on("singleclick", e => {
-      this.coordinates = e.coordinate;
-      this.setCoordinates();
-      this.addMarker();
-      this.presentCoordinates();
     });
-    this.activated = true;
     this.localObserver.publish("showSnackbar");
   }
 
   deactivate() {
-    this.map.un("singleclick", this.setCoordinates);
+    this.map.un("singleclick", this.addMarker);
     this.vector.getSource().clear();
 
     this.activated = false;

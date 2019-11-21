@@ -54,21 +54,28 @@ class SearchModel {
   controllers = [];
 
   mapSourceAsWFSPromise = (feature, projCode, source) => {
-    var geom = feature.getGeometry();
-    if (geom.getType() === "Circle") {
-      geom = fromCircle(geom);
+    let geometry = feature.getGeometry();
+    if (geometry.getType() === "Circle") {
+      geometry = fromCircle(geometry);
     }
+
+    /**
+     * This is really confusing, but depending on whether we
+     * searching using global WFS sources or by transforming
+     * mapconfig's WMS layers to search sources, we call the
+     * geom differently. So here's a hopefully bullet-proof
+     * way of ensuring we respect the geom from admin (if any)
+     * or fall back to default 'geom'
+     */
+    const finalGeom = source.geometryField || source.geometryName || "geom";
+
     const options = {
       featureTypes: source.layers,
       srsName: projCode,
       outputFormat: "JSON", //source.outputFormat,
-      maxFeatures: 100,
-      geometryName: source.geometryName,
-      filter: new Intersects(
-        "geom", // geometryName
-        geom, // geometry
-        projCode // projCode
-      )
+      maxFeatures: this.options.maxFeatures || 100,
+      geometryName: finalGeom,
+      filter: new Intersects(finalGeom, geometry, projCode)
     };
 
     const node = this.wfsParser.writeGetFeature(options);
@@ -167,8 +174,13 @@ class SearchModel {
     }
   };
 
-  /*useTransformedWmsSource uses sources specified under Tools -> Search in admin -> 
-  "Visningstjänster för sök inom" instead of the global wfs sources specifed in admin*/
+  /**
+   *
+   *
+   * @param {*} feature
+   * @param {boolean} useTransformedWmsSource If true, uses sources specified in Admin->Tools->Search in admin->"Visningstjänster för sök inom", instead of the global WFS sources (Admin->Söktjänster).
+   * @param {*} callback Function to call when search is completed
+   */
   searchWithinArea = (feature, useTransformedWmsSource, callback) => {
     const projCode = this.olMap
       .getView()
@@ -255,6 +267,7 @@ class SearchModel {
   search = (searchInput, force, callback) => {
     clearTimeout(this.timeout);
 
+    this.clearRecentSpatialSearch();
     //var autoExecution = searchInput.length > 3;
 
     if (/*autoExecution ||*/ force === true) {
@@ -368,6 +381,7 @@ class SearchModel {
   withinSearch = (radiusDrawn, searchDone) => {
     this.toggleDraw(true, "Circle", true, e => {
       radiusDrawn();
+      // TODO: Change second parameter to FALSE in order to use global defined WFS search sources
       this.searchWithinArea(e.feature, true, featureCollections => {
         let layerIds = featureCollections.map(featureCollection => {
           return featureCollection.source.layerId;
@@ -504,15 +518,25 @@ class SearchModel {
   }
 
   mapDisplayLayerAsSearchLayer(searchLayer) {
-    var type =
+    // Admin has the possibility to set some search options for WMS layers,
+    // one of them is name of geometry field. If it exists, use it.
+    const layerInfo = searchLayer.get("layerInfo");
+    const geomNameFromWmsConfig =
+      typeof layerInfo === "object" &&
+      layerInfo !== null &&
+      layerInfo.hasOwnProperty("searchGeometryField")
+        ? layerInfo.searchGeometryField
+        : "geom";
+
+    const type =
       searchLayer instanceof VectorLayer
         ? "VECTOR"
         : searchLayer instanceof TileLayer || searchLayer instanceof ImageLayer
         ? "TILE"
         : undefined;
-    var source = {};
-    var layers;
-    var layerSource = searchLayer.getSource();
+    let source = {};
+    let layers;
+    const layerSource = searchLayer.getSource();
     if (type === "TILE") {
       if (searchLayer.layerType === "group") {
         layers = searchLayer.subLayers;
@@ -527,7 +551,7 @@ class SearchModel {
           type: type,
           url: searchLayer.get("url"),
           layers: [searchLayer.get("featureType")],
-          geometryName: "geom",
+          geometryName: geomNameFromWmsConfig,
           layerId: searchLayer.layerId
         };
         break;
@@ -536,7 +560,7 @@ class SearchModel {
           type: type,
           url: searchLayer.get("url").replace("wms", "wfs"),
           layers: layers,
-          geometryName: "geom",
+          geometryName: geomNameFromWmsConfig,
           layerId: searchLayer.layerId
         };
         break;
@@ -552,18 +576,14 @@ class SearchModel {
       .getProjection()
       .getCode();
 
-    const geom = feature.getGeometry();
+    const geometry = feature.getGeometry();
 
     const options = {
       featureTypes: source.layers,
       srsName: projCode,
       outputFormat: "JSON", //source.outputFormat,
-      geometryName: source.geometryName,
-      filter: new Intersects(
-        "geom", // geometryName
-        geom, // geometry
-        projCode // projCode
-      )
+      geometryName: source.geometryField,
+      filter: new Intersects(source.geometryField, geometry, projCode)
     };
 
     const node = this.wfsParser.writeGetFeature(options);
@@ -613,7 +633,7 @@ class SearchModel {
       srsName: projCode,
       outputFormat: "JSON", //source.outputFormat,
       geometryName: source.geometryField,
-      maxFeatures: 100,
+      maxFeatures: this.options.maxFeatures || 100,
       filter: filter
     };
 

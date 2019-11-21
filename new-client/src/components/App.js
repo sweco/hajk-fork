@@ -14,8 +14,9 @@ import PluginWindows from "./PluginWindows";
 import Zoom from "../controls/Zoom";
 import ScaleLine from "../controls/ScaleLine";
 import Attribution from "../controls/Attribution.js";
-import MapSwitcher from "../controls/MapSwitcher";
 import MapCleaner from "../controls/MapCleaner";
+import MapResetter from "../controls/MapResetter";
+import MapSwitcher from "../controls/MapSwitcher";
 
 import {
   Backdrop,
@@ -345,7 +346,8 @@ class App extends React.PureComponent {
       : "Visa verktygspanelen";
     return (
       Object.keys(this.appModel.plugins).length > 0 &&
-      this.appModel.plugins.search === undefined && (
+      this.appModel.plugins.search === undefined &&
+      this.appModel.config.mapConfig.map.clean !== true && (
         <Tooltip title={tooltipText}>
           <span>
             <Fab
@@ -363,8 +365,27 @@ class App extends React.PureComponent {
     );
   }
 
+  isString(s) {
+    return s instanceof String || typeof s === "string";
+  }
+
   render() {
     const { classes, config } = this.props;
+
+    // If clean===true, some components won't be rendered below
+    const clean = config.mapConfig.map.clean;
+
+    const defaultCookieNoticeMessage = this.isString(
+      this.props.config.mapConfig.map.defaultCookieNoticeMessage
+    )
+      ? this.props.config.mapConfig.map.defaultCookieNoticeMessage
+      : undefined;
+
+    const defaultCookieNoticeUrl = this.isString(
+      this.props.config.mapConfig.map.defaultCookieNoticeUrl
+    )
+      ? this.props.config.mapConfig.map.defaultCookieNoticeUrl
+      : undefined;
 
     return (
       <SnackbarProvider
@@ -377,9 +398,8 @@ class App extends React.PureComponent {
         <>
           <CookieNotice
             globalObserver={this.globalObserver}
-            defaultCookieNoticeMessage={
-              this.props.config.mapConfig.map.defaultCookieNoticeMessage
-            }
+            defaultCookieNoticeMessage={defaultCookieNoticeMessage}
+            defaultCookieNoticeUrl={defaultCookieNoticeUrl}
           />
           <Alert
             open={this.state.alert}
@@ -395,8 +415,8 @@ class App extends React.PureComponent {
             <header
               className={cslx(classes.header, classes.pointerEventsOnChildren)}
             >
-              {this.renderStandaloneDrawerToggler()}
-              {this.renderSearchPlugin()}
+              {clean === false && this.renderStandaloneDrawerToggler()}
+              {clean === false && this.renderSearchPlugin()}
             </header>
             <main className={classes.main}>
               <div
@@ -422,8 +442,14 @@ class App extends React.PureComponent {
                 )}
               >
                 <Zoom map={this.appModel.getMap()} />
-                <MapSwitcher appModel={this.appModel} />
-                <MapCleaner appModel={this.appModel} />
+                {clean === false && <MapSwitcher appModel={this.appModel} />}
+                {clean === false && <MapCleaner appModel={this.appModel} />}
+                {clean === true && (
+                  <MapResetter
+                    mapConfig={this.appModel.config.mapConfig}
+                    map={this.appModel.getMap()}
+                  />
+                )}
               </div>
             </main>
             <footer
