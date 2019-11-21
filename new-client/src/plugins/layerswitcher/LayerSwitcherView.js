@@ -11,10 +11,13 @@ import BreadCrumbs from "./components/BreadCrumbs.js";
 
 const styles = theme => ({
   windowContent: {
-    margin: "-10px" // special case, we need to "unset" the padding for Window content that's set in Window.js
+    margin: -10 // special case, we need to "unset" the padding for Window content that's set in Window.js
+  },
+  stickyAppBar: {
+    top: -10
   },
   tabContent: {
-    padding: "10px"
+    padding: 10
   }
 });
 
@@ -58,6 +61,24 @@ class LayersSwitcherView extends React.PureComponent {
   handleChangeTabs = (event, activeTab) => {
     this.setState({ activeTab });
   };
+
+  /**
+   * @summary Ensure that the selected Tab's indicator has correct width.
+   * @description When Tabs are mounted, the indicator (below selected button)
+   * can have incorrect width (based on calculations done prior complete render).
+   * This function is called once, on mount of <Tabs> and ensures that the
+   * indicator gets correct width.
+   *
+   * @memberof LayersSwitcherView
+   */
+  handleTabsMounted = ref => {
+    // Not beautiful but it works - timeout is needed to ensure rendering is done
+    // and parent's element are correct.
+    setTimeout(() => {
+      ref.updateIndicator();
+    }, 1);
+  };
+
   /**
    * @summary Loops through map configuration and
    * renders all groups. Visible only if @param shouldRender is true.
@@ -115,12 +136,17 @@ class LayersSwitcherView extends React.PureComponent {
     return (
       <>
         <div className={classes.windowContent}>
-          <AppBar position="static" color="default">
+          <AppBar
+            position="sticky" // Does not work in IE11
+            color="default"
+            className={classes.stickyAppBar}
+          >
             <Tabs
-              value={this.state.activeTab}
-              onChange={this.handleChangeTabs}
+              action={this.handleTabsMounted}
               indicatorColor="primary"
+              onChange={this.handleChangeTabs}
               textColor="primary"
+              value={this.state.activeTab}
               variant="fullWidth"
             >
               <Tab label="Kartlager" />
