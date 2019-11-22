@@ -8,6 +8,7 @@ import TextField from "@material-ui/core/TextField";
 import FormControl from "@material-ui/core/FormControl";
 import NativeSelect from "@material-ui/core/NativeSelect";
 import FormLabel from "@material-ui/core/FormLabel";
+import InputLabel from "@material-ui/core/InputLabel";
 import Input from "@material-ui/core/Input";
 
 const styles = theme => ({
@@ -49,7 +50,8 @@ class MarkisView extends React.PureComponent {
     createdBy: "",
     enableCreate: false,
     inCreation: false,
-    formValues: {}
+    formValues: {},
+    drawMethod: "abort"
   };
 
   constructor(props) {
@@ -248,7 +250,7 @@ class MarkisView extends React.PureComponent {
     });
     this.model.setEditLayer(this.props.model.sourceName);
     this.model.toggleLayer(this.props.model.sourceName, true);
-    this.model.activateAdd();
+    //this.model.activateAdd();
   };
 
   abortCreation = () => {
@@ -327,13 +329,13 @@ class MarkisView extends React.PureComponent {
       if (this.state.contractId) {
         return (
           <Typography>
-            Du visar nu geometrin kopplad till avtalsnummer:
+            Du visar nu ytor kopplade till avtalsnummer:
             <br />
             <b>{this.state.contractId}</b>
           </Typography>
         );
       } else {
-        return <Typography>Du visar ingen avtalsgeometri just nu.</Typography>;
+        return <Typography>Du visar ingen avtalsyta just nu.</Typography>;
       }
     }
   }
@@ -352,6 +354,10 @@ class MarkisView extends React.PureComponent {
     this.model.setEditLayer(this.props.model.sourceName);
     this.model.toggleLayer(this.model.estateLayerName, true);
     this.model.activateEstateSelection();
+  };
+
+  handleChange = name => event => {
+    this.setState({ [name]: event.target.value });
   };
 
   renderBtns() {
@@ -409,6 +415,22 @@ class MarkisView extends React.PureComponent {
       </Button>
     );
 
+    const listCreateChoices = (
+      <FormControl className={classes.formControl}>
+        <InputLabel htmlFor="drawMethod-native-helper">Aktivitet</InputLabel>
+        <NativeSelect
+          value={this.state.drawMethod}
+          onChange={this.handleChange("drawMethod")}
+          input={<Input name="drawMethod" id="drawMethod-native-helper" />}
+        >
+          <option value="abort">Ingen</option>
+          <option value="add">Lägg till objekt</option>
+          <option value="remove">Ta bort objekt</option>
+          <option value="edit">Editera objekt</option>
+        </NativeSelect>
+      </FormControl>
+    );
+
     if (this.state.mode === "editeringsläge") {
       if (!this.state.inCreation) {
         return (
@@ -420,9 +442,12 @@ class MarkisView extends React.PureComponent {
       } else {
         return (
           <div>
-            {this.createForm()}
-            {btnAbort}
-            {btnSave}
+            <div>{listCreateChoices}</div>
+            <div>{this.createForm()}</div>
+            <div>
+              {btnAbort}
+              {btnSave}
+            </div>
           </div>
         );
       }

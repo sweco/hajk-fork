@@ -662,17 +662,17 @@ class MarkisModel {
     if (v.length <= 3) return null;
     this.search(v, d => {
       var numHits = this.getNumberOfResults(d);
-      if (numHits !== 1) {
+      if (numHits < 1) {
         this.localObserver.publish(
           "markisErrorEvent",
-          "Antal sökträffar från Markis: " + numHits
+          "Det finns ingen gällande avtalsyta för: " + v
         );
         this.highlightImpact(d);
       } else {
         this.highlightImpact(d);
         this.localObserver.publish(
           "markisSearchComplete",
-          "Sökbegreppet " + v + " hittades!"
+          "Avtalsytor kopplade till " + v + " är markerade i rött"
         );
       }
     });
