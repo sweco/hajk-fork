@@ -51,7 +51,8 @@ class MarkisView extends React.PureComponent {
     enableCreate: false,
     inCreation: false,
     formValues: {},
-    drawMethod: "abort"
+    createMethod: "abort",
+    geometryExists: false
   };
 
   constructor(props) {
@@ -79,6 +80,13 @@ class MarkisView extends React.PureComponent {
         contractId: information.objectId,
         createdBy: information.createdBy
       });
+    });
+    this.localObserver.subscribe("featureUpdate", vectorSource => {
+      this.setState({
+        geometryExists: vectorSource.getFeatures().length > 0 || false
+      });
+
+      console.log("geometryexists: ", this.state.geometryExists);
     });
     this.localObserver.subscribe("contractAlreadyExistsError", message => {
       this.showAdvancedSnackbar(message);
@@ -170,7 +178,7 @@ class MarkisView extends React.PureComponent {
               className={classes.textField}
               margin="normal"
               variant="outlined"
-              disabled={!this.state.editFeature}
+              disabled={!this.state.geometryExists}
               value={value}
               onChange={e => {
                 this.checkText(field.name, e.target.value);
@@ -193,7 +201,7 @@ class MarkisView extends React.PureComponent {
               <FormLabel component="legend">{field.name}</FormLabel>
               <NativeSelect
                 value={value}
-                disabled={!this.state.editFeature}
+                disabled={!this.state.geometryExists}
                 input={<Input name={field.name} id={field.name} />}
                 onChange={e => {
                   this.checkSelect(field.name, e.target.value);
@@ -250,20 +258,22 @@ class MarkisView extends React.PureComponent {
     });
     this.model.setEditLayer(this.props.model.sourceName);
     this.model.toggleLayer(this.props.model.sourceName, true);
-    //this.model.activateAdd();
   };
 
   abortCreation = () => {
     this.setState({
       inCreation: false,
-      editFeature: undefined
+      createMethod: "abort",
+      formValues: {}
     });
-    this.model.deActivateAdd();
+    this.model.removeInteraction();
+    this.model.vectorSource.clear();
     this.model.toggleLayer(this.props.model.estateLayerName, false);
     this.model.toggleLayer(this.props.model.sourceName, false);
   };
 
   saveCreated = () => {
+    this.model.createEditFeature();
     this.updateFeature();
     this.model.save(r => {
       console.log("done", r);
@@ -277,7 +287,6 @@ class MarkisView extends React.PureComponent {
         ) > 0
       ) {
         this.props.enqueueSnackbar("Avtalsgeometrin skapades utan problem!");
-        this.model.deActivateAdd();
         this.model.toggleLayer(this.props.model.estateLayerName, false);
         this.model.refreshLayer(this.props.model.sourceName);
         this.reset();
@@ -285,7 +294,6 @@ class MarkisView extends React.PureComponent {
         this.showAdvancedSnackbar(
           "Avtalsgeometrin gick inte att spara. Fösök igen senare."
         );
-        this.model.deActivateAdd();
         this.model.toggleLayer(this.props.model.estateLayerName, false);
         this.model.refreshLayer(this.props.model.sourceName);
         this.reset();
@@ -294,6 +302,8 @@ class MarkisView extends React.PureComponent {
   };
 
   reset() {
+    this.model.removeInteraction();
+    this.model.vectorSource.clear();
     this.setState({
       inCreation: false,
       mode: "visningsläge",
@@ -353,11 +363,12 @@ class MarkisView extends React.PureComponent {
     });
     this.model.setEditLayer(this.props.model.sourceName);
     this.model.toggleLayer(this.model.estateLayerName, true);
-    this.model.activateEstateSelection();
+    //this.model.activateEstateSelection();
   };
 
   handleChange = name => event => {
     this.setState({ [name]: event.target.value });
+    this.props.model.setCreateMethod(event.target.value);
   };
 
   renderBtns() {
@@ -399,7 +410,7 @@ class MarkisView extends React.PureComponent {
         variant="contained"
         className={classes.createButtons}
         onClick={this.saveCreated}
-        disabled={!this.state.editFeature}
+        disabled={!this.state.geometryExists}
       >
         Skapa
       </Button>
@@ -417,14 +428,15 @@ class MarkisView extends React.PureComponent {
 
     const listCreateChoices = (
       <FormControl className={classes.formControl}>
-        <InputLabel htmlFor="drawMethod-native-helper">Aktivitet</InputLabel>
+        <InputLabel htmlFor="createMethod-native-helper">Aktivitet</InputLabel>
         <NativeSelect
-          value={this.state.drawMethod}
-          onChange={this.handleChange("drawMethod")}
-          input={<Input name="drawMethod" id="drawMethod-native-helper" />}
+          value={this.state.createMethod}
+          onChange={this.handleChange("createMethod")}
+          input={<Input name="createMethod" id="createMethod-native-helper" />}
         >
           <option value="abort">Ingen</option>
           <option value="add">Lägg till objekt</option>
+          <option value="addEstate">Välj fastighet</option>
           <option value="remove">Ta bort objekt</option>
           <option value="edit">Editera objekt</option>
         </NativeSelect>
