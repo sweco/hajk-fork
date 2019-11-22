@@ -6,12 +6,16 @@ import Or from "ol/format/filter/Or";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Vector from "ol/layer/Vector";
+import Feature from "ol/Feature.js";
 import GeoJSON from "ol/format/GeoJSON";
 import { arraySort } from "./../../utils/ArraySort.js";
 import { Stroke, Style, Circle, Fill, Icon } from "ol/style.js";
 import { Draw } from "ol/interaction";
 import X2JS from "x2js";
 import { handleClick } from "../../models/Click.js";
+import { Modify } from "ol/interaction.js";
+import Collection from "ol/Collection.js";
+import MultiPolygon from "ol/geom/MultiPolygon";
 
 const fetchConfig = {
   credentials: "same-origin"
@@ -68,6 +72,8 @@ class MarkisModel {
     this.editSource = undefined;
     this.sourceName = undefined;
     this.geomCreated = false;
+    this.geomCollection = [];
+    this.type = "Polygon";
     this.markisParameters = {
       objectId: undefined,
       objectType: undefined,
@@ -75,6 +81,7 @@ class MarkisModel {
       objectState: "F"
     };
     this.editLayer = undefined;
+    this.createMethod = "abort";
     this.geometryName = "geom";
     this.wfsParser = new WFS();
     this.controllers = [];
@@ -92,15 +99,9 @@ class MarkisModel {
         return style;
       }
     });
+    this.map.addLayer(this.vectorLayer);
     this.vectorLayer.set("type", "markisResultLayer");
     this.vectorLayer.set("queryable", true);
-    this.drawSource = new VectorSource({ wrapX: false });
-    this.drawLayer = new VectorLayer({
-      source: this.drawSource,
-      style: drawStyle
-    });
-    this.map.addLayer(this.vectorLayer);
-    this.map.addLayer(this.drawLayer);
   }
 
   getMap() {
@@ -139,11 +140,6 @@ class MarkisModel {
     this.wfstSource = this.wfstSources.find(
       wfstSource => wfstSource.layers[0] === layerName
     );
-    // this.vectorSource = new VectorSource({
-    //   loader: extent => this.loadData(this.wfstSource, extent, done),
-    //   strategy: strategyAll,
-    //   projection: this.wfstSource.projection
-    // });
     this.vectorSource = new VectorSource({});
     this.editLayer = new Vector({
       source: this.vectorSource,
@@ -238,7 +234,7 @@ class MarkisModel {
   //Only handles single select and is restricted to polygon and multipolygon atm
   onSelectFeatures = (evt, selectionDone, callback) => {
     handleClick(evt, evt.map, response => {
-      this.vectorSource.clear();
+      //this.vectorSource.clear();
       if (response.features.length > 0) {
         var geometryType = response.features[0].getGeometry().getType();
 
@@ -251,83 +247,28 @@ class MarkisModel {
             this.editFeature.modification = "added";
             this.vectorSource.addFeatures([this.editFeature]);
             this.geomCreated = true;
-            this.localObserver.publish("editFeature", this.editFeature);
-            this.activateEstateSelection(selectionDone, callback);
+            //this.localObserver.publish("editFeature", this.editFeature);
+            this.localObserver.publish("featureUpdate", this.vectorSource);
+            //this.activateEstateSelection(selectionDone, callback);
           }
         } else {
           this.editFeature = undefined;
           this.localObserver.publish("editFeature", this.editFeature);
-          this.activateEstateSelection(selectionDone, callback);
+          //this.activateEstateSelection(selectionDone, callback);
         }
       } else {
         this.editFeature = undefined;
         this.localObserver.publish("editFeature", this.editFeature);
-        this.activateEstateSelection(selectionDone, callback);
+        //this.activateEstateSelection(selectionDone, callback);
       }
     });
   };
 
   activateEstateSelection = (selectionDone, callback) => {
-    this.map.once("singleclick", e => {
+    this.map.on("singleclick", e => {
       this.onSelectFeatures(e, selectionDone, callback);
     });
   };
-
-  loadDataSuccess = data => {
-    var format = new WFS();
-    var features;
-    try {
-      features = format.readFeatures(data);
-    } catch (e) {
-      alert("Fel: data kan inte läsas in. Kontrollera koordinatsystem.");
-    }
-    if (features.length > 0) {
-      this.geometryName = features[0].getGeometryName();
-    }
-    this.vectorSource.addFeatures(features);
-  };
-
-  loadDataError = response => {
-    alert("Fel: data kan inte hämtas. Försök igen senare.");
-  };
-
-  loadData(source, extent, done) {
-    var url = this.urlFromObject(source.url, {
-      service: "WFS",
-      version: "1.1.0",
-      request: "GetFeature",
-      typename: source.layers[0],
-      srsname: source.projection
-    });
-    fetch(url, fetchConfig)
-      .then(response => {
-        response.text().then(data => {
-          this.loadDataSuccess(data);
-        });
-        if (done) done();
-      })
-      .catch(error => {
-        this.loadDataError(error);
-        if (done) done();
-      });
-  }
-
-  activateAdd() {
-    this.draw = new Draw({
-      source: this.vectorSource,
-      style: this.getSketchStyle(),
-      type: GeometryType.POLYGON,
-      geometryName: this.geometryName
-    });
-    this.draw.on("drawend", event => {
-      event.feature.modification = "added";
-      this.geomCreated = true;
-      this.editAttributes(event.feature);
-      this.setFeatureProperties();
-      this.map.removeInteraction(this.draw);
-    });
-    this.map.addInteraction(this.draw);
-  }
 
   setFeatureProperties() {
     this.editFeature.setProperties({
@@ -339,15 +280,82 @@ class MarkisModel {
     });
   }
 
+  setType(type) {
+    this.type = type;
+    this.removeInteraction();
+    this.addInteraction(type);
+  }
+
+  addInteraction() {
+    this.draw = new Draw({
+      source: this.vectorSource,
+      type: this.type,
+      style: this.getSketchStyle(),
+      geometryName: this.geometryName
+    });
+    this.draw.on("drawend", this.handleDrawEnd);
+    this.map.addInteraction(this.draw);
+  }
+
+  removeInteraction() {
+    if (this.draw) {
+      this.map.removeInteraction(this.draw);
+    }
+    if (this.edit) {
+      this.map.removeInteraction(this.edit);
+    }
+    this.map.un("singleclick", this.removeSelected);
+    this.map.un("singleclick", this.onSelectFeatures);
+  }
+
+  handleDrawEnd = event => {
+    this.localObserver.publish("featureUpdate", this.vectorSource);
+  };
+
+  removeSelected = e => {
+    this.map.forEachFeatureAtPixel(e.pixel, feature => {
+      this.vectorSource.removeFeature(feature);
+    });
+    this.localObserver.publish("featureUpdate", this.vectorSource);
+  };
+
+  setEditActive() {
+    let features = new Collection();
+    this.vectorSource.getFeatures().forEach(feature => {
+      features.push(feature);
+    });
+    this.edit = new Modify({ features: features });
+    this.map.addInteraction(this.edit);
+  }
+
+  setCreateMethod(method) {
+    if (method) {
+      this.createMethod = method;
+    }
+    this.removeInteraction();
+
+    if (this.createMethod === "remove") {
+      this.map.on("singleclick", this.removeSelected);
+    }
+
+    if (this.createMethod === "add") {
+      this.setType(this.type);
+    }
+
+    if (this.createMethod === "addEstate") {
+      //this.activateEstateSelection();
+      this.map.on("singleclick", this.onSelectFeatures);
+    }
+
+    if (this.createMethod === "edit") {
+      this.setEditActive();
+    }
+  }
+
   getTimeStampDate() {
     return new Date(new Date().toString().split("GMT")[0] + " UTC")
       .toISOString()
       .split(".")[0];
-  }
-
-  deActivateAdd() {
-    this.map.removeInteraction(this.draw);
-    this.editLayer.getSource().clear();
   }
 
   editAttributes(feature) {
@@ -403,7 +411,7 @@ class MarkisModel {
       payload = payload.replace("<geometry>", "<geom>");
       payload = payload.replace("</geometry>", "</geom>");
     }
-
+    console.log("parload: ", payload);
     if (payload) {
       fetch(src.posturl, {
         method: "POST",
@@ -426,25 +434,30 @@ class MarkisModel {
     }
   }
 
-  save(done) {
-    var find = mode =>
-      this.vectorSource
-        .getFeatures()
-        .filter(feature => feature.modification === mode);
+  createEditFeature() {
+    if (this.vectorSource.getFeatures) {
+      var geomCollection = [];
+      this.vectorSource.forEachFeature(feature => {
+        geomCollection.push(feature.getGeometry());
+      });
+      this.editFeature = new Feature(new MultiPolygon(geomCollection));
+    } else {
+      this.editFeature = undefined;
+    }
+  }
 
+  save(done) {
     var features = {
-      updates: find("updated"),
-      inserts: find("added"),
-      deletes: find("removed")
+      updates: [undefined],
+      inserts: [this.editFeature],
+      deletes: [undefined]
     };
 
-    if (
-      features.updates.length === 0 &&
-      features.inserts.length === 0 &&
-      features.deletes.length === 0
-    ) {
+    if (features.inserts.length === 0) {
       return done();
     }
+    this.setFeatureProperties();
+    console.log("features: ", features);
 
     this.transact(features, done);
   }
@@ -685,7 +698,11 @@ class MarkisModel {
   };
 
   highlightImpact(result) {
+    console.log("result: ", result);
+    console.log("this.vectorSource: ", this.vectorLayer.getSource());
+    console.log("this.vectorLayer: ", this.vectorLayer);
     var olFeatures = new GeoJSON().readFeatures(result[0]);
+    console.log("olFeatures: ", olFeatures);
     this.vectorLayer.getSource().addFeatures(olFeatures);
     var extent = this.vectorLayer.getSource().getExtent();
     this.map.getView().fit(extent, this.map.getSize());
