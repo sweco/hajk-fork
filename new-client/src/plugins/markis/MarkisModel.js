@@ -17,9 +17,6 @@ import { Modify } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
 import MultiPolygon from "ol/geom/MultiPolygon";
 
-const fetchConfig = {
-  credentials: "same-origin"
-};
 var style = new Style({
   stroke: new Stroke({
     color: "rgba(244, 83, 63, 1)",
@@ -27,31 +24,6 @@ var style = new Style({
   }),
   fill: new Fill({
     color: "rgba(244, 83, 63, 0.2)"
-  }),
-  //Setting image in constructor to MarkerImage - this is default style
-  image: new Circle({
-    radius: 6,
-    stroke: new Stroke({
-      color: "rgba(0, 0, 0, 0.6)",
-      width: 2
-    })
-  })
-});
-
-var drawStyle = new Style({
-  stroke: new Stroke({
-    color: "rgba(255, 214, 91, 0.6)",
-    width: 4
-  }),
-  fill: new Fill({
-    color: "rgba(255, 214, 91, 0.2)"
-  }),
-  image: new Circle({
-    radius: 6,
-    stroke: new Stroke({
-      color: "rgba(255, 214, 91, 0.6)",
-      width: 2
-    })
   })
 });
 
@@ -61,8 +33,6 @@ class MarkisModel {
     this.app = settings.app;
     this.localObserver = settings.localObserver;
     this.hubUrl = settings.options.hubUrl;
-    this.defaultStatus = settings.options.defaultStatus;
-    this.defaultHandlopNr = settings.options.defaultHandlopNr;
     this.isConnected = false;
     this.connection = undefined;
     this.sources = settings.options.sources;
@@ -71,14 +41,13 @@ class MarkisModel {
     this.editFeature = undefined;
     this.editSource = undefined;
     this.sourceName = undefined;
-    this.geomCreated = false;
     this.geomCollection = [];
     this.type = "Polygon";
     this.markisParameters = {
       objectId: undefined,
-      objectType: undefined,
-      createdBy: undefined,
-      objectState: "F"
+      objectSerial: undefined,
+      objectStatus: undefined,
+      createdBy: undefined
     };
     this.editLayer = undefined;
     this.createMethod = "abort";
@@ -116,10 +85,10 @@ class MarkisModel {
     return [
       new Style({
         fill: new Fill({
-          color: "rgba(255, 255, 255, 0.5)"
+          color: "rgba(255, 0, 0, 0.5)"
         }),
         stroke: new Stroke({
-          color: "rgba(0, 0, 0, 0.5)",
+          color: "rgba(200, 0, 0, 0.5)",
           width: 4
         }),
         image: new Circle({
@@ -212,21 +181,14 @@ class MarkisModel {
     }
   }
 
+  //Only handles single layers
   getContractSource() {
     if (this.markisParameters.objectId.length === 10) {
       var prefix = this.markisParameters.objectId.slice(0, 2).toUpperCase();
-      if (prefix.match(/^(AA|AB|AJ|AL|KI|AN)$/)) {
-        return "fk.belastning.v1:arrende_nyttjanderatt";
-      } else if (prefix.match(/^(EX|FV|MA|MR|OP)$/)) {
-        return "fk.belastning.v1:avtal_special";
-      } else if (prefix.match(/^(KN)$/)) {
-        return "fk.belastning.v1:kommunal_nyttjanderatt";
-      } else if (prefix.match(/^(LT)$/)) {
-        return "fk.belastning.v1:trf_ledningsratt";
-      } else if (prefix.match(/^(NB)$/)) {
-        return "fk.belastning.v1:arrende_med_byggnad";
-      } else if (prefix.match(/^(SE)$/)) {
-        return "fk.belastning.v1:avtal_servitut";
+      for (var i = 0; i < this.wfstSources.length; i++) {
+        if (this.wfstSources[i].prefixes.indexOf(prefix) > -1) {
+          return this.wfstSources[i].layers[0];
+        }
       }
     }
   }
@@ -234,32 +196,15 @@ class MarkisModel {
   //Only handles single select and is restricted to polygon and multipolygon atm
   onSelectFeatures = (evt, selectionDone, callback) => {
     handleClick(evt, evt.map, response => {
-      //this.vectorSource.clear();
       if (response.features.length > 0) {
         var geometryType = response.features[0].getGeometry().getType();
-
         if (
           geometryType === GeometryType.POLYGON ||
           geometryType === GeometryType.MULTI_POLYGON
         ) {
-          if (response.features.length > 0) {
-            this.editFeature = response.features[0];
-            this.editFeature.modification = "added";
-            this.vectorSource.addFeatures([this.editFeature]);
-            this.geomCreated = true;
-            //this.localObserver.publish("editFeature", this.editFeature);
-            this.localObserver.publish("featureUpdate", this.vectorSource);
-            //this.activateEstateSelection(selectionDone, callback);
-          }
-        } else {
-          this.editFeature = undefined;
-          this.localObserver.publish("editFeature", this.editFeature);
-          //this.activateEstateSelection(selectionDone, callback);
+          this.vectorSource.addFeatures(response.features);
+          this.localObserver.publish("featureUpdate", this.vectorSource);
         }
-      } else {
-        this.editFeature = undefined;
-        this.localObserver.publish("editFeature", this.editFeature);
-        //this.activateEstateSelection(selectionDone, callback);
       }
     });
   };
@@ -275,8 +220,9 @@ class MarkisModel {
       [this.editSource.columnNames.contractId]: this.markisParameters.objectId,
       [this.editSource.columnNames.createdBy]: this.markisParameters.createdBy,
       [this.editSource.columnNames.regDate]: this.getTimeStampDate(),
-      [this.editSource.columnNames.status]: this.defaultStatus,
-      [this.editSource.columnNames.handlopnr]: this.defaultHandlopNr
+      [this.editSource.columnNames.status]: this.markisParameters.objectStatus,
+      [this.editSource.columnNames.handlopnr]: this.markisParameters
+        .objectSerial
     });
   }
 
@@ -343,7 +289,6 @@ class MarkisModel {
     }
 
     if (this.createMethod === "addEstate") {
-      //this.activateEstateSelection();
       this.map.on("singleclick", this.onSelectFeatures);
     }
 
@@ -356,11 +301,6 @@ class MarkisModel {
     return new Date(new Date().toString().split("GMT")[0] + " UTC")
       .toISOString()
       .split(".")[0];
-  }
-
-  editAttributes(feature) {
-    this.editFeature = feature;
-    this.localObserver.publish("editFeature", feature);
   }
 
   urlFromObject(url, obj) {
@@ -411,7 +351,6 @@ class MarkisModel {
       payload = payload.replace("<geometry>", "<geom>");
       payload = payload.replace("</geometry>", "</geom>");
     }
-    console.log("parload: ", payload);
     if (payload) {
       fetch(src.posturl, {
         method: "POST",
@@ -457,7 +396,6 @@ class MarkisModel {
       return done();
     }
     this.setFeatureProperties();
-    console.log("features: ", features);
 
     this.transact(features, done);
   }
@@ -469,10 +407,68 @@ class MarkisModel {
   reset() {
     Object.assign(this.markisParameters, {
       objectId: undefined,
-      createdBy: undefined
+      objectSerial: undefined,
+      objectStatus: undefined,
+      createdBy: undefined,
+      mode: "visningsläge"
     });
     this.sourceName = undefined;
-    this.geomCreated = false;
+  }
+
+  updateMarkisParameters(message, mode) {
+    if (message.contractId.length !== 10) {
+      this.publishError("Avtalsnumret måste bestå av 10 tecken.", true);
+      return false;
+    } else if (
+      isNaN(message.contractSerial) ||
+      message.contractSerial === "0"
+    ) {
+      this.publishError(
+        "Markis skickade inte ett giltligt händelselöpnummer.",
+        true
+      );
+      return false;
+    } else if (!message.userName) {
+      this.publishError("Markis skickade inte ett giltligt anvädnarnamn", true);
+      return false;
+    } else if (
+      ["F", "G"].indexOf(message.contractStatus.toUpperCase()) === -1
+    ) {
+      this.publishError(
+        "Markis skickade inte ett giltligt status. (Status måste vara F eller G)",
+        true
+      );
+      return false;
+    } else {
+      Object.assign(this.markisParameters, {
+        objectId: message.contractId,
+        objectSerial: message.contractSerial,
+        objectStatus: message.contractStatus,
+        createdBy: message.userName,
+        mode: mode
+      });
+      return true;
+    }
+  }
+
+  checkContractMeta(foundContract) {
+    var foundSerial = foundContract.features[0].properties.handlopnr;
+    if (foundSerial) {
+      if (
+        foundSerial >= this.markisParameters.objectSerial &&
+        foundContract.features[0].properties.status === "G"
+      ) {
+        this.publishError(
+          "Det finns en en avtalsyta med samma avtalsnummer och större eller samma händelselöpsnummer.",
+          false
+        );
+      }
+    } else {
+      this.publishError(
+        "Det finns en en avtalsyta med samma avtalsnummer men inget händelselöpsnummer.",
+        false
+      );
+    }
   }
 
   connectToHub(sessionId) {
@@ -488,26 +484,23 @@ class MarkisModel {
           this.isConnected = true;
         }.bind(this)
       )
-      .catch(function() {});
+      .catch(
+        function() {
+          this.publishError(
+            "Webbkartan kunde inte ansluta till MarkIS.",
+            false
+          );
+        }.bind(this)
+      );
 
     this.connection.on(
       "ShowContractFromMarkis",
       function(_, showMessage) {
         this.reset();
-        this.localObserver.publish("toggleCreateButton", { enabled: false });
         var showObj = JSON.parse(showMessage);
-        if (showObj.objectid) {
-          this.localObserver.publish("toggleView", "visningsläge");
-          this.localObserver.publish("updateContractInformation", {
-            objectId: showObj.objectid,
-            createdBy: ""
-          });
-          this.doSearch(showObj.objectid);
-        } else {
-          this.localObserver.publish(
-            "markisErrorEvent",
-            "Markis skickade ej giltligt avtalsnummer"
-          );
+        if (this.updateMarkisParameters(showObj, "visningsläge")) {
+          this.localObserver.publish("updateMarkisView", {});
+          this.doSearch(showObj.contractId);
         }
       }.bind(this)
     );
@@ -517,54 +510,39 @@ class MarkisModel {
       function(_, createMessage) {
         this.reset();
         var createObject = JSON.parse(createMessage);
-        if (createObject.objectid && createObject.userName) {
-          Object.assign(this.markisParameters, {
-            objectId: createObject.objectid,
-            createdBy: createObject.userName
-          });
-          this.search(createObject.objectid, result => {
-            if (this.getNumberOfResults(result) > 0) {
-              this.localObserver.publish(
-                "contractAlreadyExistsError",
-                "Avtalet som du försöker skapa en ny geometri för finns redan!"
+        if (this.updateMarkisParameters(createObject, "editeringsläge")) {
+          this.search(this.markisParameters.objectId, result => {
+            var numExistingContracts = this.getNumberOfResults(result);
+            if (numExistingContracts > 0) {
+              this.publishError(
+                "Avtalet som du försöker skapa en ny geometri för finns redan!",
+                false
               );
               this.highlightImpact(result);
-              this.localObserver.publish("toggleView", "visningsläge");
-              this.localObserver.publish("updateContractInformation", {
-                objectId: this.markisParameters.objectId,
-                createdBy: this.markisParameters.createdBy
-              });
-              this.localObserver.publish("toggleCreateButton", {
-                enabled: false
-              });
+              this.localObserver.publish("updateMarkisView", {});
             } else {
               this.vectorLayer.getSource().clear();
               this.sourceName = this.getContractSource();
               if (this.sourceName) {
-                this.localObserver.publish("toggleView", "editeringsläge");
-                this.localObserver.publish("updateContractInformation", {
-                  objectId: this.markisParameters.objectId,
-                  objectType: this.markisParameters.objectType
-                });
-                this.localObserver.publish("toggleCreateButton", {
-                  enabled: true
-                });
+                this.localObserver.publish("updateMarkisView", {});
               } else {
-                this.localObserver.publish(
-                  "markisErrorEvent",
-                  "Markis skickade ej giltligt avtalsnummer eller typ"
+                this.publishError(
+                  "Inget datalager hittades för avtalsprefixet. Kontakta systemadministratören.",
+                  true
                 );
               }
             }
           });
-        } else {
-          this.localObserver.publish(
-            "markisErrorEvent",
-            "Markis skickade ej giltligt avtalsnummer eller typ"
-          );
         }
       }.bind(this)
     );
+  }
+
+  publishError(message, reset) {
+    this.localObserver.publish("markisErrorEvent", {
+      message: message,
+      reset: reset
+    });
   }
 
   disconnectHub() {
@@ -698,11 +676,7 @@ class MarkisModel {
   };
 
   highlightImpact(result) {
-    console.log("result: ", result);
-    console.log("this.vectorSource: ", this.vectorLayer.getSource());
-    console.log("this.vectorLayer: ", this.vectorLayer);
     var olFeatures = new GeoJSON().readFeatures(result[0]);
-    console.log("olFeatures: ", olFeatures);
     this.vectorLayer.getSource().addFeatures(olFeatures);
     var extent = this.vectorLayer.getSource().getExtent();
     this.map.getView().fit(extent, this.map.getSize());
