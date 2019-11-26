@@ -514,6 +514,9 @@ class MarkisModel {
           this.search(this.markisParameters.objectId, result => {
             var numExistingContracts = this.getNumberOfResults(result);
             if (numExistingContracts > 0) {
+              for (var i = 0; i < numExistingContracts; i++) {
+                this.checkContractMeta(result[0]);
+              }
               this.publishError(
                 "Avtalet som du försöker skapa en ny geometri för finns redan!",
                 false
