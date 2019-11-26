@@ -6,16 +6,17 @@ import Or from "ol/format/filter/Or";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Vector from "ol/layer/Vector";
+import Feature from "ol/Feature.js";
 import GeoJSON from "ol/format/GeoJSON";
 import { arraySort } from "./../../utils/ArraySort.js";
 import { Stroke, Style, Circle, Fill, Icon } from "ol/style.js";
 import { Draw } from "ol/interaction";
 import X2JS from "x2js";
 import { handleClick } from "../../models/Click.js";
+import { Modify } from "ol/interaction.js";
+import Collection from "ol/Collection.js";
+import MultiPolygon from "ol/geom/MultiPolygon";
 
-const fetchConfig = {
-  credentials: "same-origin"
-};
 var style = new Style({
   stroke: new Stroke({
     color: "rgba(244, 83, 63, 1)",
@@ -23,31 +24,6 @@ var style = new Style({
   }),
   fill: new Fill({
     color: "rgba(244, 83, 63, 0.2)"
-  }),
-  //Setting image in constructor to MarkerImage - this is default style
-  image: new Circle({
-    radius: 6,
-    stroke: new Stroke({
-      color: "rgba(0, 0, 0, 0.6)",
-      width: 2
-    })
-  })
-});
-
-var drawStyle = new Style({
-  stroke: new Stroke({
-    color: "rgba(255, 214, 91, 0.6)",
-    width: 4
-  }),
-  fill: new Fill({
-    color: "rgba(255, 214, 91, 0.2)"
-  }),
-  image: new Circle({
-    radius: 6,
-    stroke: new Stroke({
-      color: "rgba(255, 214, 91, 0.6)",
-      width: 2
-    })
   })
 });
 
@@ -57,8 +33,6 @@ class MarkisModel {
     this.app = settings.app;
     this.localObserver = settings.localObserver;
     this.hubUrl = settings.options.hubUrl;
-    this.defaultStatus = settings.options.defaultStatus;
-    this.defaultHandlopNr = settings.options.defaultHandlopNr;
     this.isConnected = false;
     this.connection = undefined;
     this.sources = settings.options.sources;
@@ -67,14 +41,16 @@ class MarkisModel {
     this.editFeature = undefined;
     this.editSource = undefined;
     this.sourceName = undefined;
-    this.geomCreated = false;
+    this.geomCollection = [];
+    this.type = "Polygon";
     this.markisParameters = {
       objectId: undefined,
-      objectType: undefined,
-      createdBy: undefined,
-      objectState: "F"
+      objectSerial: undefined,
+      objectStatus: undefined,
+      createdBy: undefined
     };
     this.editLayer = undefined;
+    this.createMethod = "abort";
     this.geometryName = "geom";
     this.wfsParser = new WFS();
     this.controllers = [];
@@ -92,15 +68,9 @@ class MarkisModel {
         return style;
       }
     });
+    this.map.addLayer(this.vectorLayer);
     this.vectorLayer.set("type", "markisResultLayer");
     this.vectorLayer.set("queryable", true);
-    this.drawSource = new VectorSource({ wrapX: false });
-    this.drawLayer = new VectorLayer({
-      source: this.drawSource,
-      style: drawStyle
-    });
-    this.map.addLayer(this.vectorLayer);
-    this.map.addLayer(this.drawLayer);
   }
 
   getMap() {
@@ -115,10 +85,10 @@ class MarkisModel {
     return [
       new Style({
         fill: new Fill({
-          color: "rgba(255, 255, 255, 0.5)"
+          color: "rgba(255, 0, 0, 0.5)"
         }),
         stroke: new Stroke({
-          color: "rgba(0, 0, 0, 0.5)",
+          color: "rgba(200, 0, 0, 0.5)",
           width: 4
         }),
         image: new Circle({
@@ -139,11 +109,6 @@ class MarkisModel {
     this.wfstSource = this.wfstSources.find(
       wfstSource => wfstSource.layers[0] === layerName
     );
-    // this.vectorSource = new VectorSource({
-    //   loader: extent => this.loadData(this.wfstSource, extent, done),
-    //   strategy: strategyAll,
-    //   projection: this.wfstSource.projection
-    // });
     this.vectorSource = new VectorSource({});
     this.editLayer = new Vector({
       source: this.vectorSource,
@@ -216,21 +181,14 @@ class MarkisModel {
     }
   }
 
+  //Only handles single layers
   getContractSource() {
     if (this.markisParameters.objectId.length === 10) {
       var prefix = this.markisParameters.objectId.slice(0, 2).toUpperCase();
-      if (prefix.match(/^(AA|AB|AJ|AL|KI|AN)$/)) {
-        return "fk.belastning.v1:arrende_nyttjanderatt";
-      } else if (prefix.match(/^(EX|FV|MA|MR|OP)$/)) {
-        return "fk.belastning.v1:avtal_special";
-      } else if (prefix.match(/^(KN)$/)) {
-        return "fk.belastning.v1:kommunal_nyttjanderatt";
-      } else if (prefix.match(/^(LT)$/)) {
-        return "fk.belastning.v1:trf_ledningsratt";
-      } else if (prefix.match(/^(NB)$/)) {
-        return "fk.belastning.v1:arrende_med_byggnad";
-      } else if (prefix.match(/^(SE)$/)) {
-        return "fk.belastning.v1:avtal_servitut";
+      for (var i = 0; i < this.wfstSources.length; i++) {
+        if (this.wfstSources[i].prefixes.indexOf(prefix) > -1) {
+          return this.wfstSources[i].layers[0];
+        }
       }
     }
   }
@@ -238,121 +196,111 @@ class MarkisModel {
   //Only handles single select and is restricted to polygon and multipolygon atm
   onSelectFeatures = (evt, selectionDone, callback) => {
     handleClick(evt, evt.map, response => {
-      this.vectorSource.clear();
       if (response.features.length > 0) {
         var geometryType = response.features[0].getGeometry().getType();
-
         if (
           geometryType === GeometryType.POLYGON ||
           geometryType === GeometryType.MULTI_POLYGON
         ) {
-          if (response.features.length > 0) {
-            this.editFeature = response.features[0];
-            this.editFeature.modification = "added";
-            this.vectorSource.addFeatures([this.editFeature]);
-            this.geomCreated = true;
-            this.localObserver.publish("editFeature", this.editFeature);
-            this.activateEstateSelection(selectionDone, callback);
-          }
-        } else {
-          this.editFeature = undefined;
-          this.localObserver.publish("editFeature", this.editFeature);
-          this.activateEstateSelection(selectionDone, callback);
+          this.vectorSource.addFeatures(response.features);
+          this.localObserver.publish("featureUpdate", this.vectorSource);
         }
-      } else {
-        this.editFeature = undefined;
-        this.localObserver.publish("editFeature", this.editFeature);
-        this.activateEstateSelection(selectionDone, callback);
       }
     });
   };
 
   activateEstateSelection = (selectionDone, callback) => {
-    this.map.once("singleclick", e => {
+    this.map.on("singleclick", e => {
       this.onSelectFeatures(e, selectionDone, callback);
     });
   };
-
-  loadDataSuccess = data => {
-    var format = new WFS();
-    var features;
-    try {
-      features = format.readFeatures(data);
-    } catch (e) {
-      alert("Fel: data kan inte läsas in. Kontrollera koordinatsystem.");
-    }
-    if (features.length > 0) {
-      this.geometryName = features[0].getGeometryName();
-    }
-    this.vectorSource.addFeatures(features);
-  };
-
-  loadDataError = response => {
-    alert("Fel: data kan inte hämtas. Försök igen senare.");
-  };
-
-  loadData(source, extent, done) {
-    var url = this.urlFromObject(source.url, {
-      service: "WFS",
-      version: "1.1.0",
-      request: "GetFeature",
-      typename: source.layers[0],
-      srsname: source.projection
-    });
-    fetch(url, fetchConfig)
-      .then(response => {
-        response.text().then(data => {
-          this.loadDataSuccess(data);
-        });
-        if (done) done();
-      })
-      .catch(error => {
-        this.loadDataError(error);
-        if (done) done();
-      });
-  }
-
-  activateAdd() {
-    this.draw = new Draw({
-      source: this.vectorSource,
-      style: this.getSketchStyle(),
-      type: GeometryType.POLYGON,
-      geometryName: this.geometryName
-    });
-    this.draw.on("drawend", event => {
-      event.feature.modification = "added";
-      this.geomCreated = true;
-      this.editAttributes(event.feature);
-      this.setFeatureProperties();
-      this.map.removeInteraction(this.draw);
-    });
-    this.map.addInteraction(this.draw);
-  }
 
   setFeatureProperties() {
     this.editFeature.setProperties({
       [this.editSource.columnNames.contractId]: this.markisParameters.objectId,
       [this.editSource.columnNames.createdBy]: this.markisParameters.createdBy,
       [this.editSource.columnNames.regDate]: this.getTimeStampDate(),
-      [this.editSource.columnNames.status]: this.defaultStatus,
-      [this.editSource.columnNames.handlopnr]: this.defaultHandlopNr
+      [this.editSource.columnNames.status]: this.markisParameters.objectStatus,
+      [this.editSource.columnNames.handlopnr]: this.markisParameters
+        .objectSerial
     });
+  }
+
+  setType(type) {
+    this.type = type;
+    this.removeInteraction();
+    this.addInteraction(type);
+  }
+
+  addInteraction() {
+    this.draw = new Draw({
+      source: this.vectorSource,
+      type: this.type,
+      style: this.getSketchStyle(),
+      geometryName: this.geometryName
+    });
+    this.draw.on("drawend", this.handleDrawEnd);
+    this.map.addInteraction(this.draw);
+  }
+
+  removeInteraction() {
+    if (this.draw) {
+      this.map.removeInteraction(this.draw);
+    }
+    if (this.edit) {
+      this.map.removeInteraction(this.edit);
+    }
+    this.map.un("singleclick", this.removeSelected);
+    this.map.un("singleclick", this.onSelectFeatures);
+  }
+
+  handleDrawEnd = event => {
+    this.localObserver.publish("featureUpdate", this.vectorSource);
+  };
+
+  removeSelected = e => {
+    this.map.forEachFeatureAtPixel(e.pixel, feature => {
+      this.vectorSource.removeFeature(feature);
+    });
+    this.localObserver.publish("featureUpdate", this.vectorSource);
+  };
+
+  setEditActive() {
+    let features = new Collection();
+    this.vectorSource.getFeatures().forEach(feature => {
+      features.push(feature);
+    });
+    this.edit = new Modify({ features: features });
+    this.map.addInteraction(this.edit);
+  }
+
+  setCreateMethod(method) {
+    if (method) {
+      this.createMethod = method;
+    }
+    this.removeInteraction();
+
+    if (this.createMethod === "remove") {
+      this.map.on("singleclick", this.removeSelected);
+    }
+
+    if (this.createMethod === "add") {
+      this.setType(this.type);
+    }
+
+    if (this.createMethod === "addEstate") {
+      this.map.on("singleclick", this.onSelectFeatures);
+    }
+
+    if (this.createMethod === "edit") {
+      this.setEditActive();
+    }
   }
 
   getTimeStampDate() {
     return new Date(new Date().toString().split("GMT")[0] + " UTC")
       .toISOString()
       .split(".")[0];
-  }
-
-  deActivateAdd() {
-    this.map.removeInteraction(this.draw);
-    this.editLayer.getSource().clear();
-  }
-
-  editAttributes(feature) {
-    this.editFeature = feature;
-    this.localObserver.publish("editFeature", feature);
   }
 
   urlFromObject(url, obj) {
@@ -403,7 +351,6 @@ class MarkisModel {
       payload = payload.replace("<geometry>", "<geom>");
       payload = payload.replace("</geometry>", "</geom>");
     }
-
     if (payload) {
       fetch(src.posturl, {
         method: "POST",
@@ -426,25 +373,29 @@ class MarkisModel {
     }
   }
 
-  save(done) {
-    var find = mode =>
-      this.vectorSource
-        .getFeatures()
-        .filter(feature => feature.modification === mode);
+  createEditFeature() {
+    if (this.vectorSource.getFeatures) {
+      var geomCollection = [];
+      this.vectorSource.forEachFeature(feature => {
+        geomCollection.push(feature.getGeometry());
+      });
+      this.editFeature = new Feature(new MultiPolygon(geomCollection));
+    } else {
+      this.editFeature = undefined;
+    }
+  }
 
+  save(done) {
     var features = {
-      updates: find("updated"),
-      inserts: find("added"),
-      deletes: find("removed")
+      updates: [undefined],
+      inserts: [this.editFeature],
+      deletes: [undefined]
     };
 
-    if (
-      features.updates.length === 0 &&
-      features.inserts.length === 0 &&
-      features.deletes.length === 0
-    ) {
+    if (features.inserts.length === 0) {
       return done();
     }
+    this.setFeatureProperties();
 
     this.transact(features, done);
   }
@@ -456,10 +407,68 @@ class MarkisModel {
   reset() {
     Object.assign(this.markisParameters, {
       objectId: undefined,
-      createdBy: undefined
+      objectSerial: undefined,
+      objectStatus: undefined,
+      createdBy: undefined,
+      mode: "visningsläge"
     });
     this.sourceName = undefined;
-    this.geomCreated = false;
+  }
+
+  updateMarkisParameters(message, mode) {
+    if (message.contractId.length !== 10) {
+      this.publishError("Avtalsnumret måste bestå av 10 tecken.", true);
+      return false;
+    } else if (
+      isNaN(message.contractSerial) ||
+      message.contractSerial === "0"
+    ) {
+      this.publishError(
+        "Markis skickade inte ett giltligt händelselöpnummer.",
+        true
+      );
+      return false;
+    } else if (!message.userName) {
+      this.publishError("Markis skickade inte ett giltligt anvädnarnamn", true);
+      return false;
+    } else if (
+      ["F", "G"].indexOf(message.contractStatus.toUpperCase()) === -1
+    ) {
+      this.publishError(
+        "Markis skickade inte ett giltligt status. (Status måste vara F eller G)",
+        true
+      );
+      return false;
+    } else {
+      Object.assign(this.markisParameters, {
+        objectId: message.contractId,
+        objectSerial: message.contractSerial,
+        objectStatus: message.contractStatus,
+        createdBy: message.userName,
+        mode: mode
+      });
+      return true;
+    }
+  }
+
+  checkContractMeta(foundContract) {
+    var foundSerial = foundContract.features[0].properties.handlopnr;
+    if (foundSerial) {
+      if (
+        foundSerial >= this.markisParameters.objectSerial &&
+        foundContract.features[0].properties.status === "G"
+      ) {
+        this.publishError(
+          "Det finns en en avtalsyta med samma avtalsnummer och större eller samma händelselöpsnummer.",
+          false
+        );
+      }
+    } else {
+      this.publishError(
+        "Det finns en en avtalsyta med samma avtalsnummer men inget händelselöpsnummer.",
+        false
+      );
+    }
   }
 
   connectToHub(sessionId) {
@@ -475,26 +484,23 @@ class MarkisModel {
           this.isConnected = true;
         }.bind(this)
       )
-      .catch(function() {});
+      .catch(
+        function() {
+          this.publishError(
+            "Webbkartan kunde inte ansluta till MarkIS.",
+            false
+          );
+        }.bind(this)
+      );
 
     this.connection.on(
       "ShowContractFromMarkis",
       function(_, showMessage) {
         this.reset();
-        this.localObserver.publish("toggleCreateButton", { enabled: false });
         var showObj = JSON.parse(showMessage);
-        if (showObj.objectid) {
-          this.localObserver.publish("toggleView", "visningsläge");
-          this.localObserver.publish("updateContractInformation", {
-            objectId: showObj.objectid,
-            createdBy: ""
-          });
-          this.doSearch(showObj.objectid);
-        } else {
-          this.localObserver.publish(
-            "markisErrorEvent",
-            "Markis skickade ej giltligt avtalsnummer"
-          );
+        if (this.updateMarkisParameters(showObj, "visningsläge")) {
+          this.localObserver.publish("updateMarkisView", {});
+          this.doSearch(showObj.contractId);
         }
       }.bind(this)
     );
@@ -504,54 +510,39 @@ class MarkisModel {
       function(_, createMessage) {
         this.reset();
         var createObject = JSON.parse(createMessage);
-        if (createObject.objectid && createObject.userName) {
-          Object.assign(this.markisParameters, {
-            objectId: createObject.objectid,
-            createdBy: createObject.userName
-          });
-          this.search(createObject.objectid, result => {
-            if (this.getNumberOfResults(result) > 0) {
-              this.localObserver.publish(
-                "contractAlreadyExistsError",
-                "Avtalet som du försöker skapa en ny geometri för finns redan!"
+        if (this.updateMarkisParameters(createObject, "editeringsläge")) {
+          this.search(this.markisParameters.objectId, result => {
+            var numExistingContracts = this.getNumberOfResults(result);
+            if (numExistingContracts > 0) {
+              this.publishError(
+                "Avtalet som du försöker skapa en ny geometri för finns redan!",
+                false
               );
               this.highlightImpact(result);
-              this.localObserver.publish("toggleView", "visningsläge");
-              this.localObserver.publish("updateContractInformation", {
-                objectId: this.markisParameters.objectId,
-                createdBy: this.markisParameters.createdBy
-              });
-              this.localObserver.publish("toggleCreateButton", {
-                enabled: false
-              });
+              this.localObserver.publish("updateMarkisView", {});
             } else {
               this.vectorLayer.getSource().clear();
               this.sourceName = this.getContractSource();
               if (this.sourceName) {
-                this.localObserver.publish("toggleView", "editeringsläge");
-                this.localObserver.publish("updateContractInformation", {
-                  objectId: this.markisParameters.objectId,
-                  objectType: this.markisParameters.objectType
-                });
-                this.localObserver.publish("toggleCreateButton", {
-                  enabled: true
-                });
+                this.localObserver.publish("updateMarkisView", {});
               } else {
-                this.localObserver.publish(
-                  "markisErrorEvent",
-                  "Markis skickade ej giltligt avtalsnummer eller typ"
+                this.publishError(
+                  "Inget datalager hittades för avtalsprefixet. Kontakta systemadministratören.",
+                  true
                 );
               }
             }
           });
-        } else {
-          this.localObserver.publish(
-            "markisErrorEvent",
-            "Markis skickade ej giltligt avtalsnummer eller typ"
-          );
         }
       }.bind(this)
     );
+  }
+
+  publishError(message, reset) {
+    this.localObserver.publish("markisErrorEvent", {
+      message: message,
+      reset: reset
+    });
   }
 
   disconnectHub() {
@@ -662,17 +653,17 @@ class MarkisModel {
     if (v.length <= 3) return null;
     this.search(v, d => {
       var numHits = this.getNumberOfResults(d);
-      if (numHits !== 1) {
+      if (numHits < 1) {
         this.localObserver.publish(
           "markisErrorEvent",
-          "Antal sökträffar från Markis: " + numHits
+          "Det finns ingen gällande avtalsyta för: " + v
         );
         this.highlightImpact(d);
       } else {
         this.highlightImpact(d);
         this.localObserver.publish(
           "markisSearchComplete",
-          "Sökbegreppet " + v + " hittades!"
+          "Avtalsytor kopplade till " + v + " är markerade i rött"
         );
       }
     });

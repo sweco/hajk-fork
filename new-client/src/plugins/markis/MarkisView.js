@@ -8,6 +8,7 @@ import TextField from "@material-ui/core/TextField";
 import FormControl from "@material-ui/core/FormControl";
 import NativeSelect from "@material-ui/core/NativeSelect";
 import FormLabel from "@material-ui/core/FormLabel";
+import InputLabel from "@material-ui/core/InputLabel";
 import Input from "@material-ui/core/Input";
 
 const styles = theme => ({
@@ -43,60 +44,44 @@ const styles = theme => ({
 class MarkisView extends React.PureComponent {
   state = {
     isConnected: false,
-    test: false,
     mode: "visningsläge",
-    contractId: "",
-    createdBy: "",
-    enableCreate: false,
     inCreation: false,
-    formValues: {}
+    formValues: {},
+    createMethod: "abort",
+    geometryExists: false
   };
 
   constructor(props) {
     super(props);
     this.model = this.props.model;
-    this.searchModel = this.model.SearchModel;
-
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
 
     this.localObserver.subscribe("markisErrorEvent", message => {
-      this.showAdvancedSnackbar(message);
-      this.reset();
+      this.showAdvancedSnackbar(message.message);
+      if (message.reset) {
+        this.reset();
+      }
     });
     this.localObserver.subscribe("markisSearchComplete", message => {
       this.props.enqueueSnackbar(message);
     });
-    this.localObserver.subscribe("toggleView", mode => {
+    this.localObserver.subscribe("featureUpdate", vectorSource => {
       this.setState({
-        mode: mode
+        geometryExists: vectorSource.getFeatures().length > 0 || false
       });
     });
-    this.localObserver.subscribe("updateContractInformation", information => {
+    this.localObserver.subscribe("updateMarkisView", message => {
       this.setState({
-        contractId: information.objectId,
-        createdBy: information.createdBy
+        mode: this.model.markisParameters.mode,
+        contractId: this.model.markisParameters.objectId,
+        serialNumber: this.model.markisParameters.objectSerial,
+        contractStatus: this.model.markisParameters.objectStatus,
+        createdBy: this.model.markisParameters.createdBy,
+        inCreation: false
       });
-    });
-    this.localObserver.subscribe("contractAlreadyExistsError", message => {
-      this.showAdvancedSnackbar(message);
-    });
-    this.localObserver.subscribe("toggleCreateButton", message => {
-      this.setState({
-        enableCreate: message.enabled
-      });
-    });
-    this.localObserver.subscribe("editFeature", attr => {
-      this.setState({
-        editFeature: this.props.model.editFeature,
-        editSource: this.props.model.editSource
-      });
-      this.model.setFeatureProperties();
-      if (this.state.editFeature.getProperties().fastighet) {
-        this.checkText(
-          "akt_id",
-          this.state.editFeature.getProperties().fastighet
-        );
+      if (this.state.mode === "editeringsläge") {
+        this.openCreateDialog();
       }
     });
   }
@@ -118,19 +103,25 @@ class MarkisView extends React.PureComponent {
   }
 
   updateFeature() {
-    var props = this.props.model.editFeature.getProperties();
-    Object.keys(this.state.formValues).forEach(key => {
-      var value = this.state.formValues[key];
-      if (value === "") value = null;
-      if (Array.isArray(value)) {
-        value = value
-          .filter(v => v.checked)
-          .map(v => v.name)
-          .join(";");
-      }
-      props[key] = value;
-    });
-    this.props.model.editFeature.setProperties(props);
+    if (this.model.editFeature) {
+      var props = this.props.model.editFeature.getProperties();
+      Object.keys(this.state.formValues).forEach(key => {
+        var value = this.state.formValues[key];
+        if (value === "") value = null;
+        if (Array.isArray(value)) {
+          value = value
+            .filter(v => v.checked)
+            .map(v => v.name)
+            .join(";");
+        }
+        props[key] = value;
+      });
+      this.props.model.editFeature.setProperties(props);
+    } else {
+      this.showAdvancedSnackbar(
+        "Fel när objekten skulle sparas, kontakta systemadministratören."
+      );
+    }
   }
 
   getValueMarkup(field) {
@@ -168,7 +159,7 @@ class MarkisView extends React.PureComponent {
               className={classes.textField}
               margin="normal"
               variant="outlined"
-              disabled={!this.state.editFeature}
+              disabled={!this.state.geometryExists}
               value={value}
               onChange={e => {
                 this.checkText(field.name, e.target.value);
@@ -191,7 +182,7 @@ class MarkisView extends React.PureComponent {
               <FormLabel component="legend">{field.name}</FormLabel>
               <NativeSelect
                 value={value}
-                disabled={!this.state.editFeature}
+                disabled={!this.state.geometryExists}
                 input={<Input name={field.name} id={field.name} />}
                 onChange={e => {
                   this.checkSelect(field.name, e.target.value);
@@ -243,25 +234,22 @@ class MarkisView extends React.PureComponent {
   };
 
   openCreateDialog = () => {
+    this.model.setEditLayer(this.props.model.sourceName);
+    this.model.toggleLayer(this.props.model.sourceName, true);
+    this.model.toggleLayer(this.props.model.estateLayerName, true);
     this.setState({
       inCreation: true
     });
-    this.model.setEditLayer(this.props.model.sourceName);
-    this.model.toggleLayer(this.props.model.sourceName, true);
-    this.model.activateAdd();
   };
 
   abortCreation = () => {
-    this.setState({
-      inCreation: false,
-      editFeature: undefined
-    });
-    this.model.deActivateAdd();
+    this.reset();
     this.model.toggleLayer(this.props.model.estateLayerName, false);
     this.model.toggleLayer(this.props.model.sourceName, false);
   };
 
   saveCreated = () => {
+    this.model.createEditFeature();
     this.updateFeature();
     this.model.save(r => {
       console.log("done", r);
@@ -275,65 +263,53 @@ class MarkisView extends React.PureComponent {
         ) > 0
       ) {
         this.props.enqueueSnackbar("Avtalsgeometrin skapades utan problem!");
-        this.model.deActivateAdd();
-        this.model.toggleLayer(this.props.model.estateLayerName, false);
         this.model.refreshLayer(this.props.model.sourceName);
         this.reset();
       } else {
         this.showAdvancedSnackbar(
           "Avtalsgeometrin gick inte att spara. Fösök igen senare."
         );
-        this.model.deActivateAdd();
-        this.model.toggleLayer(this.props.model.estateLayerName, false);
-        this.model.refreshLayer(this.props.model.sourceName);
         this.reset();
       }
     });
   };
 
   reset() {
+    this.model.removeInteraction();
+    this.model.vectorSource.clear();
     this.setState({
       inCreation: false,
+      geometryExists: false,
+      createMethod: "abort",
+      formValues: {},
       mode: "visningsläge",
-      contractId: "",
-      createdBy: "",
-      enableCreate: false,
-      formValues: {}
+      contractId: undefined,
+      serialNumber: undefined,
+      createdBy: undefined
     });
   }
 
   renderInfoText() {
-    if (this.state.mode === "editeringsläge" && !this.state.inCreation) {
+    if (this.state.mode === "editeringsläge") {
       return (
         <Typography>
-          Du kan nu skapa en ny geometri kopplad till avtalsnummer:
+          Du kan nu uppdatera avtalsytan för avtalsnummer:
           <br />
           <b>{this.state.contractId}</b>
           <br />
-          <br />
-          Du kan antingen skapa en geometri på frihand, eller utifrån en
-          fastighet.
-        </Typography>
-      );
-    } else if (this.state.mode === "editeringsläge" && this.state.inCreation) {
-      return (
-        <Typography>
-          Du kan nu skapa en ny geometri kopplad till avtalsnummer:
-          <br />
-          <b>{this.state.contractId}</b>
         </Typography>
       );
     } else {
       if (this.state.contractId) {
         return (
           <Typography>
-            Du visar nu geometrin kopplad till avtalsnummer:
+            Du visar nu ytor kopplade till avtalsnummer:
             <br />
             <b>{this.state.contractId}</b>
           </Typography>
         );
       } else {
-        return <Typography>Du visar ingen avtalsgeometri just nu.</Typography>;
+        return <Typography>Du visar ingen avtalsyta just nu.</Typography>;
       }
     }
   }
@@ -345,38 +321,13 @@ class MarkisView extends React.PureComponent {
     });
   };
 
-  createFromEstate = () => {
-    this.setState({
-      inCreation: true
-    });
-    this.model.setEditLayer(this.props.model.sourceName);
-    this.model.toggleLayer(this.model.estateLayerName, true);
-    this.model.activateEstateSelection();
+  handleChange = name => event => {
+    this.setState({ [name]: event.target.value });
+    this.props.model.setCreateMethod(event.target.value);
   };
 
   renderBtns() {
     const { classes } = this.props;
-    const enableCreateBtn = (
-      <Button
-        variant="contained"
-        className={classes.createButtons}
-        disabled={!this.state.enableCreate}
-        onClick={this.openCreateDialog}
-      >
-        Rita geometri
-      </Button>
-    );
-
-    const createFromEstateBtn = (
-      <Button
-        variant="contained"
-        className={classes.createButtons}
-        disabled={!this.state.enableCreate}
-        onClick={this.createFromEstate}
-      >
-        Välj fastighet
-      </Button>
-    );
 
     const btnAbort = (
       <Button
@@ -393,7 +344,7 @@ class MarkisView extends React.PureComponent {
         variant="contained"
         className={classes.createButtons}
         onClick={this.saveCreated}
-        disabled={!this.state.editFeature}
+        disabled={!this.state.geometryExists}
       >
         Skapa
       </Button>
@@ -404,28 +355,40 @@ class MarkisView extends React.PureComponent {
         variant="contained"
         className={classes.createButtons}
         onClick={this.clearSearchResult}
+        disabled={!this.state.contractId}
       >
         Rensa resultat
       </Button>
     );
 
-    if (this.state.mode === "editeringsläge") {
-      if (!this.state.inCreation) {
-        return (
+    const listCreateChoices = (
+      <FormControl className={classes.formControl}>
+        <InputLabel htmlFor="createMethod-native-helper">Aktivitet</InputLabel>
+        <NativeSelect
+          value={this.state.createMethod}
+          onChange={this.handleChange("createMethod")}
+          input={<Input name="createMethod" id="createMethod-native-helper" />}
+        >
+          <option value="abort">Ingen</option>
+          <option value="add">Lägg till objekt</option>
+          <option value="addEstate">Välj fastighet</option>
+          <option value="remove">Ta bort objekt</option>
+          <option value="edit">Editera objekt</option>
+        </NativeSelect>
+      </FormControl>
+    );
+
+    if (this.state.mode === "editeringsläge" && this.state.inCreation) {
+      return (
+        <div>
+          <div>{listCreateChoices}</div>
+          <div>{this.createForm()}</div>
           <div>
-            {enableCreateBtn}
-            {createFromEstateBtn}
-          </div>
-        );
-      } else {
-        return (
-          <div>
-            {this.createForm()}
             {btnAbort}
             {btnSave}
           </div>
-        );
-      }
+        </div>
+      );
     } else {
       return <div>{btnRemoveResult}</div>;
     }
