@@ -8,7 +8,6 @@ import TextField from "@material-ui/core/TextField";
 import FormControl from "@material-ui/core/FormControl";
 import NativeSelect from "@material-ui/core/NativeSelect";
 import FormLabel from "@material-ui/core/FormLabel";
-import InputLabel from "@material-ui/core/InputLabel";
 import Input from "@material-ui/core/Input";
 
 const styles = theme => ({
@@ -17,6 +16,18 @@ const styles = theme => ({
     flexWrap: "wrap"
   },
   root: {
+    display: "flex",
+    flexWrap: "wrap"
+  },
+  text: {
+    marginLeft: theme.spacing(1),
+    display: "flex",
+    flexWrap: "wrap"
+  },
+  listCreateChoices: {
+    margin: theme.spacing(1),
+    marginTop: theme.spacing(2),
+    marginBottom: theme.spacing(2),
     display: "flex",
     flexWrap: "wrap"
   },
@@ -58,7 +69,7 @@ class MarkisView extends React.PureComponent {
     this.globalObserver = this.props.app.globalObserver;
 
     this.localObserver.subscribe("markisErrorEvent", message => {
-      this.showAdvancedSnackbar(message.message);
+      this.showAdvancedSnackbar(message.message, message.variant);
       if (message.reset) {
         this.reset();
       }
@@ -213,7 +224,7 @@ class MarkisView extends React.PureComponent {
     return <div>{markup}</div>;
   }
 
-  showAdvancedSnackbar = message => {
+  showAdvancedSnackbar = (message, variant) => {
     const action = key => (
       <>
         <Button
@@ -227,7 +238,7 @@ class MarkisView extends React.PureComponent {
     );
 
     this.props.enqueueSnackbar(message, {
-      variant: "error",
+      variant: variant || "error",
       persist: true,
       action
     });
@@ -262,7 +273,10 @@ class MarkisView extends React.PureComponent {
           r.TransactionResponse.TransactionSummary.totalInserted.toString()
         ) > 0
       ) {
-        this.props.enqueueSnackbar("Avtalsgeometrin skapades utan problem!");
+        this.showAdvancedSnackbar(
+          "Avtalsgeometrin skapades utan problem!",
+          "success"
+        );
         this.model.refreshLayer(this.props.model.sourceName);
         this.reset();
       } else {
@@ -362,14 +376,14 @@ class MarkisView extends React.PureComponent {
     );
 
     const listCreateChoices = (
-      <FormControl className={classes.formControl}>
-        <InputLabel htmlFor="createMethod-native-helper">Aktivitet</InputLabel>
+      <FormControl className={classes.listCreateChoices}>
+        <FormLabel component="legend">Välj verktyg</FormLabel>
         <NativeSelect
           value={this.state.createMethod}
           onChange={this.handleChange("createMethod")}
           input={<Input name="createMethod" id="createMethod-native-helper" />}
         >
-          <option value="abort">Ingen</option>
+          <option value="abort">Inget aktivt verktyg</option>
           <option value="add">Lägg till objekt</option>
           <option value="addEstate">Välj fastighet</option>
           <option value="remove">Ta bort objekt</option>
@@ -382,6 +396,9 @@ class MarkisView extends React.PureComponent {
       return (
         <div>
           <div>{listCreateChoices}</div>
+          <div className={classes.text}>
+            <Typography>Nedan kan du sätta värden på avtalsytan</Typography>
+          </div>
           <div>{this.createForm()}</div>
           <div>
             {btnAbort}
@@ -398,10 +415,7 @@ class MarkisView extends React.PureComponent {
     const { classes } = this.props;
     return (
       <>
-        <div className={classes.row}>
-          <h3>Du är i {this.state.mode}</h3>
-          {this.renderInfoText()}
-        </div>
+        <div className={classes.text}>{this.renderInfoText()}</div>
         {this.renderBtns()}
       </>
     );
