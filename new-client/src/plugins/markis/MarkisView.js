@@ -263,18 +263,24 @@ class MarkisView extends React.PureComponent {
     this.model.createEditFeature();
     this.updateFeature();
     this.model.save(r => {
-      console.log("done", r);
       if (
-        r &&
-        r.TransactionResponse &&
-        r.TransactionResponse.TransactionSummary &&
-        r.TransactionResponse.TransactionSummary.totalInserted &&
         Number(
           r.TransactionResponse.TransactionSummary.totalInserted.toString()
         ) > 0
       ) {
         this.showAdvancedSnackbar(
           "Avtalsgeometrin skapades utan problem!",
+          "success"
+        );
+        this.model.refreshLayer(this.props.model.sourceName);
+        this.reset();
+      } else if (
+        Number(
+          r.TransactionResponse.TransactionSummary.totalUpdated.toString()
+        ) > 0
+      ) {
+        this.showAdvancedSnackbar(
+          "Avtalsgeometrin uppdaterades utan problem!",
           "success"
         );
         this.model.refreshLayer(this.props.model.sourceName);
@@ -371,7 +377,7 @@ class MarkisView extends React.PureComponent {
         onClick={this.clearSearchResult}
         disabled={!this.state.contractId}
       >
-        Rensa resultat
+        Rensa
       </Button>
     );
 
