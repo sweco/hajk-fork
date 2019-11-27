@@ -47,7 +47,8 @@ class MarkisModel {
       objectId: undefined,
       objectSerial: undefined,
       objectStatus: undefined,
-      createdBy: undefined
+      createdBy: undefined,
+      feature_obj_id: undefined
     };
     this.editLayer = undefined;
     this.createMethod = "abort";
@@ -194,15 +195,12 @@ class MarkisModel {
     }
   }
 
-  //Only handles single select and is restricted to polygon and multipolygon atm
+  //Only handles single select and is restricted to polygon
   onSelectFeatures = (evt, selectionDone, callback) => {
     handleClick(evt, evt.map, response => {
       if (response.features.length > 0) {
         var geometryType = response.features[0].getGeometry().getType();
-        if (
-          geometryType === GeometryType.POLYGON ||
-          geometryType === GeometryType.MULTI_POLYGON
-        ) {
+        if (geometryType === GeometryType.POLYGON) {
           this.vectorSource.addFeatures(response.features);
           this.localObserver.publish("featureUpdate", this.vectorSource);
         }
@@ -260,8 +258,10 @@ class MarkisModel {
   };
 
   removeSelected = e => {
-    this.map.forEachFeatureAtPixel(e.pixel, feature => {
-      this.vectorSource.removeFeature(feature);
+    this.map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
+      if (layer instanceof VectorLayer) {
+        this.vectorSource.removeFeature(feature);
+      }
     });
     this.localObserver.publish("featureUpdate", this.vectorSource);
   };
@@ -375,12 +375,22 @@ class MarkisModel {
   }
 
   createEditFeature() {
-    if (this.vectorSource.getFeatures) {
+    if (this.vectorSource.getFeatures()) {
       var geomCollection = [];
       this.vectorSource.forEachFeature(feature => {
-        geomCollection.push(feature.getGeometry());
+        if (feature.getGeometry().getType() === GeometryType.MULTI_POLYGON) {
+          feature
+            .getGeometry()
+            .getPolygons()
+            .forEach(polygon => {
+              geomCollection.push(polygon);
+            });
+        } else {
+          geomCollection.push(feature.getGeometry());
+        }
       });
       this.editFeature = new Feature(new MultiPolygon(geomCollection));
+      this.editFeature.setGeometryName(this.geometryName);
     } else {
       this.editFeature = undefined;
     }
@@ -389,9 +399,19 @@ class MarkisModel {
   save(done) {
     var features = {
       updates: [undefined],
-      inserts: [this.editFeature],
+      inserts: [undefined],
       deletes: [undefined]
     };
+    if (this.markisParameters.feature_obj_id) {
+      this.editFeature.setId(this.markisParameters.feature_obj_id);
+      Object.assign(features, {
+        updates: [this.editFeature]
+      });
+    } else {
+      Object.assign(features, {
+        inserts: [this.editFeature]
+      });
+    }
 
     if (features.inserts.length === 0) {
       return done();
@@ -412,7 +432,8 @@ class MarkisModel {
       objectSerial: undefined,
       objectStatus: undefined,
       createdBy: undefined,
-      mode: "visningsläge"
+      mode: "visningsläge",
+      feature_obj_id: undefined
     });
     this.sourceName = undefined;
   }
@@ -451,6 +472,13 @@ class MarkisModel {
         true
       );
       return false;
+    } else if (message.contractStatus.toUpperCase() === "G") {
+      this.publishMessage(
+        "Du kan inte skapa en avtalsyta med status gällande.",
+        "error",
+        true
+      );
+      return false;
     } else {
       Object.assign(this.markisParameters, {
         objectId: message.contractId,
@@ -485,6 +513,9 @@ class MarkisModel {
       } else if (
         foundContract.features[0].properties.status.toUpperCase() === "F"
       ) {
+        Object.assign(this.markisParameters, {
+          feature_obj_id: foundContract.features[0].properties.obj_id
+        });
         this.publishMessage(
           "Du redigerar nu en förslagsyta.",
           "warning",
