@@ -54,7 +54,7 @@ class Markis extends React.PureComponent {
           icon: <BugReportIcon />, // Custom icon for this plugin
           title: "Markis", // Custom title, etc
           description: "Markisanslutning",
-          height: 600, // Custom height/width etc | Use "auto" for automatic or leave undefined
+          height: 470, // Custom height/width etc | Use "auto" for automatic or leave undefined
           width: 400,
           top: undefined, // If undefined, it will fallback to BaseWindowPlugin's defaults
           left: undefined
