@@ -448,7 +448,8 @@ class MarkisModel {
       return false;
     } else if (
       isNaN(message.contractSerial) ||
-      message.contractSerial === "0"
+      message.contractSerial === "0" ||
+      message.contractSerial === ""
     ) {
       this.publishMessage(
         "Markis skickade inte ett giltligt händelselöpnummer.",
