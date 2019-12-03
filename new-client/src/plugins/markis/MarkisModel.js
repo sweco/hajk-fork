@@ -457,7 +457,7 @@ class MarkisModel {
         true
       );
       return false;
-    } else if (!message.userName) {
+    } else if (!message.userName && mode !== "visningsläge") {
       this.publishMessage(
         "Markis skickade inte ett giltligt anvädnarnamn",
         "error",
@@ -473,7 +473,10 @@ class MarkisModel {
         true
       );
       return false;
-    } else if (message.contractStatus.toUpperCase() === "G") {
+    } else if (
+      message.contractStatus.toUpperCase() === "G" &&
+      mode !== "visningsläge"
+    ) {
       this.publishMessage(
         "Du kan inte skapa en avtalsyta med status gällande.",
         "error",
@@ -492,48 +495,62 @@ class MarkisModel {
     }
   }
 
-  checkContractMeta(foundContract) {
-    var foundSerial = foundContract.features[0].properties.handlopnr;
+  validateContract(foundContract) {
+    var contractControl = { contractOk: false, type: undefined };
+    var foundSerial = foundContract.properties.handlopnr;
     if (foundSerial) {
-      if (foundContract.features[0].properties.status.toUpperCase() === "G") {
+      if (foundContract.properties.status.toUpperCase() === "G") {
         if (foundSerial >= this.markisParameters.objectSerial) {
-          this.publishMessage(
-            "Det finns redan en gällande avtalsyta.",
-            "error",
-            false
-          );
-          return false;
+          Object.assign(contractControl, {
+            contractOk: false,
+            message: "Det finns redan en gällande avtalsyta."
+          });
+          return contractControl;
         } else if (foundSerial < this.markisParameters.objectSerial) {
-          this.publishMessage(
-            "Du skapar en tilläggsyta. Kom ihåg att radera den gamla ytan om du inte vill att den ska ingå.",
-            "warning",
-            false
-          );
-          return true;
+          Object.assign(contractControl, {
+            contractOk: true,
+            message:
+              "Du skapar en tilläggsyta. Kom ihåg att radera den gamla ytan om du inte vill att den ska ingå."
+          });
+          return contractControl;
         }
-      } else if (
-        foundContract.features[0].properties.status.toUpperCase() === "F"
-      ) {
+      } else if (foundContract.properties.status.toUpperCase() === "F") {
         Object.assign(this.markisParameters, {
-          feature_obj_id: foundContract.features[0].properties.obj_id
+          feature_obj_id: foundContract.properties.obj_id
         });
-        this.publishMessage(
-          "Du redigerar nu en förslagsyta.",
-          "warning",
-          false
-        );
-        return true;
+        Object.assign(contractControl, {
+          contractOk: true,
+          message: "Du redigerar nu en förslagsyta."
+        });
+        return contractControl;
       } else {
-        return false;
+        Object.assign(contractControl, {
+          contractOk: false,
+          message: "De existerande avtalsytorna har inget status."
+        });
+        return contractControl;
       }
     } else {
-      this.publishMessage(
-        "Det finns redan en gällande avtalsyta. (Utan händelselöpnummer).",
-        "error",
-        false
-      );
-      return false;
+      Object.assign(contractControl, {
+        contractOk: false,
+        type: "Det finns redan en gällande avtalsyta. (Utan händelselöpnummer)."
+      });
+      return contractControl;
     }
+  }
+
+  validateContractCollection(featureCollection) {
+    for (var i = 0; i < featureCollection.features.length; i++) {
+      var existingContract = this.validateContract(
+        featureCollection.features[i]
+      );
+      if (!existingContract.contractOk) {
+        this.publishMessage(existingContract.message, "error", false);
+        return false;
+      }
+    }
+    this.publishMessage(existingContract.message, "warning", false);
+    return true;
   }
 
   connectToHub(sessionId) {
@@ -580,13 +597,10 @@ class MarkisModel {
           this.search(this.markisParameters.objectId, result => {
             var numExistingContracts = this.getNumberOfResults(result);
             if (numExistingContracts > 0) {
-              for (var i = 0; i < numExistingContracts; i++) {
-                var contractMetaOk = this.checkContractMeta(result[0]);
-                if (!contractMetaOk) {
-                  break;
-                }
-              }
-              if (contractMetaOk) {
+              var contractCollectionOk = this.validateContractCollection(
+                result[0]
+              );
+              if (contractCollectionOk) {
                 this.enableContractCreation(createObject, result);
               } else {
                 this.highlightImpact(result);
