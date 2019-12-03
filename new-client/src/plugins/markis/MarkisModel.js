@@ -32,13 +32,13 @@ class MarkisModel {
     this.map = settings.map;
     this.app = settings.app;
     this.localObserver = settings.localObserver;
+    this.globalObserver = settings.globalObserver;
     this.hubUrl = settings.options.hubUrl;
     this.isConnected = false;
     this.connection = undefined;
     this.sources = settings.options.sources;
     this.estateLayerName = settings.options.estateLayerName;
     this.wfstSources = settings.options.wfstSources;
-    this.editFeature = undefined;
     this.editSource = undefined;
     this.sourceName = undefined;
     this.geomCollection = [];
@@ -51,13 +51,13 @@ class MarkisModel {
       feature_obj_id: undefined
     };
     this.editLayer = undefined;
+    this.editFeature = undefined;
     this.createMethod = "abort";
     this.geometryName = "geom";
     this.wfsParser = new WFS();
     this.controllers = [];
     this.vectorSource = new VectorSource({});
-    this.globalObserver = settings.globalObserver;
-    this.vectorLayer = new VectorLayer({
+    this.searchResultLayer = new VectorLayer({
       source: new VectorSource({}),
       style: () => {
         if (settings.options.markerImg && settings.options.markerImg !== "") {
@@ -70,9 +70,9 @@ class MarkisModel {
         return style;
       }
     });
-    this.map.addLayer(this.vectorLayer);
-    this.vectorLayer.set("type", "markisResultLayer");
-    this.vectorLayer.set("queryable", true);
+    this.map.addLayer(this.searchResultLayer);
+    this.searchResultLayer.set("type", "markisResultLayer");
+    this.searchResultLayer.set("queryable", true);
   }
 
   getMap() {
@@ -107,11 +107,34 @@ class MarkisModel {
     ];
   }
 
+  getHiddenStyle() {
+    return [
+      new Style({
+        stroke: new Stroke({
+          color: "rgba(0, 0, 0, 0)",
+          width: 0
+        }),
+        fill: new Fill({
+          color: "rgba(1, 2, 3, 0)"
+        }),
+        image: new Circle({
+          fill: new Fill({
+            color: "rgba(0, 0, 0, 0)"
+          }),
+          stroke: new Stroke({
+            color: "rgba(0, 0, 0, 0)",
+            width: 0
+          }),
+          radius: 0
+        })
+      })
+    ];
+  }
+
   setEditLayer(layerName, done) {
     this.wfstSource = this.wfstSources.find(
       wfstSource => wfstSource.layers[0] === layerName
     );
-    //this.vectorSource = new VectorSource({});
     this.editLayer = new Vector({
       source: this.vectorSource,
       style: this.getSketchStyle()
@@ -122,7 +145,6 @@ class MarkisModel {
     }
     this.map.addLayer(this.editLayer);
     this.editSource = this.wfstSource;
-    this.editFeature = null;
   }
 
   toggleLayer(layerName, visible) {
@@ -198,37 +220,46 @@ class MarkisModel {
   //Only handles single select and is restricted to polygon
   onSelectFeatures = (evt, selectionDone, callback) => {
     handleClick(evt, evt.map, response => {
-      if (response.features.length > 0) {
-        var geometryType = response.features[0].getGeometry().getType();
+      if (response.features.length === 1) {
+        var feature = response.features[0];
+        var geometryType = feature.getGeometry().getType();
         if (geometryType === GeometryType.POLYGON) {
-          this.vectorSource.addFeatures(response.features);
+          feature.modification = "added";
+          console.log("feature: ", feature);
+          this.vectorSource.addFeature(feature);
+          console.log(
+            "this.vectorsource is: ",
+            this.vectorSource.getFeatures()
+          );
           this.localObserver.publish("featureUpdate", this.vectorSource);
         }
       }
     });
   };
 
-  activateEstateSelection = (selectionDone, callback) => {
-    this.map.on("singleclick", e => {
-      this.onSelectFeatures(e, selectionDone, callback);
-    });
-  };
-
   setFeatureProperties() {
-    this.editFeature.setProperties({
-      [this.editSource.columnNames.contractId]: this.markisParameters.objectId,
-      [this.editSource.columnNames.createdBy]: this.markisParameters.createdBy,
-      [this.editSource.columnNames.regDate]: this.getTimeStampDate(),
-      [this.editSource.columnNames.status]: this.markisParameters.objectStatus,
-      [this.editSource.columnNames.handlopnr]: this.markisParameters
-        .objectSerial
+    this.vectorSource.forEachFeature(feature => {
+      feature.setGeometryName(this.geometryName);
+      console.log("feature after change_ ", feature);
+      feature.unset("bbox", true);
+      feature.setProperties({
+        [this.editSource.columnNames.contractId]: this.markisParameters
+          .objectId,
+        [this.editSource.columnNames.createdBy]: this.markisParameters
+          .createdBy,
+        [this.editSource.columnNames.regDate]: this.getTimeStampDate(),
+        [this.editSource.columnNames.status]: this.markisParameters
+          .objectStatus,
+        [this.editSource.columnNames.handlopnr]: this.markisParameters
+          .objectSerial
+      });
     });
   }
 
   setType(type) {
     this.type = type;
     this.removeInteraction();
-    this.addInteraction(type);
+    this.addInteraction();
   }
 
   addInteraction() {
@@ -238,7 +269,9 @@ class MarkisModel {
       style: this.getSketchStyle(),
       geometryName: this.geometryName
     });
-    this.draw.on("drawend", this.handleDrawEnd);
+    this.draw.on("drawend", event => {
+      this.handleDrawEnd(event);
+    });
     this.map.addInteraction(this.draw);
   }
 
@@ -249,21 +282,41 @@ class MarkisModel {
     if (this.edit) {
       this.map.removeInteraction(this.edit);
     }
+    this.editFeature = undefined;
+    this.localObserver.publish("featureUpdate", this.vectorSource);
     this.map.un("singleclick", this.removeSelected);
     this.map.un("singleclick", this.onSelectFeatures);
+    this.map.un("singleclick", this.selectForEdit);
   }
 
   handleDrawEnd = event => {
+    event.feature.modification = "added";
     this.localObserver.publish("featureUpdate", this.vectorSource);
   };
 
   removeSelected = e => {
-    this.map.forEachFeatureAtPixel(e.pixel, (feature, layer) => {
-      if (layer instanceof VectorLayer) {
-        this.vectorSource.removeFeature(feature);
+    this.map.forEachFeatureAtPixel(e.pixel, feature => {
+      if (this.vectorSource.getFeatures().some(f => f === feature)) {
+        if (feature.modification === "added") {
+          feature.modification = undefined;
+        } else {
+          feature.modification = "removed";
+        }
+        feature.setStyle(this.getHiddenStyle());
+        this.localObserver.publish("featureUpdate", this.vectorSource);
       }
     });
-    this.localObserver.publish("featureUpdate", this.vectorSource);
+  };
+
+  selectForEdit = e => {
+    this.map.forEachFeatureAtPixel(e.pixel, feature => {
+      if (this.vectorSource.getFeatures().some(f => f === feature)) {
+        this.editFeature = feature;
+        this.localObserver.publish("featureUpdate", this.vectorSource);
+      } else {
+        this.editFeature = undefined;
+      }
+    });
   };
 
   setEditActive() {
@@ -295,6 +348,10 @@ class MarkisModel {
 
     if (this.createMethod === "edit") {
       this.setEditActive();
+    }
+
+    if (this.createMethod === "editAttributes") {
+      this.map.on("singleclick", this.selectForEdit);
     }
   }
 
@@ -348,10 +405,9 @@ class MarkisModel {
       serializer = new XMLSerializer(),
       src = this.editSource,
       payload = node ? serializer.serializeToString(node) : undefined;
-    if (payload.search("<geometry>")) {
-      payload = payload.replace("<geometry>", "<geom>");
-      payload = payload.replace("</geometry>", "</geom>");
-    }
+    payload = payload.replace(new RegExp("<geometry>", "g"), "<geom>");
+    payload = payload.replace(new RegExp("</geometry>", "g"), "</geom>");
+    console.log("payload: ", payload);
     if (payload) {
       fetch(src.posturl, {
         method: "POST",
@@ -374,59 +430,39 @@ class MarkisModel {
     }
   }
 
-  createEditFeature() {
-    if (this.vectorSource.getFeatures()) {
-      var geomCollection = [];
-      this.vectorSource.forEachFeature(feature => {
-        if (feature.getGeometry().getType() === GeometryType.MULTI_POLYGON) {
-          feature
-            .getGeometry()
-            .getPolygons()
-            .forEach(polygon => {
-              geomCollection.push(polygon);
-            });
-        } else {
-          geomCollection.push(feature.getGeometry());
-        }
-      });
-      this.editFeature = new Feature(new MultiPolygon(geomCollection));
-      this.editFeature.setGeometryName(this.geometryName);
-    } else {
-      this.editFeature = undefined;
-    }
-  }
-
   save(done) {
-    var features = {
-      updates: [undefined],
-      inserts: [undefined],
-      deletes: [undefined]
-    };
-    if (this.markisParameters.feature_obj_id) {
-      this.editFeature.setId(this.markisParameters.feature_obj_id);
-      Object.assign(features, {
-        updates: [this.editFeature]
-      });
-    } else {
-      Object.assign(features, {
-        inserts: [this.editFeature]
-      });
-    }
+    var find = mode =>
+      this.vectorSource
+        .getFeatures()
+        .filter(feature => feature.modification === mode);
 
-    if (features.inserts.length === 0) {
+    var features = {
+      updates: find("updated"),
+      inserts: find("added"),
+      deletes: find("removed")
+    };
+
+    if (
+      features.updates.length === 0 &&
+      features.inserts.length === 0 &&
+      features.deletes.length === 0
+    ) {
       return done();
     }
+
+    console.log("features i vectorSource: ", this.vectorSource.getFeatures());
     this.setFeatureProperties();
 
     this.transact(features, done);
   }
 
   clearSearchResult() {
-    this.vectorLayer.getSource().clear();
+    this.searchResultLayer.getSource().clear();
   }
 
   reset() {
     this.vectorSource.clear();
+    this.editFeature = undefined;
     Object.assign(this.markisParameters, {
       objectId: undefined,
       objectSerial: undefined,
@@ -617,13 +653,38 @@ class MarkisModel {
 
   enableContractCreation(createObject, existingGeom) {
     this.updateMarkisParameters(createObject, "editeringsläge");
-    this.vectorLayer.getSource().clear();
+    this.searchResultLayer.getSource().clear();
     this.sourceName = this.getContractSource();
     if (this.sourceName) {
       this.localObserver.publish("updateMarkisView", {});
       if (existingGeom) {
         var existingFeatures = new GeoJSON().readFeatures(existingGeom[0]);
+        console.log("existingfeatures: ", existingFeatures);
         this.vectorSource.addFeatures(existingFeatures);
+        this.vectorSource.getFeatures().forEach(feature => {
+          //If we are creating additional contract geoms it is seen as a new object
+          if (feature.getProperties().status.toUpperCase() === "G") {
+            feature.modification = "added";
+          }
+          feature.on("propertychange", e => {
+            if (feature.modification === "removed") {
+              return;
+            }
+            if (feature.modification === "added") {
+              return;
+            }
+            feature.modification = "updated";
+          });
+          feature.on("change", e => {
+            if (feature.modification === "removed") {
+              return;
+            }
+            if (feature.modification === "added") {
+              return;
+            }
+            feature.modification = "updated";
+          });
+        });
         var extent = this.vectorSource.getExtent();
         this.map.getView().fit(extent, this.map.getSize());
         this.localObserver.publish("featureUpdate", this.vectorSource);
@@ -712,7 +773,7 @@ class MarkisModel {
 
   search(searchInput, callback) {
     this.timeout = setTimeout(() => {
-      this.vectorLayer.getSource().clear();
+      this.searchResultLayer.getSource().clear();
       var promises = [];
       this.controllers.splice(0, this.controllers.length);
 
@@ -777,10 +838,10 @@ class MarkisModel {
 
   highlightImpact(result) {
     var olFeatures = new GeoJSON().readFeatures(result[0]);
-    this.vectorLayer.getSource().addFeatures(olFeatures);
-    var extent = this.vectorLayer.getSource().getExtent();
+    this.searchResultLayer.getSource().addFeatures(olFeatures);
+    var extent = this.searchResultLayer.getSource().getExtent();
     this.map.getView().fit(extent, this.map.getSize());
-    this.vectorLayer.setVisible(true);
+    this.searchResultLayer.setVisible(true);
   }
 }
 
