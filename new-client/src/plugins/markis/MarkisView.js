@@ -59,7 +59,8 @@ class MarkisView extends React.PureComponent {
     inCreation: false,
     formValues: {},
     createMethod: "abort",
-    geometryExists: false
+    geometryExists: false,
+    editFeatureExists: false
   };
 
   constructor(props) {
@@ -79,7 +80,8 @@ class MarkisView extends React.PureComponent {
     });
     this.localObserver.subscribe("featureUpdate", vectorSource => {
       this.setState({
-        geometryExists: vectorSource.getFeatures().length > 0 || false
+        geometryExists: vectorSource.getFeatures().length > 0 || false,
+        editFeatureExists: this.model.editFeature || false
       });
     });
     this.localObserver.subscribe("updateMarkisView", message => {
@@ -103,6 +105,7 @@ class MarkisView extends React.PureComponent {
     this.setState({
       formValues: formValues
     });
+    this.updateFeature(this.model.editFeature);
   }
 
   checkSelect(name, value) {
@@ -111,28 +114,47 @@ class MarkisView extends React.PureComponent {
     this.setState({
       formValues: formValues
     });
+    this.updateFeature(this.model.editFeature);
   }
 
-  updateFeature() {
-    if (this.model.editFeature) {
-      var props = this.props.model.editFeature.getProperties();
-      Object.keys(this.state.formValues).forEach(key => {
-        var value = this.state.formValues[key];
-        if (value === "") value = null;
-        if (Array.isArray(value)) {
-          value = value
-            .filter(v => v.checked)
-            .map(v => v.name)
-            .join(";");
-        }
-        props[key] = value;
-      });
-      this.props.model.editFeature.setProperties(props);
-    } else {
-      this.showAdvancedSnackbar(
-        "Fel när objekten skulle sparas, kontakta systemadministratören."
-      );
-    }
+  // updateFeature() {
+  //   if (this.model.vectorSource.getFeatures().length > 0) {
+  //     this.model.vectorSource.forEachFeature(feature => {
+  //       var props = feature.getProperties();
+  //       Object.keys(this.state.formValues).forEach(key => {
+  //         var value = this.state.formValues[key];
+  //         if (value === "") value = null;
+  //         if (Array.isArray(value)) {
+  //           value = value
+  //             .filter(v => v.checked)
+  //             .map(v => v.name)
+  //             .join(";");
+  //         }
+  //         props[key] = value;
+  //       });
+  //       feature.setProperties(props);
+  //     });
+  //   } else {
+  //     this.showAdvancedSnackbar(
+  //       "Fel när objekten skulle sparas, kontakta systemadministratören."
+  //     );
+  //   }
+  // }
+
+  updateFeature(feature) {
+    var props = feature.getProperties();
+    Object.keys(this.state.formValues).forEach(key => {
+      var value = this.state.formValues[key];
+      if (value === "") value = null;
+      if (Array.isArray(value)) {
+        value = value
+          .filter(v => v.checked)
+          .map(v => v.name)
+          .join(";");
+      }
+      props[key] = value;
+    });
+    feature.setProperties(props);
   }
 
   getValueMarkup(field) {
@@ -170,7 +192,7 @@ class MarkisView extends React.PureComponent {
               className={classes.textField}
               margin="normal"
               variant="outlined"
-              disabled={!this.state.geometryExists}
+              disabled={!this.state.editFeatureExists}
               value={value}
               onChange={e => {
                 this.checkText(field.name, e.target.value);
@@ -193,7 +215,7 @@ class MarkisView extends React.PureComponent {
               <FormLabel component="legend">{field.name}</FormLabel>
               <NativeSelect
                 value={value}
-                disabled={!this.state.geometryExists}
+                disabled={!this.state.editFeatureExists}
                 input={<Input name={field.name} id={field.name} />}
                 onChange={e => {
                   this.checkSelect(field.name, e.target.value);
@@ -260,8 +282,7 @@ class MarkisView extends React.PureComponent {
   };
 
   saveCreated = () => {
-    this.model.createEditFeature();
-    this.updateFeature();
+    //this.updateFeature();
     this.model.save(r => {
       if (
         Number(
@@ -283,6 +304,14 @@ class MarkisView extends React.PureComponent {
           "Avtalsgeometrin uppdaterades utan problem!",
           "success"
         );
+        this.model.refreshLayer(this.props.model.sourceName);
+        this.reset();
+      } else if (
+        Number(
+          r.TransactionResponse.TransactionSummary.totalDeleted.toString()
+        ) > 0
+      ) {
+        this.showAdvancedSnackbar("Avtalsgeometrin togs bort utan problem.");
         this.model.refreshLayer(this.props.model.sourceName);
         this.reset();
       } else {
@@ -344,6 +373,7 @@ class MarkisView extends React.PureComponent {
   handleChange = name => event => {
     this.setState({ [name]: event.target.value });
     this.props.model.setCreateMethod(event.target.value);
+    console.log("this.state: ", this.state);
   };
 
   renderBtns() {
@@ -394,6 +424,7 @@ class MarkisView extends React.PureComponent {
           <option value="addEstate">Välj fastighet</option>
           <option value="remove">Ta bort objekt</option>
           <option value="edit">Editera objekt</option>
+          <option value="editAttributes">Sätt attribut</option>
         </NativeSelect>
       </FormControl>
     );
