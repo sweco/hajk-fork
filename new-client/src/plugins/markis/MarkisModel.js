@@ -6,7 +6,6 @@ import Or from "ol/format/filter/Or";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import Vector from "ol/layer/Vector";
-import Feature from "ol/Feature.js";
 import GeoJSON from "ol/format/GeoJSON";
 import { arraySort } from "./../../utils/ArraySort.js";
 import { Stroke, Style, Circle, Fill, Icon } from "ol/style.js";
@@ -15,7 +14,6 @@ import X2JS from "x2js";
 import { handleClick } from "../../models/Click.js";
 import { Modify } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
-import MultiPolygon from "ol/geom/MultiPolygon";
 
 var style = new Style({
   stroke: new Stroke({
@@ -51,7 +49,8 @@ class MarkisModel {
       feature_obj_id: undefined
     };
     this.editLayer = undefined;
-    this.editFeature = undefined;
+    this.editFeatureId = undefined;
+    this.featureIdCounter = 1;
     this.createMethod = "abort";
     this.geometryName = "geom";
     this.wfsParser = new WFS();
@@ -91,6 +90,30 @@ class MarkisModel {
         }),
         stroke: new Stroke({
           color: "rgba(200, 0, 0, 0.5)",
+          width: 4
+        }),
+        image: new Circle({
+          radius: 6,
+          fill: new Fill({
+            color: "rgba(0, 0, 0, 0.5)"
+          }),
+          stroke: new Stroke({
+            color: "rgba(255, 255, 255, 0.5)",
+            width: 2
+          })
+        })
+      })
+    ];
+  }
+
+  getHighlightStyle() {
+    return [
+      new Style({
+        fill: new Fill({
+          color: "rgba(0, 255, 0, 0.5)"
+        }),
+        stroke: new Stroke({
+          color: "rgba(0, 200, 0, 0.5)",
           width: 4
         }),
         image: new Circle({
@@ -225,12 +248,9 @@ class MarkisModel {
         var geometryType = feature.getGeometry().getType();
         if (geometryType === GeometryType.POLYGON) {
           feature.modification = "added";
-          console.log("feature: ", feature);
+          feature.setId(this.featureIdCounter);
+          this.featureIdCounter++;
           this.vectorSource.addFeature(feature);
-          console.log(
-            "this.vectorsource is: ",
-            this.vectorSource.getFeatures()
-          );
           this.localObserver.publish("featureUpdate", this.vectorSource);
         }
       }
@@ -240,7 +260,6 @@ class MarkisModel {
   setFeatureProperties() {
     this.vectorSource.forEachFeature(feature => {
       feature.setGeometryName(this.geometryName);
-      console.log("feature after change_ ", feature);
       feature.unset("bbox", true);
       feature.setProperties({
         [this.editSource.columnNames.contractId]: this.markisParameters
@@ -282,7 +301,7 @@ class MarkisModel {
     if (this.edit) {
       this.map.removeInteraction(this.edit);
     }
-    this.editFeature = undefined;
+    this.editFeatureId = undefined;
     this.localObserver.publish("featureUpdate", this.vectorSource);
     this.map.un("singleclick", this.removeSelected);
     this.map.un("singleclick", this.onSelectFeatures);
@@ -291,6 +310,8 @@ class MarkisModel {
 
   handleDrawEnd = event => {
     event.feature.modification = "added";
+    event.feature.setId(this.featureIdCounter);
+    this.featureIdCounter++;
     this.localObserver.publish("featureUpdate", this.vectorSource);
   };
 
@@ -308,14 +329,20 @@ class MarkisModel {
     });
   };
 
+  removeHighlight() {
+    this.vectorSource.getFeatures().forEach(feature => {
+      feature.setStyle(this.getSketchStyle);
+    });
+  }
+
   selectForEdit = e => {
     this.map.forEachFeatureAtPixel(e.pixel, feature => {
       if (this.vectorSource.getFeatures().some(f => f === feature)) {
-        this.editFeature = feature;
-        this.localObserver.publish("featureUpdate", this.vectorSource);
-      } else {
-        this.editFeature = undefined;
+        this.removeHighlight();
+        this.editFeatureId = feature.getId();
+        feature.setStyle(this.getHighlightStyle());
       }
+      this.localObserver.publish("featureUpdate", this.vectorSource);
     });
   };
 
@@ -329,6 +356,7 @@ class MarkisModel {
   }
 
   setCreateMethod(method) {
+    this.removeHighlight();
     if (method) {
       this.createMethod = method;
     }
@@ -407,7 +435,6 @@ class MarkisModel {
       payload = node ? serializer.serializeToString(node) : undefined;
     payload = payload.replace(new RegExp("<geometry>", "g"), "<geom>");
     payload = payload.replace(new RegExp("</geometry>", "g"), "</geom>");
-    console.log("payload: ", payload);
     if (payload) {
       fetch(src.posturl, {
         method: "POST",
@@ -450,7 +477,6 @@ class MarkisModel {
       return done();
     }
 
-    console.log("features i vectorSource: ", this.vectorSource.getFeatures());
     this.setFeatureProperties();
 
     this.transact(features, done);
@@ -462,7 +488,7 @@ class MarkisModel {
 
   reset() {
     this.vectorSource.clear();
-    this.editFeature = undefined;
+    this.editFeatureId = undefined;
     Object.assign(this.markisParameters, {
       objectId: undefined,
       objectSerial: undefined,
@@ -659,9 +685,10 @@ class MarkisModel {
       this.localObserver.publish("updateMarkisView", {});
       if (existingGeom) {
         var existingFeatures = new GeoJSON().readFeatures(existingGeom[0]);
-        console.log("existingfeatures: ", existingFeatures);
         this.vectorSource.addFeatures(existingFeatures);
         this.vectorSource.getFeatures().forEach(feature => {
+          feature.setId(this.featureIdCounter);
+          this.featureIdCounter++;
           //If we are creating additional contract geoms it is seen as a new object
           if (feature.getProperties().status.toUpperCase() === "G") {
             feature.modification = "added";
