@@ -60,7 +60,7 @@ class MarkisView extends React.PureComponent {
     formValues: {},
     createMethod: "abort",
     geometryExists: false,
-    editFeatureExists: false
+    editFeatureId: undefined
   };
 
   constructor(props) {
@@ -81,7 +81,8 @@ class MarkisView extends React.PureComponent {
     this.localObserver.subscribe("featureUpdate", vectorSource => {
       this.setState({
         geometryExists: vectorSource.getFeatures().length > 0 || false,
-        editFeatureExists: this.model.editFeature || false
+        editFeatureId: this.model.editFeatureId || undefined,
+        formValues: this.initiateFormValues() || {}
       });
     });
     this.localObserver.subscribe("updateMarkisView", message => {
@@ -99,47 +100,33 @@ class MarkisView extends React.PureComponent {
     });
   }
 
+  initiateFormValues() {
+    var formValues = {};
+    var editableFields = this.model.editSource.editableFields;
+    if (this.model.editFeatureId) {
+      var editFeature = this.model.vectorSource.getFeatureById(
+        this.model.editFeatureId
+      );
+      for (var i = 0; i < editableFields.length; i++) {
+        formValues[editableFields[i].name] =
+          editFeature.get(editableFields[i].name) || "";
+      }
+    }
+
+    return formValues;
+  }
+
   checkText(name, value) {
-    var formValues = Object.assign({}, this.state.formValues);
+    var formValues = this.state.formValues;
     formValues[name] = value;
     this.setState({
       formValues: formValues
     });
-    this.updateFeature(this.model.editFeature);
+    this.forceUpdate();
+    this.updateFeature(
+      this.model.vectorSource.getFeatureById(this.model.editFeatureId)
+    );
   }
-
-  checkSelect(name, value) {
-    var formValues = Object.assign({}, this.state.formValues);
-    formValues[name] = value;
-    this.setState({
-      formValues: formValues
-    });
-    this.updateFeature(this.model.editFeature);
-  }
-
-  // updateFeature() {
-  //   if (this.model.vectorSource.getFeatures().length > 0) {
-  //     this.model.vectorSource.forEachFeature(feature => {
-  //       var props = feature.getProperties();
-  //       Object.keys(this.state.formValues).forEach(key => {
-  //         var value = this.state.formValues[key];
-  //         if (value === "") value = null;
-  //         if (Array.isArray(value)) {
-  //           value = value
-  //             .filter(v => v.checked)
-  //             .map(v => v.name)
-  //             .join(";");
-  //         }
-  //         props[key] = value;
-  //       });
-  //       feature.setProperties(props);
-  //     });
-  //   } else {
-  //     this.showAdvancedSnackbar(
-  //       "Fel när objekten skulle sparas, kontakta systemadministratören."
-  //     );
-  //   }
-  // }
 
   updateFeature(feature) {
     var props = feature.getProperties();
@@ -159,6 +146,7 @@ class MarkisView extends React.PureComponent {
 
   getValueMarkup(field) {
     const { classes } = this.props;
+
     if (field.dataType === "int") {
       field.textType = "heltal";
     }
@@ -171,17 +159,6 @@ class MarkisView extends React.PureComponent {
       field.textType = "datum";
     }
 
-    var value = this.state.formValues[field.name];
-    if (value === undefined || value === null) {
-      value = "";
-    }
-
-    if (value === "" && field.initialRender) {
-      if (field.defaultValue !== null) {
-        value = field.defaultValue;
-      }
-    }
-
     switch (field.textType) {
       case "fritext":
         return (
@@ -192,8 +169,8 @@ class MarkisView extends React.PureComponent {
               className={classes.textField}
               margin="normal"
               variant="outlined"
-              disabled={!this.state.editFeatureExists}
-              value={value}
+              disabled={!this.state.editFeatureId}
+              value={this.state.formValues[field.name]}
               onChange={e => {
                 this.checkText(field.name, e.target.value);
               }}
@@ -214,11 +191,11 @@ class MarkisView extends React.PureComponent {
             <FormControl component="fieldset" className={classes.formControl}>
               <FormLabel component="legend">{field.name}</FormLabel>
               <NativeSelect
-                value={value}
-                disabled={!this.state.editFeatureExists}
+                value={this.state.formValues[field.name]}
+                disabled={!this.state.editFeatureId}
                 input={<Input name={field.name} id={field.name} />}
                 onChange={e => {
-                  this.checkSelect(field.name, e.target.value);
+                  this.checkText(field.name, e.target.value);
                 }}
               >
                 <option value="">-Välj värde-</option>
@@ -229,21 +206,33 @@ class MarkisView extends React.PureComponent {
         );
 
       case null:
-        return <span>{value}</span>;
+        return <span>{this.state.formValues[field.name]}</span>;
       default:
-        return <span>{value}</span>;
+        return <span>{this.state.formValues[field.name]}</span>;
     }
   }
+
   createForm() {
-    var markup = this.model.editSource.editableFields.map((field, i) => {
-      var valueMarkup = this.getValueMarkup(field);
+    const { classes } = this.props;
+    if (this.model.editFeatureId >= 0) {
+      var markup = this.model.editSource.editableFields.map((field, i) => {
+        var valueMarkup = this.getValueMarkup(field);
+        return (
+          <div key={i} ref={field.name}>
+            {valueMarkup}
+          </div>
+        );
+      });
+      return <div>{markup}</div>;
+    } else if (this.state.createMethod === "editAttributes") {
       return (
-        <div key={i} ref={field.name}>
-          {valueMarkup}
+        <div className={classes.text}>
+          <Typography>
+            Markera en avtalsyta för att redigera attribut.
+          </Typography>
         </div>
       );
-    });
-    return <div>{markup}</div>;
+    }
   }
 
   showAdvancedSnackbar = (message, variant) => {
@@ -373,7 +362,6 @@ class MarkisView extends React.PureComponent {
   handleChange = name => event => {
     this.setState({ [name]: event.target.value });
     this.props.model.setCreateMethod(event.target.value);
-    console.log("this.state: ", this.state);
   };
 
   renderBtns() {
@@ -433,9 +421,6 @@ class MarkisView extends React.PureComponent {
       return (
         <div>
           <div>{listCreateChoices}</div>
-          <div className={classes.text}>
-            <Typography>Nedan kan du sätta värden på avtalsytan</Typography>
-          </div>
           <div>{this.createForm()}</div>
           <div>
             {btnAbort}
