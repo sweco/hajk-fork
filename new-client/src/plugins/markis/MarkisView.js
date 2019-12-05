@@ -272,7 +272,7 @@ class MarkisView extends React.PureComponent {
 
   saveCreated = () => {
     this.model.save(r => {
-      if (r.TransactionResponse.TransactionSummary) {
+      if (r && r.TransactionResponse.TransactionSummary) {
         if (
           Number(
             r.TransactionResponse.TransactionSummary.totalInserted.toString()

@@ -331,7 +331,9 @@ class MarkisModel {
 
   removeHighlight() {
     this.vectorSource.getFeatures().forEach(feature => {
-      feature.setStyle(this.getSketchStyle);
+      if (feature.modification !== "removed") {
+        feature.setStyle(this.getSketchStyle);
+      }
     });
   }
 
@@ -457,15 +459,30 @@ class MarkisModel {
     }
   }
 
-  updateFeatureIds() {
-    this.vectorSource.getFeatures().forEach(feature => {
-      if (feature.getProperties().obj_id >= 0) {
+  updateFeatureIds(features) {
+    if (features.inserts.length > 0) {
+      features.inserts.forEach(feature => {
+        feature.setId(undefined);
+        if (feature.getProperties().obj_id) {
+          feature.unset("obj_id", true);
+        }
+      });
+    }
+    if (features.deletes.length > 0) {
+      features.deletes.forEach(feature => {
         feature.setId(feature.getProperties().obj_id);
-      }
-    });
+      });
+    }
+    if (features.updates.length > 0) {
+      features.updates.forEach(feature => {
+        feature.setId(feature.getProperties().obj_id);
+      });
+    }
   }
 
   save(done) {
+    this.setFeatureProperties();
+
     var find = mode =>
       this.vectorSource
         .getFeatures()
@@ -484,11 +501,10 @@ class MarkisModel {
     ) {
       return done();
     }
-
-    this.updateFeatureIds();
-    this.setFeatureProperties();
-
-    this.transact(features, done);
+    this.featuresToTransact = features;
+    this.updateFeatureIds(this.featuresToTransact);
+    this.transact(this.featuresToTransact, done);
+    this.featuresToTransact = undefined;
   }
 
   clearSearchResult() {
@@ -586,6 +602,16 @@ class MarkisModel {
           return contractControl;
         }
       } else if (foundContract.properties.status.toUpperCase() === "F") {
+        if (
+          foundContract.properties.handlopnr.toString() !==
+          this.markisParameters.objectSerial
+        ) {
+          Object.assign(contractControl, {
+            contractOk: false,
+            message: "Det finns en förslagsyta med ett annat händelselöpnummer."
+          });
+          return contractControl;
+        }
         Object.assign(this.markisParameters, {
           feature_obj_id: foundContract.properties.obj_id
         });
@@ -701,6 +727,8 @@ class MarkisModel {
           //If we are creating additional contract geoms it is seen as a new object
           if (feature.getProperties().status.toUpperCase() === "G") {
             feature.modification = "added";
+          } else {
+            feature.modification = "updated";
           }
           feature.on("propertychange", e => {
             if (feature.modification === "removed") {
