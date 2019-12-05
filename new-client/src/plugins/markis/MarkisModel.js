@@ -547,9 +547,9 @@ class MarkisModel {
       return false;
     } else {
       Object.assign(this.markisParameters, {
-        objectId: message.contractId,
+        objectId: message.contractId.toUpperCase(),
         objectSerial: message.contractSerial,
-        objectStatus: message.contractStatus,
+        objectStatus: message.contractStatus.toUpperCase(),
         createdBy: message.userName,
         mode: mode
       });

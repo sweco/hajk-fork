@@ -271,38 +271,44 @@ class MarkisView extends React.PureComponent {
   };
 
   saveCreated = () => {
-    //this.updateFeature();
     this.model.save(r => {
-      if (
-        Number(
-          r.TransactionResponse.TransactionSummary.totalInserted.toString()
-        ) > 0
-      ) {
-        this.showAdvancedSnackbar(
-          "Avtalsgeometrin skapades utan problem!",
-          "success"
-        );
-        this.model.refreshLayer(this.props.model.sourceName);
-        this.reset();
-      } else if (
-        Number(
-          r.TransactionResponse.TransactionSummary.totalUpdated.toString()
-        ) > 0
-      ) {
-        this.showAdvancedSnackbar(
-          "Avtalsgeometrin uppdaterades utan problem!",
-          "success"
-        );
-        this.model.refreshLayer(this.props.model.sourceName);
-        this.reset();
-      } else if (
-        Number(
-          r.TransactionResponse.TransactionSummary.totalDeleted.toString()
-        ) > 0
-      ) {
-        this.showAdvancedSnackbar("Avtalsgeometrin togs bort utan problem.");
-        this.model.refreshLayer(this.props.model.sourceName);
-        this.reset();
+      if (r.TransactionResponse.TransactionSummary) {
+        if (
+          Number(
+            r.TransactionResponse.TransactionSummary.totalInserted.toString()
+          ) > 0
+        ) {
+          this.showAdvancedSnackbar(
+            "Avtalsgeometrin skapades utan problem!",
+            "success"
+          );
+          this.model.refreshLayer(this.props.model.sourceName);
+          this.reset();
+        } else if (
+          Number(
+            r.TransactionResponse.TransactionSummary.totalUpdated.toString()
+          ) > 0
+        ) {
+          this.showAdvancedSnackbar(
+            "Avtalsgeometrin uppdaterades utan problem!",
+            "success"
+          );
+          this.model.refreshLayer(this.props.model.sourceName);
+          this.reset();
+        } else if (
+          Number(
+            r.TransactionResponse.TransactionSummary.totalDeleted.toString()
+          ) > 0
+        ) {
+          this.showAdvancedSnackbar("Avtalsgeometrin togs bort utan problem.");
+          this.model.refreshLayer(this.props.model.sourceName);
+          this.reset();
+        } else {
+          this.showAdvancedSnackbar(
+            "Avtalsgeometrin gick inte att spara. Fösök igen senare."
+          );
+          this.reset();
+        }
       } else {
         this.showAdvancedSnackbar(
           "Avtalsgeometrin gick inte att spara. Fösök igen senare."
