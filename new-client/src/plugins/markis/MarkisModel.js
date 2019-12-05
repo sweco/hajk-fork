@@ -457,6 +457,14 @@ class MarkisModel {
     }
   }
 
+  updateFeatureIds() {
+    this.vectorSource.getFeatures().forEach(feature => {
+      if (feature.getProperties().obj_id >= 0) {
+        feature.setId(feature.getProperties().obj_id);
+      }
+    });
+  }
+
   save(done) {
     var find = mode =>
       this.vectorSource
@@ -477,6 +485,7 @@ class MarkisModel {
       return done();
     }
 
+    this.updateFeatureIds();
     this.setFeatureProperties();
 
     this.transact(features, done);
