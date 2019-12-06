@@ -115,23 +115,13 @@ class Journeys extends React.PureComponent {
           </Grid>
         </MuiPickersUtilsProvider>
         <Typography>Markera sökområde i kartan</Typography>
-        <Button
-          variant="outlined"
-          className={classes.button}
-          type="button"
-          title="Lägg till polygon"
-        >
+        <Button variant="outlined" type="button" title="Lägg till polygon">
           Polygon
-          <BorderStyleIcon className={classes.leftIcon} />
+          <BorderStyleIcon />
         </Button>
-        <Button
-          variant="outlined"
-          className={classes.button}
-          type="button"
-          title="Lägg till rektangel"
-        >
+        <Button variant="outlined" type="button" title="Lägg till rektangel">
           Rektangel
-          <SquareIcon className={classes.leftIcon} />
+          <SquareIcon />
         </Button>
       </div>
     );
