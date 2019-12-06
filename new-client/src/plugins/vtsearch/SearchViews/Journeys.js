@@ -1,7 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { withStyles } from "@material-ui/core/styles";
-import { Button } from "@material-ui/core";
+import { Button, Typography } from "@material-ui/core";
 import Grid from "@material-ui/core/Grid";
 import BorderStyleIcon from "@material-ui/icons/BorderStyle";
 import SquareIcon from "@material-ui/icons/CropSquare";
@@ -15,15 +15,7 @@ import {
 // Define JSS styles that will be used in this component.
 // Examle below utilizes the very powerful "theme" object
 // that gives access to some constants, see: https://material-ui.com/customization/default-theme/
-const styles = theme => ({
-  KeyboardDatePicker: {
-    paddingBottom: 10
-  },
-  MuiPickersUtilsProvider: { width: 150 },
-  Button: {
-    paddingLeft: 3
-  }
-});
+const styles = theme => ({});
 
 //TODO - Only mockup //Tobias
 
@@ -122,7 +114,7 @@ class Journeys extends React.PureComponent {
             />
           </Grid>
         </MuiPickersUtilsProvider>
-        <p>Markera sökområde i kartan</p>
+        <Typography>Markera sökområde i kartan</Typography>
         <Button
           variant="outlined"
           className={classes.button}
