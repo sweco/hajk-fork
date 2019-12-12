@@ -331,7 +331,7 @@ class MarkisModel {
 
   removeHighlight() {
     this.vectorSource.getFeatures().forEach(feature => {
-      if (feature.modification !== "removed") {
+      if (feature.modification && feature.modification !== "removed") {
         feature.setStyle(this.getSketchStyle);
       }
     });
@@ -737,7 +737,10 @@ class MarkisModel {
             if (feature.modification === "added") {
               return;
             }
-            feature.modification = "updated";
+            if (feature.getProperties().obj_id) {
+              feature.modification = "updated";
+            }
+            //feature.modification = "updated";
           });
           feature.on("change", e => {
             if (feature.modification === "removed") {
@@ -746,7 +749,10 @@ class MarkisModel {
             if (feature.modification === "added") {
               return;
             }
-            feature.modification = "updated";
+            if (feature.getProperties().obj_id) {
+              feature.modification = "updated";
+            }
+            //feature.modification = "updated";
           });
         });
         var extent = this.vectorSource.getExtent();
