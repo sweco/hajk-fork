@@ -300,7 +300,10 @@ class MarkisView extends React.PureComponent {
             r.TransactionResponse.TransactionSummary.totalDeleted.toString()
           ) > 0
         ) {
-          this.showAdvancedSnackbar("Avtalsgeometrin togs bort utan problem.");
+          this.showAdvancedSnackbar(
+            "Avtalsgeometrin togs bort utan problem.",
+            "success"
+          );
           this.model.refreshLayer(this.props.model.sourceName);
           this.reset();
         } else {
@@ -414,7 +417,8 @@ class MarkisView extends React.PureComponent {
           input={<Input name="createMethod" id="createMethod-native-helper" />}
         >
           <option value="abort">Inget aktivt verktyg</option>
-          <option value="add">Lägg till objekt</option>
+          <option value="add">Lägg till yta</option>
+          <option value="addLine">Lägg till linje</option>
           <option value="addEstate">Välj fastighet</option>
           <option value="remove">Ta bort objekt</option>
           <option value="edit">Editera objekt</option>
