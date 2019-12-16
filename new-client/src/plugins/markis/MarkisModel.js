@@ -369,6 +369,12 @@ class MarkisModel {
     }
 
     if (this.createMethod === "add") {
+      this.type = "Polygon";
+      this.setType(this.type);
+    }
+
+    if (this.createMethod === "addLine") {
+      this.type = "LineString";
       this.setType(this.type);
     }
 
