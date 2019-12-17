@@ -45,8 +45,7 @@ class MarkisModel {
       objectId: undefined,
       objectSerial: undefined,
       objectStatus: undefined,
-      createdBy: undefined,
-      feature_obj_id: undefined
+      createdBy: undefined
     };
     this.editLayer = undefined;
     this.editFeatureId = undefined;
@@ -469,19 +468,19 @@ class MarkisModel {
     if (features.inserts.length > 0) {
       features.inserts.forEach(feature => {
         feature.setId(undefined);
-        if (feature.getProperties().obj_id) {
-          feature.unset("obj_id", true);
+        if (feature.getProperties().id) {
+          feature.unset("id", true);
         }
       });
     }
     if (features.deletes.length > 0) {
       features.deletes.forEach(feature => {
-        feature.setId(feature.getProperties().obj_id);
+        feature.setId(feature.getProperties().id);
       });
     }
     if (features.updates.length > 0) {
       features.updates.forEach(feature => {
-        feature.setId(feature.getProperties().obj_id);
+        feature.setId(feature.getProperties().id);
       });
     }
   }
@@ -525,8 +524,7 @@ class MarkisModel {
       objectSerial: undefined,
       objectStatus: undefined,
       createdBy: undefined,
-      mode: "visningsläge",
-      feature_obj_id: undefined
+      mode: "visningsläge"
     });
     this.sourceName = undefined;
   }
@@ -618,9 +616,6 @@ class MarkisModel {
           });
           return contractControl;
         }
-        Object.assign(this.markisParameters, {
-          feature_obj_id: foundContract.properties.obj_id
-        });
         Object.assign(contractControl, {
           contractOk: true,
           message: "Du redigerar nu en förslagsyta."
@@ -743,10 +738,9 @@ class MarkisModel {
             if (feature.modification === "added") {
               return;
             }
-            if (feature.getProperties().obj_id) {
+            if (feature.getProperties().id) {
               feature.modification = "updated";
             }
-            //feature.modification = "updated";
           });
           feature.on("change", e => {
             if (feature.modification === "removed") {
@@ -755,10 +749,9 @@ class MarkisModel {
             if (feature.modification === "added") {
               return;
             }
-            if (feature.getProperties().obj_id) {
+            if (feature.getProperties().id) {
               feature.modification = "updated";
             }
-            //feature.modification = "updated";
           });
         });
         var extent = this.vectorSource.getExtent();
