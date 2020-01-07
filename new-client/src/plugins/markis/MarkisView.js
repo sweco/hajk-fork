@@ -257,8 +257,8 @@ class MarkisView extends React.PureComponent {
 
   openCreateDialog = () => {
     this.model.setEditLayer(this.props.model.sourceName);
-    this.model.toggleLayer(this.props.model.sourceName, true);
-    this.model.toggleLayer(this.props.model.estateLayerName, true);
+    this.model.toggleLayerVisibility(this.props.model.sourceName, true);
+    this.model.toggleLayerVisibility(this.props.model.estateLayerName, true);
     this.setState({
       inCreation: true
     });
@@ -266,8 +266,8 @@ class MarkisView extends React.PureComponent {
 
   abortCreation = () => {
     this.reset();
-    this.model.toggleLayer(this.props.model.estateLayerName, false);
-    this.model.toggleLayer(this.props.model.sourceName, false);
+    this.model.toggleLayerVisibility(this.props.model.estateLayerName, false);
+    this.model.toggleLayerVisibility(this.props.model.sourceName, false);
   };
 
   saveCreated = () => {
@@ -419,7 +419,7 @@ class MarkisView extends React.PureComponent {
           <option value="abort">Inget aktivt verktyg</option>
           <option value="add">Lägg till yta</option>
           <option value="addLine">Lägg till linje</option>
-          <option value="addEstate">Välj fastighet</option>
+          <option value="addEstate">Välj yta</option>
           <option value="remove">Ta bort objekt</option>
           <option value="edit">Editera objekt</option>
           <option value="editAttributes">Sätt attribut</option>
