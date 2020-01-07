@@ -8,22 +8,12 @@ import VectorSource from "ol/source/Vector";
 import Vector from "ol/layer/Vector";
 import GeoJSON from "ol/format/GeoJSON";
 import { arraySort } from "./../../utils/ArraySort.js";
-import { Stroke, Style, Circle, Fill, Icon } from "ol/style.js";
+import { Stroke, Style, Circle, Fill } from "ol/style.js";
 import { Draw } from "ol/interaction";
 import X2JS from "x2js";
 import { handleClick } from "../../models/Click.js";
 import { Modify } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
-
-var style = new Style({
-  stroke: new Stroke({
-    color: "rgba(244, 83, 63, 1)",
-    width: 4
-  }),
-  fill: new Fill({
-    color: "rgba(244, 83, 63, 0.2)"
-  })
-});
 
 class MarkisModel {
   constructor(settings) {
@@ -33,22 +23,11 @@ class MarkisModel {
     this.globalObserver = settings.globalObserver;
     this.hubUrl = settings.options.hubUrl;
     this.isConnected = false;
-    this.connection = undefined;
     this.sources = settings.options.sources;
     this.estateLayerName = settings.options.estateLayerName;
     this.wfstSources = settings.options.wfstSources;
-    this.editSource = undefined;
-    this.sourceName = undefined;
-    this.geomCollection = [];
     this.type = "Polygon";
-    this.markisParameters = {
-      objectId: undefined,
-      objectSerial: undefined,
-      objectStatus: undefined,
-      createdBy: undefined
-    };
-    this.editLayer = undefined;
-    this.editFeatureId = undefined;
+    this.markisParameters = {};
     this.featureIdCounter = 1;
     this.createMethod = "abort";
     this.geometryName = "geom";
@@ -57,30 +36,14 @@ class MarkisModel {
     this.vectorSource = new VectorSource({});
     this.searchResultLayer = new VectorLayer({
       source: new VectorSource({}),
-      style: () => {
-        if (settings.options.markerImg && settings.options.markerImg !== "") {
-          style.setImage(
-            new Icon({
-              src: settings.options.markerImg
-            })
-          );
-        }
-        return style;
-      }
+      style: this.getSketchStyle()
     });
     this.map.addLayer(this.searchResultLayer);
     this.searchResultLayer.set("type", "markisResultLayer");
     this.searchResultLayer.set("queryable", true);
   }
 
-  getMap() {
-    return this.map;
-  }
-
-  getConnection() {
-    return this.connection;
-  }
-
+  /**Style for search results and sketching */
   getSketchStyle() {
     return [
       new Style({
@@ -105,6 +68,7 @@ class MarkisModel {
     ];
   }
 
+  /**Style for highlighted (selected) features */
   getHighlightStyle() {
     return [
       new Style({
@@ -129,6 +93,7 @@ class MarkisModel {
     ];
   }
 
+  /**Style for hidden features */
   getHiddenStyle() {
     return [
       new Style({
@@ -153,8 +118,8 @@ class MarkisModel {
     ];
   }
 
-  setEditLayer(layerName, done) {
-    this.wfstSource = this.wfstSources.find(
+  setEditLayer(layerName) {
+    this.editSource = this.wfstSources.find(
       wfstSource => wfstSource.layers[0] === layerName
     );
     this.editLayer = new Vector({
@@ -166,10 +131,9 @@ class MarkisModel {
       this.map.removeLayer(this.editLayer);
     }
     this.map.addLayer(this.editLayer);
-    this.editSource = this.wfstSource;
   }
 
-  toggleLayer(layerName, visible) {
+  getLayer(layerName) {
     var foundLayer = this.map
       .getLayers()
       .getArray()
@@ -190,61 +154,44 @@ class MarkisModel {
         }
         return match;
       });
+    if (foundLayer) {
+      return foundLayer;
+    }
+  }
 
+  toggleLayerVisibility(layerName, visible) {
+    const foundLayer = this.getLayer(layerName);
     if (foundLayer) {
       foundLayer.setProperties({ visible: visible });
     }
   }
 
   refreshLayer(layerName) {
-    var source,
-      foundLayer = this.map
-        .getLayers()
-        .getArray()
-        .find(layer => {
-          var match = false;
-          if (layer.getSource().getParams) {
-            let params = layer.getSource().getParams();
-            if (typeof params === "object") {
-              let paramName = params.LAYERS.split(":");
-              let layerSplit = layerName.split(":");
-              if (paramName.length === 2 && layerSplit.length === 2) {
-                match = layerName === params.LAYERS;
-              }
-              if (paramName.length === 1) {
-                match = layerSplit[1] === params.LAYERS;
-              }
-            }
-          }
-          return match;
-        });
-
+    const foundLayer = this.getLayer(layerName);
     if (foundLayer) {
-      source = foundLayer.getSource();
+      const source = foundLayer.getSource();
       source.changed();
       source.updateParams({ time: Date.now() });
       this.map.updateSize();
     }
   }
 
-  //Only handles single layers
+  /**Returns the data source connected to the prefix of the contract ID */
   getContractSource() {
-    if (this.markisParameters.objectId.length === 10) {
-      var prefix = this.markisParameters.objectId.slice(0, 2).toUpperCase();
-      for (var i = 0; i < this.wfstSources.length; i++) {
-        if (this.wfstSources[i].prefixes.indexOf(prefix) > -1) {
-          return this.wfstSources[i].layers[0];
-        }
+    const prefix = this.markisParameters.objectId.slice(0, 2).toUpperCase();
+    for (var i = 0; i < this.wfstSources.length; i++) {
+      if (this.wfstSources[i].prefixes.indexOf(prefix) > -1) {
+        return this.wfstSources[i].layers[0];
       }
     }
   }
 
-  //Only handles single select and is restricted to polygon
-  onSelectFeatures = (evt, selectionDone, callback) => {
+  /**Lets the user select existing features for editing. Only handles single select and is restricted to polygon*/
+  onSelectFeatures = evt => {
     handleClick(evt, evt.map, response => {
       if (response.features.length === 1) {
-        var feature = response.features[0];
-        var geometryType = feature.getGeometry().getType();
+        const feature = response.features[0];
+        const geometryType = feature.getGeometry().getType();
         if (geometryType === GeometryType.POLYGON) {
           feature.modification = "added";
           feature.setId(this.featureIdCounter);
@@ -293,6 +240,13 @@ class MarkisModel {
     this.map.addInteraction(this.draw);
   }
 
+  handleDrawEnd = event => {
+    event.feature.modification = "added";
+    event.feature.setId(this.featureIdCounter);
+    this.featureIdCounter++;
+    this.localObserver.publish("featureUpdate", this.vectorSource);
+  };
+
   removeInteraction() {
     if (this.draw) {
       this.map.removeInteraction(this.draw);
@@ -306,13 +260,6 @@ class MarkisModel {
     this.map.un("singleclick", this.onSelectFeatures);
     this.map.un("singleclick", this.selectForEdit);
   }
-
-  handleDrawEnd = event => {
-    event.feature.modification = "added";
-    event.feature.setId(this.featureIdCounter);
-    this.featureIdCounter++;
-    this.localObserver.publish("featureUpdate", this.vectorSource);
-  };
 
   removeSelected = e => {
     this.map.forEachFeatureAtPixel(e.pixel, feature => {
@@ -390,24 +337,15 @@ class MarkisModel {
     }
   }
 
+  /**Creates a timestamp without time zone suitable for the database */
   getTimeStampDate() {
     return new Date(new Date().toString().split("GMT")[0] + " UTC")
       .toISOString()
       .split(".")[0];
   }
 
-  urlFromObject(url, obj) {
-    return Object.keys(obj).reduce((str, key, i, a) => {
-      str = str + key + "=" + obj[key];
-      if (i < a.length - 1) {
-        str = str + "&";
-      }
-      return str;
-    }, (url += "?"));
-  }
-
   write(features) {
-    var format = new WFS(),
+    const format = new WFS(),
       lr = this.editSource.layers[0].split(":"),
       fp = lr.length === 2 ? lr[0] : "",
       ft = lr.length === 2 ? lr[1] : lr[0],
@@ -428,7 +366,7 @@ class MarkisModel {
   }
 
   parseWFSTresponse(response) {
-    var str =
+    const str =
       typeof response !== "string"
         ? new XMLSerializer().serializeToString(response)
         : response;
@@ -436,10 +374,11 @@ class MarkisModel {
   }
 
   transact(features, done) {
-    var node = this.write(features),
+    let node = this.write(features),
       serializer = new XMLSerializer(),
       src = this.editSource,
       payload = node ? serializer.serializeToString(node) : undefined;
+    //Quickfix for wrong geometryname
     payload = payload.replace(new RegExp("<geometry>", "g"), "<geom>");
     payload = payload.replace(new RegExp("</geometry>", "g"), "</geom>");
     if (payload) {
@@ -464,6 +403,8 @@ class MarkisModel {
     }
   }
 
+  /**Updates the id:s on the features so that they are saved correctly in the database.
+   */
   updateFeatureIds(features) {
     if (features.inserts.length > 0) {
       features.inserts.forEach(feature => {
@@ -488,12 +429,12 @@ class MarkisModel {
   save(done) {
     this.setFeatureProperties();
 
-    var find = mode =>
+    const find = mode =>
       this.vectorSource
         .getFeatures()
         .filter(feature => feature.modification === mode);
 
-    var features = {
+    const features = {
       updates: find("updated"),
       inserts: find("added"),
       deletes: find("removed")
@@ -529,6 +470,7 @@ class MarkisModel {
     this.sourceName = undefined;
   }
 
+  /**Verifies the parameters sent from Markis and assigns them to the MarkisParameter-object */
   updateMarkisParameters(message, mode) {
     if (message.contractId.length !== 10) {
       this.publishMessage(
@@ -586,9 +528,12 @@ class MarkisModel {
     }
   }
 
+  /**Validates that each feature in the existing contract is ok before allowing
+   * the user to create additional contract geometries
+   */
   validateContract(foundContract) {
-    var contractControl = { contractOk: false, type: undefined };
-    var foundSerial = foundContract.properties.handlopnr;
+    let contractControl = { contractOk: false, type: undefined };
+    const foundSerial = foundContract.properties.handlopnr;
     if (foundSerial) {
       if (foundContract.properties.status.toUpperCase() === "G") {
         if (foundSerial >= this.markisParameters.objectSerial) {
@@ -637,6 +582,7 @@ class MarkisModel {
     }
   }
 
+  /**Validates all existing features connected to the contract ID */
   validateContractCollection(featureCollection) {
     for (var i = 0; i < featureCollection.features.length; i++) {
       var existingContract = this.validateContract(
@@ -678,7 +624,7 @@ class MarkisModel {
       "ShowContractFromMarkis",
       function(_, showMessage) {
         this.reset();
-        var showObj = JSON.parse(showMessage);
+        const showObj = JSON.parse(showMessage);
         if (this.updateMarkisParameters(showObj, "visningsläge")) {
           this.localObserver.publish("updateMarkisView", {});
           this.doSearch(showObj.contractId);
@@ -690,7 +636,7 @@ class MarkisModel {
       "CreateContractFromMarkis",
       function(_, createMessage) {
         this.reset();
-        var createObject = JSON.parse(createMessage);
+        const createObject = JSON.parse(createMessage);
         if (this.updateMarkisParameters(createObject, "visningsläge")) {
           this.search(this.markisParameters.objectId, result => {
             var numExistingContracts = this.getNumberOfResults(result);
@@ -713,6 +659,7 @@ class MarkisModel {
     );
   }
 
+  /**Enables creation of contract geometries. Sets the editlayer etc. */
   enableContractCreation(createObject, existingGeom) {
     this.updateMarkisParameters(createObject, "editeringsläge");
     this.searchResultLayer.getSource().clear();
@@ -720,12 +667,12 @@ class MarkisModel {
     if (this.sourceName) {
       this.localObserver.publish("updateMarkisView", {});
       if (existingGeom) {
-        var existingFeatures = new GeoJSON().readFeatures(existingGeom[0]);
+        const existingFeatures = new GeoJSON().readFeatures(existingGeom[0]);
         this.vectorSource.addFeatures(existingFeatures);
         this.vectorSource.getFeatures().forEach(feature => {
           feature.setId(this.featureIdCounter);
           this.featureIdCounter++;
-          //If we are creating additional contract geoms it is seen as a new object
+          //If we are creating "Tilläggsavtal", all existing geometries are seen as "new" geometries (Added).
           if (feature.getProperties().status.toUpperCase() === "G") {
             feature.modification = "added";
           } else {
@@ -754,7 +701,7 @@ class MarkisModel {
             }
           });
         });
-        var extent = this.vectorSource.getExtent();
+        const extent = this.vectorSource.getExtent();
         this.map.getView().fit(extent, this.map.getSize());
         this.localObserver.publish("featureUpdate", this.vectorSource);
       }
@@ -843,7 +790,7 @@ class MarkisModel {
   search(searchInput, callback) {
     this.timeout = setTimeout(() => {
       this.searchResultLayer.getSource().clear();
-      var promises = [];
+      let promises = [];
       this.controllers.splice(0, this.controllers.length);
 
       this.sources.forEach(source => {
@@ -882,7 +829,7 @@ class MarkisModel {
   doSearch(v) {
     if (v.length <= 3) return null;
     this.search(v, d => {
-      var numHits = this.getNumberOfResults(d);
+      const numHits = this.getNumberOfResults(d);
       if (numHits < 1) {
         this.localObserver.publish(
           "markisErrorEvent",
@@ -906,9 +853,9 @@ class MarkisModel {
   };
 
   highlightImpact(result) {
-    var olFeatures = new GeoJSON().readFeatures(result[0]);
+    const olFeatures = new GeoJSON().readFeatures(result[0]);
     this.searchResultLayer.getSource().addFeatures(olFeatures);
-    var extent = this.searchResultLayer.getSource().getExtent();
+    const extent = this.searchResultLayer.getSource().getExtent();
     this.map.getView().fit(extent, this.map.getSize());
     this.searchResultLayer.setVisible(true);
   }
