@@ -831,16 +831,18 @@ class MarkisModel {
     this.search(v, d => {
       const numHits = this.getNumberOfResults(d);
       if (numHits < 1) {
-        this.localObserver.publish(
-          "markisErrorEvent",
-          "Det finns ingen gällande avtalsyta för: " + v
+        this.publishMessage(
+          `Det finns ingen gällande avtalsyta för ${v}.`,
+          "error",
+          true
         );
         this.highlightImpact(d);
       } else {
         this.highlightImpact(d);
-        this.localObserver.publish(
-          "markisSearchComplete",
-          "Avtalsytor kopplade till " + v + " är markerade i rött"
+        this.publishMessage(
+          `Avtalsytor kopplade till ${v} är markerade i rött.`,
+          "success",
+          true
         );
       }
     });

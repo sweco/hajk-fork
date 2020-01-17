@@ -75,9 +75,6 @@ class MarkisView extends React.PureComponent {
         this.reset();
       }
     });
-    this.localObserver.subscribe("markisSearchComplete", message => {
-      this.props.enqueueSnackbar(message);
-    });
     this.localObserver.subscribe("featureUpdate", vectorSource => {
       this.setState({
         geometryExists: vectorSource.getFeatures().length > 0 || false,
