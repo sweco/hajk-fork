@@ -13,6 +13,91 @@ const styles = theme => ({
   }
 });
 
+function getTocJson(documentNumbers) {
+  return fetch("http://localhost:3000/toc.json").then(res => {
+    return res.text().then(text => {
+      var json = JSON.parse(text);
+      for (var i = 0; i < documentNumbers.length; i++) {
+        json[
+          i
+        ].path = `http://localhost:3000/docempty${documentNumbers[i]}.json`;
+        json[i].title = documentNumbers[i];
+      }
+      return json;
+    });
+  });
+}
+
+function downloadJson(jsonObject, name) {
+  var json = JSON.stringify(jsonObject);
+
+  //Convert JSON string to BLOB.
+  json = [json];
+  var blob1 = new Blob(json, { type: "data:text/json;charset=utf-8" });
+
+  //Check the Browser.
+  var isIE = false || !!document.documentMode;
+  if (isIE) {
+    window.navigator.msSaveBlob(blob1, `${name}.json`);
+  } else {
+    var url = window.URL || window.webkitURL;
+    var link = url.createObjectURL(blob1);
+    var a = document.createElement("a");
+    a.download = `${name}.json`;
+    a.href = link;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+}
+
+function generateJson(documentNumbers) {
+  getTocJson(documentNumbers).then(tocJson => {
+    documentNumbers.forEach((documentNumber, index) => {
+      fetch(`http://localhost:3000/docempty${documentNumber}.json`).then(
+        res => {
+          res.text().then(text => {
+            var json = JSON.parse(text);
+            fetch("http://localhost:3000/randomtext.txt").then(res => {
+              res.text().then(randomText => {
+                json.date = "random date";
+                json.text = randomText;
+                json.title = "ÖPDOK1";
+                for (var i = 0; i < json.rubriker.length; i++) {
+                  tocJson[index].rubriker.push({ id: i });
+                  json.rubriker[i].id = i;
+                  json.rubriker[i].text = randomText;
+                  json.rubriker[i].level = Math.floor(Math.random() * 3) + 1;
+                }
+                downloadJson(tocJson, `toc`);
+                downloadJson(json, `doc${documentNumber}`);
+              });
+            });
+          });
+        }
+      );
+    });
+  });
+}
+
+function getFiles(documentNumbers) {
+  var promises = [];
+  documentNumbers.forEach((documentNumber, index) => {
+    promises.push(
+      fetch(`http://localhost:3000/doc${documentNumber}.json`).then(res => {
+        return res.text().then(text => {
+          return JSON.parse(text);
+        });
+      })
+    );
+  });
+  return promises;
+}
+
+function findHeadline(document, headline) {
+  console.log(document.rubriker, "rubriker");
+}
+
 class DocumentHandlerView extends React.PureComponent {
   // Initialize state - this is the correct way of doing it nowadays.
   state = {
@@ -41,12 +126,13 @@ class DocumentHandlerView extends React.PureComponent {
     this.model = this.props.model;
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
+    this.documentToTest = null;
   }
 
   buttonClick = () => {
     // We have access to plugin's model:
-    console.log("DocumentHandler can access model's map:", this.model.getMap());
 
+    generateJson([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
     // We have access to plugin's observer. Below we publish an event that the parent
     // component is listing to, see  documenthandler.js for how to subscribe to events.
     this.localObserver.publish(
@@ -58,6 +144,20 @@ class DocumentHandlerView extends React.PureComponent {
     this.setState(prevState => ({
       counter: prevState.counter + 1
     }));
+  };
+
+  readFiles = () => {
+    var old_time = new Date();
+
+    Promise.all(getFiles([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).then(result => {
+      var new_time = new Date();
+      var seconds_passed = new_time - old_time;
+      this.documentToTest = result[0];
+    });
+  };
+
+  find = (document, rubrik) => {
+    findHeadline(this.documentToTest);
   };
 
   // Event handler for a button that shows a global info message when clicked
@@ -122,9 +222,18 @@ class DocumentHandlerView extends React.PureComponent {
           className={classes.buttonWithBottomMargin}
           variant="contained"
           fullWidth={true}
-          onClick={this.showAdvancedSnackbar}
+          onClick={this.readFiles}
         >
-          Show error snackbar
+          ReadFiles
+        </Button>
+
+        <Button
+          className={classes.buttonWithBottomMargin}
+          variant="contained"
+          fullWidth={true}
+          onClick={this.find}
+        >
+          Find
         </Button>
       </>
     );
