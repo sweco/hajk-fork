@@ -1,62 +1,2592 @@
 [
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc1.json",
+    "title": 1,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 1, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 1, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 1, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 1, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 1, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 1, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 1, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 1, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 1, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 1, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 1, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 1, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 1, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 1, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 1, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 1, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 1, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 1, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 1, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 1, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 1, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 1, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 1, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 1, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 1, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 1, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 1, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 1, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 1, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 1, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 1, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 1, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 1, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 1, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 1, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 1,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 1, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc2.json",
+    "title": 2,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 2, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 2, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 2, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 2, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 2, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 2, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 2, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 2, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 2, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 2, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 2, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 2, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 2, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 2, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 2, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 2, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 2, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 2, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 2, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 2, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 2, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 2, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 2, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 2, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 2, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 2, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 2, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 2, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 2, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 2, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 2, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 2, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 2, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 2, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 2, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 2,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 2, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc3.json",
+    "title": 3,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 3, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 3, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 3, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 3, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 3, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 3, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 3, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 3, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 3, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 3, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 3, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 3, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 3, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 3, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 3, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 3, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 3, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 3, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 3, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 3, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 3, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 3, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 3, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 3, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 3, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 3, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 3, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 3, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 3, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 3, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 3, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 3, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 3, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 3, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 3, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 3,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 3, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc4.json",
+    "title": 4,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 4, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 4, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 4, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 4, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 4, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 4, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 4, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 4, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 4, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 4, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 4, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 4, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 4, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 4, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 4, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 4, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 4, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 4, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 4, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 4, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 4, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 4, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 4, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 4, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 4, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 4, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 4, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 4, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 4, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 4, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 4, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 4, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 4, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 4, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 4, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 4,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 4, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc5.json",
+    "title": 5,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 5, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 5, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 5, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 5, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 5, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 5, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 5, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 5, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 5, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 5, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 5, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 5, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 5, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 5, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 5, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 5, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 5, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 5, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 5, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 5, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 5, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 5, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 5, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 5, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 5, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 5, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 5, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 5, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 5, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 5, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 5, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 5, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 5, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 5, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 5, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 5,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 5, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc6.json",
+    "title": 6,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 6, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 6, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 6, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 6, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 6, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 6, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 6, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 6, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 6, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 6, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 6, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 6, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 6, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 6, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 6, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 6, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 6, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 6, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 6, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 6, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 6, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 6, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 6, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 6, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 6, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 6, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 6, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 6, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 6, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 6, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 6, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 6, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 6, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 6, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 6, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 6,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 6, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc7.json",
+    "title": 7,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 7, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 7, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 7, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 7, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 7, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 7, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 7, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 7, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 7, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 7, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 7, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 7, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 7, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 7, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 7, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 7, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 7, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 7, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 7, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 7, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 7, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 7, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 7, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 7, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 7, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 7, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 7, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 7, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 7, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 7, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 7, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 7, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 7, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 7, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 7, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 7,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 7, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc8.json",
+    "title": 8,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 8, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 8, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 8, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 8, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 8, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 8, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 8, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 8, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 8, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 8, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 8, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 8, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 8, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 8, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 8, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 8, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 8, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 8, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 8, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 8, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 8, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 8, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 8, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 8, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 8, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 8, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 8, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 8, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 8, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 8, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 8, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 8, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 8, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 8, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 8, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 8,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 8, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc9.json",
+    "title": 9,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 9, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 9, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 9, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 9, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 9, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 9, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 9, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 9, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 9, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 9, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 9, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 9, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 9, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 9, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 9, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 9, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 9, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 9, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 9, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 9, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 9, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 9, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 9, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 9, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 9, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 9, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 9, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 9, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 9, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 9, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 9, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 9, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 9, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 9, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 9, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 9,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 9, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {
-    "path": "",
-    "title": "",
-    "rubriker": [],
+    "path": "http://localhost:3000/doc10.json",
+    "title": 10,
+    "rubriker": [
+      { "id": 0, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 1, "nyckelord": [] },
+      { "id": 2, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 3, "nyckelord": [] },
+      { "id": 4, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 5, "nyckelord": [] },
+      { "id": 6, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 7, "nyckelord": [] },
+      { "id": 8, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 9, "nyckelord": [] },
+      { "id": 10, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 11, "nyckelord": [] },
+      { "id": 12, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 13, "nyckelord": [] },
+      { "id": 14, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 15, "nyckelord": [] },
+      { "id": 16, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 17, "nyckelord": [] },
+      { "id": 18, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 19, "nyckelord": [] },
+      { "id": 20, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 21, "nyckelord": [] },
+      { "id": 22, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 23, "nyckelord": [] },
+      { "id": 24, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 25, "nyckelord": [] },
+      { "id": 26, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 27, "nyckelord": [] },
+      { "id": 28, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 29, "nyckelord": [] },
+      { "id": 30, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 31, "nyckelord": [] },
+      { "id": 32, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 33, "nyckelord": [] },
+      { "id": 34, "nyckelord": ["mollis", "placerat", "condimentum "] },
+      { "id": 35, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 10, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 10, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 10, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 10, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 10, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 10, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 10, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 10, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 10, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 10, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 10, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 10, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 10, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 10, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 10, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 10, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 10, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 10, "nyckelord": [] },
+      {
+        "id": 0,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 1, "document": 10, "nyckelord": [] },
+      {
+        "id": 2,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 3, "document": 10, "nyckelord": [] },
+      {
+        "id": 4,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 5, "document": 10, "nyckelord": [] },
+      {
+        "id": 6,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 7, "document": 10, "nyckelord": [] },
+      {
+        "id": 8,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 9, "document": 10, "nyckelord": [] },
+      {
+        "id": 10,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 11, "document": 10, "nyckelord": [] },
+      {
+        "id": 12,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 13, "document": 10, "nyckelord": [] },
+      {
+        "id": 14,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 15, "document": 10, "nyckelord": [] },
+      {
+        "id": 16,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 17, "document": 10, "nyckelord": [] },
+      {
+        "id": 18,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 19, "document": 10, "nyckelord": [] },
+      {
+        "id": 20,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 21, "document": 10, "nyckelord": [] },
+      {
+        "id": 22,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 23, "document": 10, "nyckelord": [] },
+      {
+        "id": 24,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 25, "document": 10, "nyckelord": [] },
+      {
+        "id": 26,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 27, "document": 10, "nyckelord": [] },
+      {
+        "id": 28,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 29, "document": 10, "nyckelord": [] },
+      {
+        "id": 30,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 31, "document": 10, "nyckelord": [] },
+      {
+        "id": 32,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 33, "document": 10, "nyckelord": [] },
+      {
+        "id": 34,
+        "document": 10,
+        "nyckelord": ["mollis", "placerat", "condimentum "]
+      },
+      { "id": 35, "document": 10, "nyckelord": [] }
+    ],
     "geoobjects": [{ "rubrikId": "", "geoidn": "" }]
   },
   {

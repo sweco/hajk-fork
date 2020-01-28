@@ -18,9 +18,7 @@ function getTocJson(documentNumbers) {
     return res.text().then(text => {
       var json = JSON.parse(text);
       for (var i = 0; i < documentNumbers.length; i++) {
-        json[
-          i
-        ].path = `http://localhost:3000/docempty${documentNumbers[i]}.json`;
+        json[i].path = `http://localhost:3000/doc${documentNumbers[i]}.json`;
         json[i].title = documentNumbers[i];
       }
       return json;
@@ -52,30 +50,46 @@ function downloadJson(jsonObject, name) {
 }
 
 function generateJson(documentNumbers) {
+  var promises = [];
   getTocJson(documentNumbers).then(tocJson => {
-    documentNumbers.forEach((documentNumber, index) => {
-      fetch(`http://localhost:3000/docempty${documentNumber}.json`).then(
-        res => {
-          res.text().then(text => {
-            var json = JSON.parse(text);
-            fetch("http://localhost:3000/randomtext.txt").then(res => {
-              res.text().then(randomText => {
-                json.date = "random date";
-                json.text = randomText;
-                json.title = "ÖPDOK1";
-                for (var i = 0; i < json.rubriker.length; i++) {
-                  tocJson[index].rubriker.push({ id: i });
-                  json.rubriker[i].id = i;
-                  json.rubriker[i].text = randomText;
-                  json.rubriker[i].level = Math.floor(Math.random() * 3) + 1;
-                }
-                downloadJson(tocJson, `toc`);
-                downloadJson(json, `doc${documentNumber}`);
+    fetch("http://localhost:3000/randomtext.txt").then(res => {
+      res.text().then(randomText => {
+        documentNumbers.forEach((documentNumber, index) => {
+          promises.push(
+            new Promise((resolve, reject) => {
+              fetch(
+                `http://localhost:3000/docempty${documentNumber}.json`
+              ).then(res => {
+                res.text().then(text => {
+                  var json = JSON.parse(text);
+                  json.date = "random date";
+                  json.text = randomText;
+                  json.title = `${documentNumber}`;
+                  for (var i = 0; i < json.rubriker.length; i++) {
+                    console.log(documentNumber, "documentNumber");
+                    tocJson[index].rubriker.push({
+                      id: i,
+                      document: documentNumber,
+                      nyckelord:
+                        i % 2 == 0 ? ["mollis", "placerat", "condimentum "] : []
+                    });
+                    json.rubriker[i].id = i;
+                    json.rubriker[i].text = randomText;
+                    json.rubriker[i].level = Math.floor(Math.random() * 3) + 1;
+                  }
+                  resolve(json);
+                });
               });
-            });
+            })
+          );
+        });
+        Promise.all(promises).then(res => {
+          downloadJson(tocJson, `toc`);
+          res.forEach((json, index) => {
+            downloadJson(json, `doc${index}`);
           });
-        }
-      );
+        });
+      });
     });
   });
 }
@@ -129,6 +143,68 @@ class DocumentHandlerView extends React.PureComponent {
     this.documentToTest = null;
   }
 
+  searchForKeywords = () => {
+    var keywords = ["placerat"];
+    var t0 = performance.now();
+
+    var found = [];
+    fetch("http://localhost:3000/toc.json").then(res => {
+      return res.text().then(text => {
+        var json = JSON.parse(text);
+        var documents = Object.values(json);
+        documents.forEach(document => {
+          document.rubriker.forEach(rubrik => {
+            for (var i = 0; i < keywords.length; i++) {
+              for (var j = 0; j < rubrik.nyckelord.length; j++) {
+                if (keywords[i] === rubrik.nyckelord[j]) {
+                  found.push({ document: document.path, rubrik: rubrik });
+                  break;
+                }
+              }
+            }
+          });
+        });
+
+        var paths = new Set(
+          found.map(x => {
+            return x.document;
+          })
+        );
+
+        Promise.all(
+          Array.from(paths).map(path => {
+            return fetch(path);
+          })
+        ).then(documents => {
+          documents.forEach(document => {
+            document.text().then(text => {
+              var jsonDocument = JSON.parse(text);
+              var tst = this.getRubrikFromOpDokument(
+                jsonDocument,
+                found.map(found => {
+                  return found.rubrik.id;
+                })
+              );
+              var t1 = performance.now();
+              console.log(tst, "tst");
+              console.log(
+                "Call to doSomething took " + (t1 - t0) + " milliseconds."
+              );
+            });
+          });
+        });
+      });
+    });
+  };
+
+  getRubrikFromOpDokument = (opDokument, rubrikIds) => {
+    return rubrikIds.map(rubrikId => {
+      return opDokument.rubriker.filter(rubrik => {
+        return rubrik.id == rubrikId;
+      });
+    });
+  };
+
   buttonClick = () => {
     // We have access to plugin's model:
 
@@ -147,22 +223,13 @@ class DocumentHandlerView extends React.PureComponent {
   };
 
   readFiles = () => {
-    var old_time = new Date();
+    var t0 = performance.now();
 
     Promise.all(getFiles([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).then(result => {
-      var new_time = new Date();
-      var seconds_passed = new_time - old_time;
+      var t1 = performance.now();
+      console.log("Call to doSomething took " + (t1 - t0) + " milliseconds.");
       this.documentToTest = result[0];
     });
-  };
-
-  find = (document, rubrik) => {
-    findHeadline(this.documentToTest);
-  };
-
-  // Event handler for a button that shows a global info message when clicked
-  showDefaultSnackbar = () => {
-    this.props.enqueueSnackbar("Yay, a nice message with default styling.");
   };
 
   // A more complicate snackbar example, this one with an action button and persistent snackbar
@@ -201,39 +268,28 @@ class DocumentHandlerView extends React.PureComponent {
           className={classes.buttonWithBottomMargin}
           variant="contained"
           fullWidth={true}
-          // onChange={(e) => { console.log(e) }}
-          // ^ Don't do this. Closures here are inefficient. Use the below:
           onClick={this.buttonClick}
         >
-          {this.state.test ||
-            `Clicked ${this.state.counter} ${
-              this.state.counter === 1 ? "time" : "times"
-            }`}
-        </Button>
-        <Button
-          className={classes.buttonWithBottomMargin}
-          variant="contained"
-          fullWidth={true}
-          onClick={this.showDefaultSnackbar}
-        >
-          Show default snackbar
-        </Button>
-        <Button
-          className={classes.buttonWithBottomMargin}
-          variant="contained"
-          fullWidth={true}
-          onClick={this.readFiles}
-        >
-          ReadFiles
+          Create mocked doc-files and toc-file
         </Button>
 
         <Button
           className={classes.buttonWithBottomMargin}
           variant="contained"
           fullWidth={true}
-          onClick={this.find}
+          onClick={this.readFiles}
         >
-          Find
+          Log time to read all documents into memory (2.5 miljoner tecken per
+          fil)
+        </Button>
+        <Button
+          className={classes.buttonWithBottomMargin}
+          variant="contained"
+          fullWidth={true}
+          onClick={this.searchForKeywords}
+        >
+          Log time to Search for mocked keyword and get all JSON-tags from
+          documents
         </Button>
       </>
     );
