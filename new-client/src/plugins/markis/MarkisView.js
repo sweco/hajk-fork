@@ -276,6 +276,7 @@ class MarkisView extends React.PureComponent {
 
   saveCreated = () => {
     if (this.state.type !== "Contract") {
+      this.model.operationCompletedMessage();
       if (!this.model.validateTradeGeometries()) {
         this.showAdvancedSnackbar(
           "Du måste ange diarienummer och fastighetsnummer innan du sparar!",
@@ -364,12 +365,13 @@ class MarkisView extends React.PureComponent {
       );
     } else if (
       this.state.userMode === "Create" &&
-      (this.state.type === "Purchase" || this.state.type === "Purchase") &&
+      (this.state.type === "Purchase" || this.state.type === "Sale") &&
       this.state.inCreation
     ) {
       return (
         <Typography>
-          Du kan nu skapa en {this.model.displayConnections[this.state.type]}.
+          Du kan nu skapa en{" "}
+          {this.model.displayConnections[this.state.type].toLowerCase()}.
           <br />
         </Typography>
       );
@@ -387,37 +389,6 @@ class MarkisView extends React.PureComponent {
       return <Typography>Du visar ingen yta just nu.</Typography>;
     }
   }
-
-  // renderInfoText() {
-  //   if (
-  //     this.state.userMode === "Create" &&
-  //     this.state.type === "Contract" &&
-  //     this.state.inCreation
-  //   ) {
-  //     return (
-  //       <Typography>
-  //         Du kan nu uppdatera avtalsytan för avtalsnummer:
-  //         <br />
-  //         <b>{this.state.objectId}</b>
-  //         <br />
-  //       </Typography>
-  //     );
-  //   } else {
-  //     if (this.state.objectId) {
-  //       return (
-  //         <Typography>
-  //           Du visar nu{" "}
-  //           {this.model.displayConnections[this.state.type].toLowerCase()}{" "}
-  //           kopplade till:
-  //           <br />
-  //           <b>{this.state.objectId}</b>
-  //         </Typography>
-  //       );
-  //     } else {
-  //       return <Typography>Du visar ingen yta just nu.</Typography>;
-  //     }
-  //   }
-  // }
 
   clearSearchResult = () => {
     this.model.clearSearchResult();

@@ -2,6 +2,7 @@ import * as signalR from "@microsoft/signalr";
 import { WFS } from "ol/format";
 import GeometryType from "ol/geom/GeometryType";
 import IsLike from "ol/format/filter/IsLike";
+import Intersects from "ol/format/filter/Intersects";
 import Or from "ol/format/filter/Or";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -38,10 +39,17 @@ class MarkisModel {
       Contract: "Avtal",
       Estate: "Fastigheter",
       Purchase: "Förvärvsyta",
-      Sell: "Försäljningsyta"
+      Sale: "Försäljningsyta"
     };
     this.type = "Polygon";
     this.markisParameters = {};
+    this.result = {
+      objectId: undefined,
+      objectSerial: undefined,
+      operation: undefined,
+      totalArea: undefined,
+      affectedEstates: {}
+    };
     this.featureIdCounter = 1;
     this.createMethod = "abort";
     this.geometryName = "geom";
@@ -270,6 +278,7 @@ class MarkisModel {
     event.feature.setId(this.featureIdCounter);
     this.featureIdCounter++;
     this.localObserver.publish("featureUpdate", this.vectorSource);
+    this.getAreaAndAffectedEstates();
   };
 
   removeInteraction() {
@@ -762,8 +771,91 @@ class MarkisModel {
     return true;
   }
 
+  lookupEstate(source, feature, callback) {
+    const projCode = this.map
+      .getView()
+      .getProjection()
+      .getCode();
+
+    const geometry = feature.getGeometry();
+
+    const options = {
+      featureTypes: source.layers,
+      srsName: projCode,
+      outputFormat: "JSON", //source.outputFormat,
+      geometryName: source.geometryField,
+      filter: new Intersects(source.geometryField, geometry, projCode)
+    };
+
+    const node = this.wfsParser.writeGetFeature(options);
+    const xmlSerializer = new XMLSerializer();
+    const xmlString = xmlSerializer.serializeToString(node);
+
+    const request = {
+      credentials: "same-origin",
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml"
+      },
+      body: xmlString
+    };
+
+    fetch(this.app.config.appConfig.searchProxy + source.url, request).then(
+      response => {
+        response.json().then(estate => {
+          callback(estate);
+        });
+      }
+    );
+  }
+
+  addAffectedEstates(estates) {
+    estates.features.forEach(feature => {
+      if (
+        !this.result.affectedEstates.hasOwnProperty(
+          feature.properties.fastighet
+        )
+      ) {
+        this.result.affectedEstates["estateName"] =
+          feature.properties.fastighet;
+      }
+    });
+  }
+
+  getAreaAndAffectedEstates() {
+    let totalArea = 0;
+    const estateSource = this.sources.find(
+      source => source.layers[0] === this.estateWfsName
+    );
+    this.vectorSource.getFeatures().forEach(feature => {
+      if (feature.modification !== "removed") {
+        let geom = feature.getGeometry();
+        if (geom.getType()) {
+          totalArea += Math.round(geom.getArea());
+        }
+        this.lookupEstate(estateSource, feature, estates => {
+          console.log("estates: ", estates);
+          this.addAffectedEstates(estates);
+        });
+      }
+    });
+
+    Object.assign(this.result, {
+      objectId: this.markisParameters.objectId,
+      objectSerial: this.markisParameters.objectSerial,
+      totalArea: totalArea
+    });
+    console.log("result: ", this.result);
+  }
+
   async operationCompletedMessage() {
-    this.connection.invoke("OperationCompleted", this.sessionId, "message");
+    this.getAreaAndAffectedEstates();
+    let message_string = JSON.stringify(this.result);
+    this.connection.invoke(
+      "OperationCompleted",
+      this.sessionId,
+      message_string
+    );
   }
 
   connectToHub(sessionId) {
