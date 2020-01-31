@@ -48,7 +48,7 @@ class MarkisModel {
       objectSerial: undefined,
       operation: undefined,
       totalArea: undefined,
-      affectedEstates: {}
+      affectedEstates: []
     };
     this.featureIdCounter = 1;
     this.createMethod = "abort";
@@ -278,7 +278,6 @@ class MarkisModel {
     event.feature.setId(this.featureIdCounter);
     this.featureIdCounter++;
     this.localObserver.publish("featureUpdate", this.vectorSource);
-    this.getAreaAndAffectedEstates();
   };
 
   removeInteraction() {
@@ -809,24 +808,12 @@ class MarkisModel {
     );
   }
 
-  addAffectedEstates(estates) {
-    estates.features.forEach(feature => {
-      if (
-        !this.result.affectedEstates.hasOwnProperty(
-          feature.properties.fastighet
-        )
-      ) {
-        this.result.affectedEstates["estateName"] =
-          feature.properties.fastighet;
-      }
-    });
-  }
-
-  getAreaAndAffectedEstates() {
+  getAreaAndAffectedEstates(callback) {
     let totalArea = 0;
     const estateSource = this.sources.find(
       source => source.layers[0] === this.estateWfsName
     );
+
     this.vectorSource.getFeatures().forEach(feature => {
       if (feature.modification !== "removed") {
         let geom = feature.getGeometry();
@@ -834,28 +821,37 @@ class MarkisModel {
           totalArea += Math.round(geom.getArea());
         }
         this.lookupEstate(estateSource, feature, estates => {
-          console.log("estates: ", estates);
-          this.addAffectedEstates(estates);
+          estates.features.forEach(feature => {
+            if (
+              !this.result.affectedEstates.hasOwnProperty(
+                feature.properties.fastighet
+              )
+            ) {
+              this.result.affectedEstates.push({
+                estateName: feature.properties.fastighet,
+                estateArea: 0
+              });
+            }
+          });
         });
       }
     });
 
-    Object.assign(this.result, {
-      objectId: this.markisParameters.objectId,
-      objectSerial: this.markisParameters.objectSerial,
-      totalArea: totalArea
-    });
-    console.log("result: ", this.result);
+    this.result.objectId = this.markisParameters.objectId;
+    this.result.objectSerial = this.markisParameters.objectSerial;
+    this.result.totalArea = totalArea;
+    if (callback) callback();
   }
 
-  async operationCompletedMessage() {
-    this.getAreaAndAffectedEstates();
-    let message_string = JSON.stringify(this.result);
-    this.connection.invoke(
-      "OperationCompleted",
-      this.sessionId,
-      message_string
-    );
+  invokeCompleteMessage() {
+    this.getAreaAndAffectedEstates(r => {
+      let message_string = JSON.stringify(this.result);
+      this.connection.invoke(
+        "OperationCompleted",
+        this.sessionId,
+        message_string
+      );
+    });
   }
 
   connectToHub(sessionId) {

@@ -276,7 +276,6 @@ class MarkisView extends React.PureComponent {
 
   saveCreated = () => {
     if (this.state.type !== "Contract") {
-      this.model.operationCompletedMessage();
       if (!this.model.validateTradeGeometries()) {
         this.showAdvancedSnackbar(
           "Du måste ange diarienummer och fastighetsnummer innan du sparar!",
@@ -285,6 +284,7 @@ class MarkisView extends React.PureComponent {
         return;
       }
     }
+    this.model.invokeCompleteMessage();
     this.model.save(r => {
       if (r && r.TransactionResponse.TransactionSummary) {
         if (
