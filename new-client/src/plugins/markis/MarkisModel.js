@@ -809,6 +809,7 @@ class MarkisModel {
   }
 
   getAreaAndAffectedEstates(callback) {
+    let affectedEstates = [];
     let totalArea = 0;
     const estateSource = this.sources.find(
       source => source.layers[0] === this.estateWfsName
@@ -821,15 +822,21 @@ class MarkisModel {
           totalArea += Math.round(geom.getArea());
         }
         this.lookupEstate(estateSource, feature, estates => {
-          estates.features.forEach(feature => {
+          estates.features.forEach(estate => {
+            let estateArea = Math.round(
+              new GeoJSON()
+                .readFeature(estate)
+                .getGeometry()
+                .getArea()
+            );
             if (
-              !this.result.affectedEstates.hasOwnProperty(
-                feature.properties.fastighet
+              affectedEstates.filter(
+                e => e.estateName !== estate.properties.fastighet
               )
             ) {
-              this.result.affectedEstates.push({
-                estateName: feature.properties.fastighet,
-                estateArea: 0
+              affectedEstates.push({
+                estateName: estate.properties.fastighet,
+                estateArea: estateArea
               });
             }
           });
@@ -837,15 +844,20 @@ class MarkisModel {
       }
     });
 
-    this.result.objectId = this.markisParameters.objectId;
-    this.result.objectSerial = this.markisParameters.objectSerial;
-    this.result.totalArea = totalArea;
-    if (callback) callback();
+    const result = {
+      action: this.markisParameters.type,
+      objectId: this.markisParameters.objectId,
+      objectSerial: this.markisParameters.objectSerial,
+      totalArea: totalArea,
+      affectedEstates: affectedEstates
+    };
+    if (callback) callback(result);
   }
 
   invokeCompleteMessage() {
     this.getAreaAndAffectedEstates(r => {
-      let message_string = JSON.stringify(this.result);
+      console.log("r is: ", r);
+      let message_string = JSON.stringify(r);
       this.connection.invoke(
         "OperationCompleted",
         this.sessionId,
