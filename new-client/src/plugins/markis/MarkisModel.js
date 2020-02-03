@@ -799,18 +799,18 @@ class MarkisModel {
       body: xmlString
     };
 
-    fetch(this.app.config.appConfig.searchProxy + source.url, request).then(
-      response => {
-        response.json().then(estate => {
-          callback(estate);
-        });
-      }
-    );
+    return fetch(
+      this.app.config.appConfig.searchProxy + source.url,
+      request
+    ).then(response => {
+      return response.json();
+    });
   }
 
   getAreaAndAffectedEstates(callback) {
     let affectedEstates = [];
     let totalArea = 0;
+    let promises = [];
     const estateSource = this.sources.find(
       source => source.layers[0] === this.estateWfsName
     );
@@ -821,42 +821,42 @@ class MarkisModel {
         if (geom.getType()) {
           totalArea += Math.round(geom.getArea());
         }
-        this.lookupEstate(estateSource, feature, estates => {
-          estates.features.forEach(estate => {
-            let estateArea = Math.round(
-              new GeoJSON()
-                .readFeature(estate)
-                .getGeometry()
-                .getArea()
-            );
-            if (
-              affectedEstates.filter(
-                e => e.estateName !== estate.properties.fastighet
-              )
-            ) {
-              affectedEstates.push({
-                estateName: estate.properties.fastighet,
-                estateArea: estateArea
-              });
-            }
-          });
-        });
+        promises.push(this.lookupEstate(estateSource, feature));
       }
     });
 
-    const result = {
-      action: this.markisParameters.type,
-      objectId: this.markisParameters.objectId,
-      objectSerial: this.markisParameters.objectSerial,
-      totalArea: totalArea,
-      affectedEstates: affectedEstates
-    };
-    if (callback) callback(result);
+    Promise.all(promises).then(estates => {
+      estates[0].features.forEach(estate => {
+        let estateArea = Math.round(
+          new GeoJSON()
+            .readFeature(estate)
+            .getGeometry()
+            .getArea()
+        );
+        if (
+          affectedEstates.filter(
+            e => e.estateName !== estate.properties.fastighet
+          )
+        ) {
+          affectedEstates.push({
+            estateName: estate.properties.fastighet,
+            estateArea: estateArea
+          });
+        }
+      });
+      let result = {
+        operation: this.markisParameters.type,
+        objectId: this.markisParameters.objectId,
+        objectSerial: this.markisParameters.objectSerial || "",
+        totalArea: totalArea,
+        affectedEstates: affectedEstates
+      };
+      if (callback) callback(result);
+    });
   }
 
   invokeCompleteMessage() {
     this.getAreaAndAffectedEstates(r => {
-      console.log("r is: ", r);
       let message_string = JSON.stringify(r);
       this.connection.invoke(
         "OperationCompleted",
