@@ -2,6 +2,7 @@ import * as signalR from "@microsoft/signalr";
 import { WFS } from "ol/format";
 import GeometryType from "ol/geom/GeometryType";
 import IsLike from "ol/format/filter/IsLike";
+import Intersects from "ol/format/filter/Intersects";
 import Or from "ol/format/filter/Or";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -25,9 +26,30 @@ class MarkisModel {
     this.isConnected = false;
     this.sources = settings.options.sources;
     this.estateLayerName = settings.options.estateLayerName;
+    this.estateWfsName = settings.options.estateWfsName;
+    this.purchaseLayerName = settings.options.purchaseLayerName;
+    this.purchaseWfsName = settings.options.purchaseWfsName;
+    this.saleLayerName = settings.options.saleLayerName;
+    this.saleWfsName = settings.options.saleWfsName;
+    this.longLeaseLayerName = settings.options.longLeaseLayerName;
+    this.longLeaseWfsName = settings.options.longLeaseWfsName;
     this.wfstSources = settings.options.wfstSources;
+    this.displayConnections = {
+      LongLease: "Tomträtter",
+      Contract: "Avtal",
+      Estate: "Fastigheter",
+      Purchase: "Förvärvsyta",
+      Sale: "Försäljningsyta"
+    };
     this.type = "Polygon";
     this.markisParameters = {};
+    this.result = {
+      objectId: undefined,
+      objectSerial: undefined,
+      operation: undefined,
+      totalArea: undefined,
+      affectedEstates: []
+    };
     this.featureIdCounter = 1;
     this.createMethod = "abort";
     this.geometryName = "geom";
@@ -159,11 +181,13 @@ class MarkisModel {
     }
   }
 
-  toggleLayerVisibility(layerName, visible) {
-    const foundLayer = this.getLayer(layerName);
-    if (foundLayer) {
-      foundLayer.setProperties({ visible: visible });
-    }
+  toggleLayerVisibility(layerNames, visible) {
+    layerNames.forEach(layerName => {
+      const foundLayer = this.getLayer(layerName);
+      if (foundLayer) {
+        foundLayer.setProperties({ visible: visible });
+      }
+    });
   }
 
   refreshLayer(layerName) {
@@ -207,17 +231,25 @@ class MarkisModel {
     this.vectorSource.forEachFeature(feature => {
       feature.setGeometryName(this.geometryName);
       feature.unset("bbox", true);
-      feature.setProperties({
-        [this.editSource.columnNames.contractId]: this.markisParameters
-          .objectId,
-        [this.editSource.columnNames.createdBy]: this.markisParameters
-          .createdBy,
-        [this.editSource.columnNames.regDate]: this.getTimeStampDate(),
-        [this.editSource.columnNames.status]: this.markisParameters
-          .objectStatus,
-        [this.editSource.columnNames.handlopnr]: this.markisParameters
-          .objectSerial
-      });
+      if (this.markisParameters.type === "Contract") {
+        feature.setProperties({
+          [this.editSource.columnNames.contractId]: this.markisParameters
+            .objectId,
+          [this.editSource.columnNames.createdBy]: this.markisParameters
+            .createdBy,
+          [this.editSource.columnNames.regDate]: this.getTimeStampDate(),
+          [this.editSource.columnNames.status]: this.markisParameters
+            .objectStatus,
+          [this.editSource.columnNames.handlopnr]: this.markisParameters
+            .objectSerial
+        });
+      } else {
+        feature.setProperties({
+          [this.editSource.columnNames.createdBy]: this.markisParameters
+            .createdBy,
+          [this.editSource.columnNames.regDate]: this.getTimeStampDate()
+        });
+      }
     });
   }
 
@@ -234,6 +266,7 @@ class MarkisModel {
       style: this.getSketchStyle(),
       geometryName: this.geometryName
     });
+
     this.draw.on("drawend", event => {
       this.handleDrawEnd(event);
     });
@@ -378,7 +411,7 @@ class MarkisModel {
       serializer = new XMLSerializer(),
       src = this.editSource,
       payload = node ? serializer.serializeToString(node) : undefined;
-    //Quickfix for wrong geometryname
+    //Quick fix for incorrect geometryname
     payload = payload.replace(new RegExp("<geometry>", "g"), "<geom>");
     payload = payload.replace(new RegExp("</geometry>", "g"), "</geom>");
     if (payload) {
@@ -459,15 +492,155 @@ class MarkisModel {
 
   reset() {
     this.vectorSource.clear();
+    this.toggleLayerVisibility(
+      [
+        this.estateLayerName,
+        this.saleLayerName,
+        this.purchaseLayerName,
+        this.longLeaseLayerName
+      ],
+      false
+    );
     this.editFeatureId = undefined;
     Object.assign(this.markisParameters, {
       objectId: undefined,
       objectSerial: undefined,
       objectStatus: undefined,
       createdBy: undefined,
-      mode: "visningsläge"
+      userMode: undefined,
+      type: undefined
     });
     this.sourceName = undefined;
+  }
+
+  validateShowMessage(message) {
+    if (this.markisParameters.type === "Contract") {
+      if (message.objectId.length !== 10) {
+        this.publishMessage(
+          "Avtalsnumret måste bestå av 10 tecken.",
+          "error",
+          true
+        );
+        return false;
+      } else {
+        this.assignMessageParameters(message);
+        return true;
+      }
+    } else if (this.markisParameters.type === "LongLease") {
+      if (message.objectId.length < 4) {
+        this.publishMessage(
+          "Du måste ange fler tecken för att kunna visa en tomträtt.",
+          "error",
+          true
+        );
+        return false;
+      } else {
+        this.assignMessageParameters(message);
+        return true;
+      }
+    } else if (this.markisParameters.type === "Estate") {
+      if (message.objectId.length < 4) {
+        this.publishMessage(
+          "Du måste ange fler tecken för att kunna visa en fastighet.",
+          "error",
+          true
+        );
+        return false;
+      } else {
+        this.assignMessageParameters(message);
+        return true;
+      }
+    }
+  }
+
+  validateCreateTradeMessage(message) {
+    if (!message.userName) {
+      this.publishMessage(
+        "Markis skickade inte ett giltligt anvädnarnamn",
+        "error",
+        true
+      );
+      return false;
+    } else {
+      this.assignMessageParameters(message);
+      return true;
+    }
+  }
+
+  validateCreateContractMessage(message) {
+    if (message.objectId.length !== 10) {
+      this.publishMessage(
+        "Avtalsnumret måste bestå av 10 tecken.",
+        "error",
+        true
+      );
+      return false;
+    } else if (message.objectStatus.toUpperCase() === "G") {
+      this.publishMessage(
+        "Du kan inte skapa en avtalsyta med gällande status.",
+        "error",
+        true
+      );
+      return false;
+    } else if (
+      isNaN(message.objectSerial) ||
+      message.objectSerial === "0" ||
+      message.objectSerial === ""
+    ) {
+      this.publishMessage(
+        "Markis skickade inte ett giltligt händelselöpnummer.",
+        "error",
+        true
+      );
+      return false;
+    } else if (!message.userName) {
+      this.publishMessage(
+        "Markis skickade inte ett giltligt anvädnarnamn",
+        "error",
+        true
+      );
+      return false;
+    } else {
+      this.assignMessageParameters(message);
+      return true;
+    }
+  }
+
+  validateTradeGeometries() {
+    var result = true;
+    this.vectorSource.forEachFeature(feature => {
+      if (
+        !feature.getProperties().diarie_nr ||
+        !feature.getProperties().gbg_fastnr
+      ) {
+        result = false;
+      }
+    });
+    return result;
+  }
+
+  assignMessageParameters(message) {
+    Object.assign(this.markisParameters, {
+      objectId: (message.objectId || "").toUpperCase(),
+      objectSerial: message.objectSerial,
+      objectStatus: (message.objectStatus || "").toUpperCase(),
+      createdBy: message.userName
+    });
+  }
+
+  validateMessageParameters(message) {
+    if (this.markisParameters.userMode === "Show") {
+      return this.validateShowMessage(message);
+    } else if (this.markisParameters.userMode === "Create") {
+      if (this.markisParameters.type === "Contract") {
+        return this.validateCreateContractMessage(message);
+      } else if (
+        this.markisParameters.type === "Purchase" ||
+        this.markisParameters.type === "Sale"
+      ) {
+        return this.validateCreateTradeMessage(message);
+      }
+    }
   }
 
   /**Verifies the parameters sent from Markis and assigns them to the MarkisParameter-object */
@@ -597,6 +770,102 @@ class MarkisModel {
     return true;
   }
 
+  lookupEstate(source, feature, callback) {
+    const projCode = this.map
+      .getView()
+      .getProjection()
+      .getCode();
+
+    const geometry = feature.getGeometry();
+
+    const options = {
+      featureTypes: source.layers,
+      srsName: projCode,
+      outputFormat: "JSON", //source.outputFormat,
+      geometryName: source.geometryField,
+      filter: new Intersects(source.geometryField, geometry, projCode)
+    };
+
+    const node = this.wfsParser.writeGetFeature(options);
+    const xmlSerializer = new XMLSerializer();
+    const xmlString = xmlSerializer.serializeToString(node);
+
+    const request = {
+      credentials: "same-origin",
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml"
+      },
+      body: xmlString
+    };
+
+    return fetch(
+      this.app.config.appConfig.searchProxy + source.url,
+      request
+    ).then(response => {
+      return response.json();
+    });
+  }
+
+  getAreaAndAffectedEstates(callback) {
+    let affectedEstates = [];
+    let totalArea = 0;
+    let promises = [];
+    const estateSource = this.sources.find(
+      source => source.layers[0] === this.estateWfsName
+    );
+
+    this.vectorSource.getFeatures().forEach(feature => {
+      if (feature.modification !== "removed") {
+        let geom = feature.getGeometry();
+        if (geom.getType()) {
+          totalArea += Math.round(geom.getArea());
+        }
+        promises.push(this.lookupEstate(estateSource, feature));
+      }
+    });
+
+    Promise.all(promises).then(estates => {
+      estates[0].features.forEach(estate => {
+        let estateArea = Math.round(
+          new GeoJSON()
+            .readFeature(estate)
+            .getGeometry()
+            .getArea()
+        );
+        if (
+          affectedEstates.filter(
+            e => e.estateName !== estate.properties.fastighet
+          )
+        ) {
+          affectedEstates.push({
+            estateName: estate.properties.fastighet,
+            estateArea: estateArea
+          });
+        }
+      });
+      let result = {
+        operation: this.markisParameters.type,
+        objectId: this.markisParameters.objectId,
+        objectSerial: this.markisParameters.objectSerial || "",
+        totalArea: totalArea,
+        affectedEstates: affectedEstates
+      };
+      if (callback) callback(result);
+    });
+  }
+
+  invokeCompleteMessage() {
+    this.getAreaAndAffectedEstates(r => {
+      let message_string = JSON.stringify(r);
+      this.connection.invoke(
+        "OperationCompleted",
+        this.sessionId,
+        message_string
+      );
+    });
+  }
+
   connectToHub(sessionId) {
     this.sessionId = sessionId;
     this.connection = new signalR.HubConnectionBuilder()
@@ -621,39 +890,131 @@ class MarkisModel {
       );
 
     this.connection.on(
-      "ShowContractFromMarkis",
+      "Map.ShowContract",
       function(_, showMessage) {
         this.reset();
+        Object.assign(this.markisParameters, {
+          userMode: "Show",
+          type: "Contract"
+        });
         const showObj = JSON.parse(showMessage);
-        if (this.updateMarkisParameters(showObj, "visningsläge")) {
+        // if (this.updateMarkisParameters(showObj, "visningsläge")) {
+        //   this.localObserver.publish("updateMarkisView", {});
+        //   this.doSearch(showObj.contractId, undefined);
+        // }
+        if (this.validateMessageParameters(showObj)) {
           this.localObserver.publish("updateMarkisView", {});
-          this.doSearch(showObj.contractId);
+          this.doSearch(showObj.objectId, undefined);
         }
       }.bind(this)
     );
 
     this.connection.on(
-      "CreateContractFromMarkis",
+      "Map.ShowEstateGeometry",
+      function(_, message) {
+        this.reset();
+        Object.assign(this.markisParameters, {
+          userMode: "Show",
+          type: "Estate"
+        });
+        const showEstateObj = JSON.parse(message);
+        if (this.validateMessageParameters(showEstateObj)) {
+          const estateSource = this.sources.find(
+            source => source.layers[0] === this.estateWfsName
+          );
+          this.localObserver.publish("updateMarkisView", {});
+          this.doSearch(showEstateObj.objectId, estateSource);
+          this.toggleLayerVisibility([this.estateLayerName], true);
+        }
+      }.bind(this)
+    );
+
+    this.connection.on(
+      "Map.ShowLongLeaseGeometry",
+      function(_, message) {
+        this.reset();
+        Object.assign(this.markisParameters, {
+          userMode: "Show",
+          type: "LongLease"
+        });
+        const showLongLeaseObj = JSON.parse(message);
+        if (this.validateMessageParameters(showLongLeaseObj)) {
+          const longLeaseSource = this.sources.find(
+            source => source.layers[0] === this.longLeaseWfsName
+          );
+
+          this.localObserver.publish("updateMarkisView", {});
+          this.doSearch(showLongLeaseObj.objectId, longLeaseSource);
+          this.toggleLayerVisibility([this.longLeaseLayerName], true);
+        }
+      }.bind(this)
+    );
+
+    this.connection.on(
+      "Map.CreatePurchaseGeometry",
+      function(_, message) {
+        this.reset();
+        Object.assign(this.markisParameters, {
+          userMode: "Create",
+          type: "Purchase"
+        });
+        const createPurchaseObj = JSON.parse(message);
+        if (this.validateMessageParameters(createPurchaseObj)) {
+          this.sourceName = this.purchaseWfsName;
+          this.searchResultLayer.getSource().clear();
+          this.localObserver.publish("updateMarkisView", {});
+          this.toggleLayerVisibility([this.purchaseLayerName], true);
+        }
+      }.bind(this)
+    );
+
+    this.connection.on(
+      "Map.CreateSaleGeometry",
+      function(_, message) {
+        this.reset();
+        Object.assign(this.markisParameters, {
+          userMode: "Create",
+          type: "Sale"
+        });
+        const createSaleObj = JSON.parse(message);
+        if (this.validateMessageParameters(createSaleObj)) {
+          this.sourceName = this.saleWfsName;
+          this.searchResultLayer.getSource().clear();
+          this.localObserver.publish("updateMarkisView", {});
+          this.toggleLayerVisibility([this.saleLayerName], true);
+        }
+      }.bind(this)
+    );
+
+    this.connection.on(
+      "Map.CreateContract",
       function(_, createMessage) {
         this.reset();
-        const createObject = JSON.parse(createMessage);
-        if (this.updateMarkisParameters(createObject, "visningsläge")) {
-          this.search(this.markisParameters.objectId, result => {
-            var numExistingContracts = this.getNumberOfResults(result);
+        Object.assign(this.markisParameters, {
+          userMode: "Create",
+          type: "Contract"
+        });
+        const createContractObject = JSON.parse(createMessage);
+        //if (this.updateMarkisParameters(createObject, "visningsläge")) {
+        if (this.validateMessageParameters(createContractObject)) {
+          this.search(this.markisParameters.objectId, undefined, result => {
+            let numExistingContracts = this.getNumberOfResults(result);
             if (numExistingContracts > 0) {
               var contractCollectionOk = this.validateContractCollection(
                 result[0]
               );
               if (contractCollectionOk) {
-                this.enableContractCreation(createObject, result);
+                this.enableContractCreation(createContractObject, result);
               } else {
                 this.highlightImpact(result);
                 this.localObserver.publish("updateMarkisView", {});
               }
             } else {
-              this.enableContractCreation(createObject, null);
+              this.enableContractCreation(createContractObject, null);
             }
           });
+        } else {
+          this.reset();
         }
       }.bind(this)
     );
@@ -661,7 +1022,7 @@ class MarkisModel {
 
   /**Enables creation of contract geometries. Sets the editlayer etc. */
   enableContractCreation(createObject, existingGeom) {
-    this.updateMarkisParameters(createObject, "editeringsläge");
+    //this.updateMarkisParameters(createObject, "editeringsläge");
     this.searchResultLayer.getSource().clear();
     this.sourceName = this.getContractSource();
     if (this.sourceName) {
@@ -787,18 +1148,23 @@ class MarkisModel {
     return { promise, controller };
   }
 
-  search(searchInput, callback) {
+  search(searchInput, source, callback) {
     this.timeout = setTimeout(() => {
       this.searchResultLayer.getSource().clear();
       let promises = [];
       this.controllers.splice(0, this.controllers.length);
 
-      this.sources.forEach(source => {
+      if (source) {
         const { promise, controller } = this.lookUp(source, searchInput);
         promises.push(promise);
         this.controllers.push(controller);
-      });
-
+      } else {
+        this.sources.forEach(source => {
+          const { promise, controller } = this.lookUp(source, searchInput);
+          promises.push(promise);
+          this.controllers.push(controller);
+        });
+      }
       Promise.all(promises)
         .then(responses => {
           Promise.all(responses.map(result => result.json()))
@@ -826,9 +1192,9 @@ class MarkisModel {
     }, 200);
   }
 
-  doSearch(v) {
+  doSearch(v, source) {
     if (v.length <= 3) return null;
-    this.search(v, d => {
+    this.search(v, source, d => {
       const numHits = this.getNumberOfResults(d);
       if (numHits < 1) {
         this.publishMessage(
@@ -840,9 +1206,11 @@ class MarkisModel {
       } else {
         this.highlightImpact(d);
         this.publishMessage(
-          `Avtalsytor kopplade till ${v} är markerade i rött.`,
+          `${
+            this.displayConnections[this.markisParameters.type]
+          } kopplade till ${v} är markerade i rött.`,
           "success",
-          true
+          false
         );
       }
     });

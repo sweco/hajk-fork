@@ -55,7 +55,6 @@ const styles = theme => ({
 class MarkisView extends React.PureComponent {
   state = {
     isConnected: false,
-    mode: "visningsläge",
     inCreation: false,
     formValues: {},
     createMethod: "abort",
@@ -85,13 +84,15 @@ class MarkisView extends React.PureComponent {
     this.localObserver.subscribe("updateMarkisView", message => {
       this.setState({
         mode: this.model.markisParameters.mode,
-        contractId: this.model.markisParameters.objectId,
+        userMode: this.model.markisParameters.userMode,
+        type: this.model.markisParameters.type,
+        objectId: this.model.markisParameters.objectId,
         serialNumber: this.model.markisParameters.objectSerial,
         contractStatus: this.model.markisParameters.objectStatus,
         createdBy: this.model.markisParameters.createdBy,
         inCreation: false
       });
-      if (this.state.mode === "editeringsläge") {
+      if (this.state.userMode === "Create") {
         this.openCreateDialog();
       }
     });
@@ -167,6 +168,7 @@ class MarkisView extends React.PureComponent {
               margin="normal"
               variant="outlined"
               disabled={!this.state.editFeatureId}
+              inputProps={{ maxLength: field.maxLength || undefined }}
               value={this.state.formValues[field.name]}
               onChange={e => {
                 this.checkText(field.name, e.target.value);
@@ -225,7 +227,7 @@ class MarkisView extends React.PureComponent {
       return (
         <div className={classes.text}>
           <Typography>
-            Markera en avtalsyta för att redigera attribut.
+            Markera en yta för att redigera dess attribut.
           </Typography>
         </div>
       );
@@ -254,8 +256,13 @@ class MarkisView extends React.PureComponent {
 
   openCreateDialog = () => {
     this.model.setEditLayer(this.props.model.sourceName);
-    this.model.toggleLayerVisibility(this.props.model.sourceName, true);
-    this.model.toggleLayerVisibility(this.props.model.estateLayerName, true);
+    if (this.state.type === "Contract") {
+      this.model.toggleLayerVisibility(
+        [this.props.model.estateLayerName],
+        true
+      );
+    }
+    this.model.toggleLayerVisibility([this.props.model.sourceName], true);
     this.setState({
       inCreation: true
     });
@@ -263,11 +270,21 @@ class MarkisView extends React.PureComponent {
 
   abortCreation = () => {
     this.reset();
-    this.model.toggleLayerVisibility(this.props.model.estateLayerName, false);
-    this.model.toggleLayerVisibility(this.props.model.sourceName, false);
+    this.model.toggleLayerVisibility([this.props.model.estateLayerName], false);
+    this.model.toggleLayerVisibility([this.props.model.sourceName], false);
   };
 
   saveCreated = () => {
+    if (this.state.type !== "Contract") {
+      if (!this.model.validateTradeGeometries()) {
+        this.showAdvancedSnackbar(
+          "Du måste ange diarienummer och fastighetsnummer innan du sparar!",
+          "error"
+        );
+        return;
+      }
+    }
+    this.model.invokeCompleteMessage();
     this.model.save(r => {
       if (r && r.TransactionResponse.TransactionSummary) {
         if (
@@ -276,7 +293,7 @@ class MarkisView extends React.PureComponent {
           ) > 0
         ) {
           this.showAdvancedSnackbar(
-            "Avtalsgeometrin skapades utan problem!",
+            "Geometrin skapades utan problem!",
             "success"
           );
           this.model.refreshLayer(this.props.model.sourceName);
@@ -287,7 +304,7 @@ class MarkisView extends React.PureComponent {
           ) > 0
         ) {
           this.showAdvancedSnackbar(
-            "Avtalsgeometrin uppdaterades utan problem!",
+            "Geometrin uppdaterades utan problem!",
             "success"
           );
           this.model.refreshLayer(this.props.model.sourceName);
@@ -298,20 +315,20 @@ class MarkisView extends React.PureComponent {
           ) > 0
         ) {
           this.showAdvancedSnackbar(
-            "Avtalsgeometrin togs bort utan problem.",
+            "Geometrin togs bort utan problem.",
             "success"
           );
           this.model.refreshLayer(this.props.model.sourceName);
           this.reset();
         } else {
           this.showAdvancedSnackbar(
-            "Avtalsgeometrin gick inte att spara. Fösök igen senare."
+            "Geometrin gick inte att spara. Fösök igen senare."
           );
           this.reset();
         }
       } else {
         this.showAdvancedSnackbar(
-          "Avtalsgeometrin gick inte att spara. Fösök igen senare."
+          "Geometrin gick inte att spara. Fösök igen senare."
         );
         this.reset();
       }
@@ -326,42 +343,57 @@ class MarkisView extends React.PureComponent {
       geometryExists: false,
       createMethod: "abort",
       formValues: {},
-      mode: "visningsläge",
-      contractId: undefined,
+      objectId: undefined,
       serialNumber: undefined,
       createdBy: undefined
     });
   }
 
   renderInfoText() {
-    if (this.state.mode === "editeringsläge") {
+    if (
+      this.state.userMode === "Create" &&
+      this.state.type === "Contract" &&
+      this.state.inCreation
+    ) {
       return (
         <Typography>
           Du kan nu uppdatera avtalsytan för avtalsnummer:
           <br />
-          <b>{this.state.contractId}</b>
+          <b>{this.state.objectId}</b>
           <br />
         </Typography>
       );
+    } else if (
+      this.state.userMode === "Create" &&
+      (this.state.type === "Purchase" || this.state.type === "Sale") &&
+      this.state.inCreation
+    ) {
+      return (
+        <Typography>
+          Du kan nu skapa en{" "}
+          {this.model.displayConnections[this.state.type].toLowerCase()}.
+          <br />
+        </Typography>
+      );
+    } else if (this.state.userMode === "Show") {
+      return (
+        <Typography>
+          Du visar nu{" "}
+          {this.model.displayConnections[this.state.type].toLowerCase()}{" "}
+          kopplade till:
+          <br />
+          <b>{this.state.objectId}</b>
+        </Typography>
+      );
     } else {
-      if (this.state.contractId) {
-        return (
-          <Typography>
-            Du visar nu ytor kopplade till avtalsnummer:
-            <br />
-            <b>{this.state.contractId}</b>
-          </Typography>
-        );
-      } else {
-        return <Typography>Du visar ingen avtalsyta just nu.</Typography>;
-      }
+      return <Typography>Du visar ingen yta just nu.</Typography>;
     }
   }
 
   clearSearchResult = () => {
     this.model.clearSearchResult();
     this.setState({
-      contractId: undefined
+      objectId: undefined
     });
   };
 
@@ -399,7 +431,7 @@ class MarkisView extends React.PureComponent {
         variant="contained"
         className={classes.createButtons}
         onClick={this.clearSearchResult}
-        disabled={!this.state.contractId}
+        disabled={!this.state.objectId}
       >
         Rensa
       </Button>
@@ -424,7 +456,7 @@ class MarkisView extends React.PureComponent {
       </FormControl>
     );
 
-    if (this.state.mode === "editeringsläge" && this.state.inCreation) {
+    if (this.state.userMode === "Create" && this.state.inCreation) {
       return (
         <div>
           <div>{listCreateChoices}</div>
