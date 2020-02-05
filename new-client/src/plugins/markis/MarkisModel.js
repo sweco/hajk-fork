@@ -764,55 +764,68 @@ class MarkisModel {
       ) {
         createdFeatures.push(feature);
         let geom = feature.getGeometry();
-        if (geom.getType()) {
+        if (geom.getType() === GeometryType.POLYGON) {
           totalArea += Math.floor(geom.getArea());
         }
         promises.push(this.lookupEstate(estateSource, feature));
       }
     });
 
-    Promise.all(promises).then(estates => {
-      estates[0].features.forEach(estate => {
-        var parser = new GeoJSON();
-        let estateArea = Math.round(
-          parser
-            .readFeature(estate)
-            .getGeometry()
-            .getArea()
-        );
-        let affectedArea = 0;
-        createdFeatures.forEach(feature => {
-          let interSection = parser.readFeature(
-            turf.intersect(parser.writeFeatureObject(feature), estate)
-          );
-          if (interSection.getGeometry().getType() === GeometryType.POLYGON) {
-            affectedArea += Math.floor(interSection.getGeometry().getArea());
-          }
-        });
-        if (affectedArea > 0) {
-          if (
-            affectedEstates.filter(
-              e => e.estateName !== estate.properties.fastighet
-            )
-          ) {
-            affectedEstates.push({
-              estateName: estate.properties.fastighet,
-              estateId: estate.properties.fnr_fr,
-              estateArea: estateArea,
-              affectedArea: affectedArea,
-              percentageAffected: ((affectedArea / estateArea) * 100).toFixed(2)
+    Promise.all(promises).then(estateCollections => {
+      if (estateCollections) {
+        estateCollections.forEach(estateCollection => {
+          estateCollection.features.forEach(estate => {
+            var parser = new GeoJSON();
+            let estateArea = Math.round(
+              parser
+                .readFeature(estate)
+                .getGeometry()
+                .getArea()
+            );
+            let affectedArea = 0;
+            createdFeatures.forEach(drawnArea => {
+              if (drawnArea.getGeometry().getType() === GeometryType.POLYGON) {
+                let interSection = turf.intersect(
+                  parser.writeFeatureObject(drawnArea),
+                  estate
+                );
+                if (interSection) {
+                  let intersectionFeature = parser.readFeature(interSection);
+                  if (
+                    intersectionFeature.getGeometry().getType() ===
+                    GeometryType.POLYGON
+                  ) {
+                    affectedArea += Math.floor(
+                      intersectionFeature.getGeometry().getArea()
+                    );
+                  }
+                }
+              }
             });
-          }
-        }
-      });
-      let result = {
-        operation: this.markisParameters.type,
-        objectId: this.markisParameters.objectId,
-        objectSerial: this.markisParameters.objectSerial || "",
-        totalArea: totalArea,
-        affectedEstates: affectedEstates
-      };
-      if (callback) callback(result);
+            if (affectedArea > 0) {
+              let objIndex = affectedEstates.findIndex(
+                obj => obj.estateName === estate.properties.fastighet
+              );
+              if (objIndex === -1) {
+                affectedEstates.push({
+                  estateName: estate.properties.fastighet,
+                  estateId: estate.properties.fnr_fr,
+                  estateArea: estateArea,
+                  affectedArea: affectedArea
+                });
+              }
+            }
+          });
+        });
+        let result = {
+          operation: this.markisParameters.type,
+          objectId: this.markisParameters.objectId,
+          objectSerial: this.markisParameters.objectSerial || "",
+          totalArea: totalArea,
+          affectedEstates: affectedEstates
+        };
+        if (callback) callback(result);
+      }
     });
   }
 
@@ -983,7 +996,9 @@ class MarkisModel {
     if (this.sourceName) {
       this.localObserver.publish("updateMarkisView", {});
       if (existingGeom) {
-        const existingFeatures = new GeoJSON().readFeatures(existingGeom[0]);
+        const existingFeatures = new GeoJSON({
+          geometryName: this.geometryName
+        }).readFeatures(existingGeom[0]);
         this.vectorSource.addFeatures(existingFeatures);
         this.vectorSource.getFeatures().forEach(feature => {
           feature.setId(this.featureIdCounter);
