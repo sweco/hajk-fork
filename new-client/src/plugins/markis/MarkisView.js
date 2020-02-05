@@ -446,12 +446,12 @@ class MarkisView extends React.PureComponent {
           input={<Input name="createMethod" id="createMethod-native-helper" />}
         >
           <option value="abort">Inget aktivt verktyg</option>
-          <option value="add">Lägg till yta</option>
-          <option value="addLine">Lägg till linje</option>
-          <option value="addEstate">Välj yta</option>
-          <option value="remove">Ta bort objekt</option>
-          <option value="edit">Editera objekt</option>
-          <option value="editAttributes">Sätt attribut</option>
+          <option value="add">Rita yta</option>
+          <option value="addLine">Rita linje</option>
+          <option value="addEstate">Välj yta i kartan</option>
+          <option value="remove">Radera yta</option>
+          <option value="edit">Editera yta</option>
+          <option value="editAttributes">Ange attribut på yta</option>
         </NativeSelect>
       </FormControl>
     );
