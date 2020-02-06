@@ -1,4 +1,5 @@
 import * as signalR from "@microsoft/signalr";
+import * as turf from "@turf/turf";
 import { WFS } from "ol/format";
 import GeometryType from "ol/geom/GeometryType";
 import IsLike from "ol/format/filter/IsLike";
@@ -15,6 +16,7 @@ import X2JS from "x2js";
 import { handleClick } from "../../models/Click.js";
 import { Modify } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
+import { Feature } from "ol";
 
 class MarkisModel {
   constructor(settings) {
@@ -43,13 +45,6 @@ class MarkisModel {
     };
     this.type = "Polygon";
     this.markisParameters = {};
-    this.result = {
-      objectId: undefined,
-      objectSerial: undefined,
-      operation: undefined,
-      totalArea: undefined,
-      affectedEstates: []
-    };
     this.featureIdCounter = 1;
     this.createMethod = "abort";
     this.geometryName = "geom";
@@ -214,9 +209,12 @@ class MarkisModel {
   onSelectFeatures = evt => {
     handleClick(evt, evt.map, response => {
       if (response.features.length === 1) {
-        const feature = response.features[0];
-        const geometryType = feature.getGeometry().getType();
+        const estateFeature = response.features[0];
+        const geometryType = estateFeature.getGeometry().getType();
         if (geometryType === GeometryType.POLYGON) {
+          let feature = new Feature({});
+          feature.setGeometryName(this.geometryName);
+          feature.setGeometry(estateFeature.getGeometry());
           feature.modification = "added";
           feature.setId(this.featureIdCounter);
           this.featureIdCounter++;
@@ -556,7 +554,7 @@ class MarkisModel {
   validateCreateTradeMessage(message) {
     if (!message.userName) {
       this.publishMessage(
-        "Markis skickade inte ett giltligt anvädnarnamn",
+        "Markis skickade inte ett giltligt användarnamn",
         "error",
         true
       );
@@ -610,8 +608,9 @@ class MarkisModel {
     var result = true;
     this.vectorSource.forEachFeature(feature => {
       if (
-        !feature.getProperties().diarie_nr ||
-        !feature.getProperties().gbg_fastnr
+        (!feature.getProperties().diarie_nr ||
+          !feature.getProperties().gbg_fastnr) &&
+        feature.modification === "added"
       ) {
         result = false;
       }
@@ -640,64 +639,6 @@ class MarkisModel {
       ) {
         return this.validateCreateTradeMessage(message);
       }
-    }
-  }
-
-  /**Verifies the parameters sent from Markis and assigns them to the MarkisParameter-object */
-  updateMarkisParameters(message, mode) {
-    if (message.contractId.length !== 10) {
-      this.publishMessage(
-        "Avtalsnumret måste bestå av 10 tecken.",
-        "error",
-        true
-      );
-      return false;
-    } else if (
-      isNaN(message.contractSerial) ||
-      message.contractSerial === "0" ||
-      message.contractSerial === ""
-    ) {
-      this.publishMessage(
-        "Markis skickade inte ett giltligt händelselöpnummer.",
-        "error",
-        true
-      );
-      return false;
-    } else if (!message.userName && mode !== "visningsläge") {
-      this.publishMessage(
-        "Markis skickade inte ett giltligt anvädnarnamn",
-        "error",
-        true
-      );
-      return false;
-    } else if (
-      ["F", "G"].indexOf(message.contractStatus.toUpperCase()) === -1
-    ) {
-      this.publishMessage(
-        "Markis skickade inte ett giltligt status. (Status måste vara F eller G)",
-        "error",
-        true
-      );
-      return false;
-    } else if (
-      message.contractStatus.toUpperCase() === "G" &&
-      mode !== "visningsläge"
-    ) {
-      this.publishMessage(
-        "Du kan inte skapa en avtalsyta med status gällande.",
-        "error",
-        true
-      );
-      return false;
-    } else {
-      Object.assign(this.markisParameters, {
-        objectId: message.contractId.toUpperCase(),
-        objectSerial: message.contractSerial,
-        objectStatus: message.contractStatus.toUpperCase(),
-        createdBy: message.userName,
-        mode: mode
-      });
-      return true;
     }
   }
 
@@ -811,47 +752,80 @@ class MarkisModel {
     let affectedEstates = [];
     let totalArea = 0;
     let promises = [];
+    let createdFeatures = [];
     const estateSource = this.sources.find(
       source => source.layers[0] === this.estateWfsName
     );
 
     this.vectorSource.getFeatures().forEach(feature => {
-      if (feature.modification !== "removed") {
+      if (
+        feature.modification === "added" ||
+        feature.modification === "updated"
+      ) {
+        createdFeatures.push(feature);
         let geom = feature.getGeometry();
-        if (geom.getType()) {
-          totalArea += Math.round(geom.getArea());
+        if (geom.getType() === GeometryType.POLYGON) {
+          totalArea += Math.floor(geom.getArea());
         }
         promises.push(this.lookupEstate(estateSource, feature));
       }
     });
 
-    Promise.all(promises).then(estates => {
-      estates[0].features.forEach(estate => {
-        let estateArea = Math.round(
-          new GeoJSON()
-            .readFeature(estate)
-            .getGeometry()
-            .getArea()
-        );
-        if (
-          affectedEstates.filter(
-            e => e.estateName !== estate.properties.fastighet
-          )
-        ) {
-          affectedEstates.push({
-            estateName: estate.properties.fastighet,
-            estateArea: estateArea
+    Promise.all(promises).then(estateCollections => {
+      if (estateCollections) {
+        estateCollections.forEach(estateCollection => {
+          estateCollection.features.forEach(estate => {
+            var parser = new GeoJSON();
+            let estateArea = Math.round(
+              parser
+                .readFeature(estate)
+                .getGeometry()
+                .getArea()
+            );
+            let affectedArea = 0;
+            createdFeatures.forEach(drawnArea => {
+              if (drawnArea.getGeometry().getType() === GeometryType.POLYGON) {
+                let interSection = turf.intersect(
+                  parser.writeFeatureObject(drawnArea),
+                  estate
+                );
+                if (interSection) {
+                  let intersectionFeature = parser.readFeature(interSection);
+                  if (
+                    intersectionFeature.getGeometry().getType() ===
+                    GeometryType.POLYGON
+                  ) {
+                    affectedArea += Math.floor(
+                      intersectionFeature.getGeometry().getArea()
+                    );
+                  }
+                }
+              }
+            });
+            if (affectedArea > 0) {
+              let objIndex = affectedEstates.findIndex(
+                obj => obj.estateName === estate.properties.fastighet
+              );
+              if (objIndex === -1) {
+                affectedEstates.push({
+                  estateName: estate.properties.fastighet,
+                  estateId: estate.properties.fnr_fr,
+                  estateArea: estateArea,
+                  affectedArea: affectedArea
+                });
+              }
+            }
           });
-        }
-      });
-      let result = {
-        operation: this.markisParameters.type,
-        objectId: this.markisParameters.objectId,
-        objectSerial: this.markisParameters.objectSerial || "",
-        totalArea: totalArea,
-        affectedEstates: affectedEstates
-      };
-      if (callback) callback(result);
+        });
+        let result = {
+          operation: this.markisParameters.type,
+          objectId: this.markisParameters.objectId,
+          objectSerial: this.markisParameters.objectSerial || "",
+          totalArea: totalArea,
+          affectedEstates: affectedEstates
+        };
+        if (callback) callback(result);
+      }
     });
   }
 
@@ -898,10 +872,6 @@ class MarkisModel {
           type: "Contract"
         });
         const showObj = JSON.parse(showMessage);
-        // if (this.updateMarkisParameters(showObj, "visningsläge")) {
-        //   this.localObserver.publish("updateMarkisView", {});
-        //   this.doSearch(showObj.contractId, undefined);
-        // }
         if (this.validateMessageParameters(showObj)) {
           this.localObserver.publish("updateMarkisView", {});
           this.doSearch(showObj.objectId, undefined);
@@ -995,7 +965,6 @@ class MarkisModel {
           type: "Contract"
         });
         const createContractObject = JSON.parse(createMessage);
-        //if (this.updateMarkisParameters(createObject, "visningsläge")) {
         if (this.validateMessageParameters(createContractObject)) {
           this.search(this.markisParameters.objectId, undefined, result => {
             let numExistingContracts = this.getNumberOfResults(result);
@@ -1022,13 +991,14 @@ class MarkisModel {
 
   /**Enables creation of contract geometries. Sets the editlayer etc. */
   enableContractCreation(createObject, existingGeom) {
-    //this.updateMarkisParameters(createObject, "editeringsläge");
     this.searchResultLayer.getSource().clear();
     this.sourceName = this.getContractSource();
     if (this.sourceName) {
       this.localObserver.publish("updateMarkisView", {});
       if (existingGeom) {
-        const existingFeatures = new GeoJSON().readFeatures(existingGeom[0]);
+        const existingFeatures = new GeoJSON({
+          geometryName: this.geometryName
+        }).readFeatures(existingGeom[0]);
         this.vectorSource.addFeatures(existingFeatures);
         this.vectorSource.getFeatures().forEach(feature => {
           feature.setId(this.featureIdCounter);
@@ -1198,7 +1168,9 @@ class MarkisModel {
       const numHits = this.getNumberOfResults(d);
       if (numHits < 1) {
         this.publishMessage(
-          `Det finns ingen gällande avtalsyta för ${v}.`,
+          `${v} returnerade inga ${this.displayConnections[
+            this.markisParameters.type
+          ].toLowerCase()}.`,
           "error",
           true
         );
