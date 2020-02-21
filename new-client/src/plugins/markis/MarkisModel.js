@@ -593,7 +593,7 @@ class MarkisModel {
       return false;
     } else if (!message.userName) {
       this.publishMessage(
-        "Markis skickade inte ett giltligt anvädnarnamn",
+        "Markis skickade inte ett giltligt användarnamn",
         "error",
         true
       );
@@ -809,7 +809,7 @@ class MarkisModel {
               if (objIndex === -1) {
                 affectedEstates.push({
                   estateName: estate.properties.fastighet,
-                  estateId: estate.properties.fnr_fr,
+                  estateId: estate.properties.fastnr_fk,
                   estateArea: estateArea,
                   affectedArea: affectedArea
                 });

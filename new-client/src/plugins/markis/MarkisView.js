@@ -59,7 +59,9 @@ class MarkisView extends React.PureComponent {
     formValues: {},
     createMethod: "abort",
     geometryExists: false,
-    editFeatureId: undefined
+    editFeatureId: undefined,
+    allowLine: true,
+    allowPolygon: true
   };
 
   constructor(props) {
@@ -264,7 +266,10 @@ class MarkisView extends React.PureComponent {
     }
     this.model.toggleLayerVisibility([this.props.model.sourceName], true);
     this.setState({
-      inCreation: true
+      inCreation: true,
+      allowLine: this.model.editSource.allowedGeometries.indexOf("Line") > -1,
+      allowPolygon:
+        this.model.editSource.allowedGeometries.indexOf("Polygon") > -1
     });
   };
 
@@ -322,7 +327,7 @@ class MarkisView extends React.PureComponent {
           this.reset();
         } else {
           this.showAdvancedSnackbar(
-            "Geometrin gick inte att spara. Fösök igen senare."
+            "Geometrin gick inte att spara. Försök igen senare."
           );
           this.reset();
         }
@@ -345,7 +350,9 @@ class MarkisView extends React.PureComponent {
       formValues: {},
       objectId: undefined,
       serialNumber: undefined,
-      createdBy: undefined
+      createdBy: undefined,
+      allowLine: true,
+      allowPolygon: true
     });
   }
 
@@ -446,12 +453,16 @@ class MarkisView extends React.PureComponent {
           input={<Input name="createMethod" id="createMethod-native-helper" />}
         >
           <option value="abort">Inget aktivt verktyg</option>
-          <option value="add">Rita yta</option>
-          <option value="addLine">Rita linje</option>
+          <option value="add" disabled={!this.state.allowPolygon}>
+            Rita yta
+          </option>
+          <option value="addLine" disabled={!this.state.allowLine}>
+            Rita linje
+          </option>
           <option value="addEstate">Välj yta i kartan</option>
           <option value="remove">Radera yta</option>
           <option value="edit">Editera yta</option>
-          <option value="editAttributes">Ange attribut på yta</option>
+          <option value="editAttributes">Ange attribut</option>
         </NativeSelect>
       </FormControl>
     );
