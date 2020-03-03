@@ -9,6 +9,17 @@ import FormControl from "@material-ui/core/FormControl";
 import NativeSelect from "@material-ui/core/NativeSelect";
 import FormLabel from "@material-ui/core/FormLabel";
 import Input from "@material-ui/core/Input";
+import ToggleButton from "@material-ui/lab/ToggleButton";
+import ToggleButtonGroup from "@material-ui/lab/ToggleButtonGroup";
+import Grid from "@material-ui/core/Grid";
+import EditIcon from "@material-ui/icons/Edit";
+import FormatShapesIcon from "@material-ui/icons/FormatShapes";
+import TuneIcon from "@material-ui/icons/Tune";
+import DeleteIcon from "@material-ui/icons/Delete";
+import TimelineIcon from "@material-ui/icons/Timeline";
+import TouchAppIcon from "@material-ui/icons/TouchApp";
+import Avatar from "@material-ui/core/Avatar";
+import Chip from "@material-ui/core/Chip";
 
 const styles = theme => ({
   container: {
@@ -24,22 +35,9 @@ const styles = theme => ({
     display: "flex",
     flexWrap: "wrap"
   },
-  listCreateChoices: {
-    margin: theme.spacing(1),
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-    display: "flex",
-    flexWrap: "wrap"
-  },
   formControl: {
     margin: theme.spacing(1),
     minWidth: 120
-  },
-  selectEmpty: {
-    marginTop: theme.spacing(2)
-  },
-  row: {
-    marginBottom: theme.spacing(1)
   },
   createButtons: {
     margin: theme.spacing(1),
@@ -49,6 +47,27 @@ const styles = theme => ({
     marginLeft: 0,
     marginRight: 0,
     width: "100%"
+  },
+  styledButtonGroup: {
+    margin: theme.spacing(0),
+    display: "flex",
+    width: "100%"
+  },
+  styledToggleButton: {
+    margin: theme.spacing(0),
+    border: "1px solid #575757",
+    color: "#575757",
+    width: 125
+  },
+  centerElements: {
+    textAlign: "center"
+  },
+  toolIcons: {
+    margin: theme.spacing(0.5)
+  },
+  chip: {
+    marginBottom: theme.spacing(1),
+    textAlign: "center"
   }
 });
 
@@ -251,7 +270,8 @@ class MarkisView extends React.PureComponent {
 
     this.props.enqueueSnackbar(message, {
       variant: variant || "error",
-      persist: true,
+      autoHideDuration: 7000,
+      persist: false,
       action
     });
   };
@@ -356,19 +376,19 @@ class MarkisView extends React.PureComponent {
     });
   }
 
-  renderInfoText() {
+  renderInfoChip() {
     if (
       this.state.userMode === "Create" &&
       this.state.type === "Contract" &&
       this.state.inCreation
     ) {
       return (
-        <Typography>
-          Du kan nu uppdatera avtalsytan för avtalsnummer:
-          <br />
-          <b>{this.state.objectId}</b>
-          <br />
-        </Typography>
+        <Chip
+          label={`Uppdaterar ${this.state.objectId}`}
+          avatar={<Avatar>A</Avatar>}
+          color="primary"
+          variant="outlined"
+        />
       );
     } else if (
       this.state.userMode === "Create" &&
@@ -376,13 +396,16 @@ class MarkisView extends React.PureComponent {
       this.state.inCreation
     ) {
       return (
-        <Typography>
-          Du kan nu skapa en{" "}
-          {this.model.displayConnections[this.state.type].toLowerCase()}.
-          <br />
-        </Typography>
+        <Chip
+          label={`Skapar ${this.model.displayConnections[
+            this.state.type
+          ].toLowerCase()}`}
+          avatar={<Avatar>K/S</Avatar>}
+          color="primary"
+          variant="outlined"
+        />
       );
-    } else if (this.state.userMode === "Show") {
+    } else if (this.state.userMode === "Show" && this.state.objectId) {
       return (
         <Typography>
           Du visar nu{" "}
@@ -405,8 +428,13 @@ class MarkisView extends React.PureComponent {
   };
 
   handleChange = name => event => {
-    this.setState({ [name]: event.target.value });
-    this.props.model.setCreateMethod(event.target.value);
+    if (this.state[name] === event.currentTarget.value) {
+      this.setState({ [name]: undefined });
+      this.props.model.setCreateMethod("abort");
+    } else {
+      this.setState({ [name]: event.currentTarget.value });
+      this.props.model.setCreateMethod(event.currentTarget.value);
+    }
   };
 
   renderBtns() {
@@ -418,18 +446,19 @@ class MarkisView extends React.PureComponent {
         className={classes.createButtons}
         onClick={this.abortCreation}
       >
-        Avbryt
+        Återgå
       </Button>
     );
 
     const btnSave = (
       <Button
         variant="contained"
+        color="primary"
         className={classes.createButtons}
         onClick={this.saveCreated}
         disabled={!this.state.geometryExists}
       >
-        Skapa
+        Spara
       </Button>
     );
 
@@ -444,35 +473,101 @@ class MarkisView extends React.PureComponent {
       </Button>
     );
 
-    const listCreateChoices = (
-      <FormControl className={classes.listCreateChoices}>
-        <FormLabel component="legend">Välj verktyg</FormLabel>
-        <NativeSelect
-          value={this.state.createMethod}
-          onChange={this.handleChange("createMethod")}
-          input={<Input name="createMethod" id="createMethod-native-helper" />}
-        >
-          <option value="abort">Inget aktivt verktyg</option>
-          <option value="add" disabled={!this.state.allowPolygon}>
-            Rita yta
-          </option>
-          <option value="addLine" disabled={!this.state.allowLine}>
-            Rita linje
-          </option>
-          <option value="addEstate">Välj yta i kartan</option>
-          <option value="remove">Radera yta</option>
-          <option value="edit">Editera yta</option>
-          <option value="editAttributes">Ange attribut</option>
-        </NativeSelect>
-      </FormControl>
+    const buttonGroup = (
+      <Grid container spacing={1} direction="column" alignItems="center">
+        <Grid item>
+          <ToggleButtonGroup
+            variant="contained"
+            className={classes.styledButtonGroup}
+            size="medium"
+            exclusive
+            onChange={this.handleChange("createMethod")}
+            value={this.state.createMethod}
+          >
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={1}
+              value="add"
+              disabled={!this.state.allowPolygon}
+            >
+              <FormatShapesIcon className={classes.toolIcons} />
+              SKAPA YTA
+            </ToggleButton>
+            <ToggleButton
+              className={classes.styledToggleButton}
+              disabled={!this.state.allowLine}
+              key={2}
+              value="addLine"
+            >
+              <TimelineIcon fontSize="large" className={classes.toolIcons} />
+              SKAPA LINJE
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Grid>
+        <Grid item>
+          <ToggleButtonGroup
+            variant="contained"
+            className={classes.styledButtonGroup}
+            exclusive
+            onChange={this.handleChange("createMethod")}
+            size="medium"
+            value={this.state.createMethod}
+          >
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={3}
+              value="addEstate"
+              disabled={!this.state.allowPolygon}
+            >
+              <TouchAppIcon className={classes.toolIcons} />
+              VÄLJ YTA
+            </ToggleButton>
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={4}
+              value="edit"
+            >
+              <EditIcon className={classes.toolIcons} />
+              REDIGERA
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Grid>
+        <Grid item>
+          <ToggleButtonGroup
+            variant="contained"
+            className={classes.styledButtonGroup}
+            exclusive
+            onChange={this.handleChange("createMethod")}
+            size="medium"
+            value={this.state.createMethod}
+          >
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={5}
+              value="remove"
+            >
+              <DeleteIcon className={classes.toolIcons} />
+              RADERA YTA
+            </ToggleButton>
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={6}
+              value="editAttributes"
+            >
+              <TuneIcon className={classes.toolIcons} />
+              ÄNDRA ATTRIBUT
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Grid>
+      </Grid>
     );
 
     if (this.state.userMode === "Create" && this.state.inCreation) {
       return (
         <div>
-          <div>{listCreateChoices}</div>
+          <div>{buttonGroup}</div>
           <div>{this.createForm()}</div>
-          <div>
+          <div className={classes.centerElements}>
             {btnAbort}
             {btnSave}
           </div>
@@ -487,7 +582,7 @@ class MarkisView extends React.PureComponent {
     const { classes } = this.props;
     return (
       <>
-        <div className={classes.text}>{this.renderInfoText()}</div>
+        <div className={classes.chip}>{this.renderInfoChip()}</div>
         {this.renderBtns()}
       </>
     );
