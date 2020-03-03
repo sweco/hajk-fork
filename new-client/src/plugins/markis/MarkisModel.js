@@ -207,22 +207,31 @@ class MarkisModel {
 
   /**Lets the user select existing features for editing. Only handles single select and is restricted to polygon*/
   onSelectFeatures = evt => {
-    handleClick(evt, evt.map, response => {
-      if (response.features.length === 1) {
-        const estateFeature = response.features[0];
-        const geometryType = estateFeature.getGeometry().getType();
-        if (geometryType === GeometryType.POLYGON) {
-          let feature = new Feature({});
-          feature.setGeometryName(this.geometryName);
-          feature.setGeometry(estateFeature.getGeometry());
-          feature.modification = "added";
-          feature.setId(this.featureIdCounter);
-          this.featureIdCounter++;
-          this.vectorSource.addFeature(feature);
-          this.localObserver.publish("featureUpdate", this.vectorSource);
+    if (!this.editFeatureId) {
+      handleClick(evt, evt.map, response => {
+        if (response.features.length === 1) {
+          const estateFeature = response.features[0];
+          const geometryType = estateFeature.getGeometry().getType();
+          if (geometryType === GeometryType.POLYGON) {
+            let feature = new Feature({});
+            feature.setGeometryName(this.geometryName);
+            feature.setGeometry(estateFeature.getGeometry());
+            feature.modification = "added";
+            feature.setId(this.featureIdCounter);
+            this.editFeatureId = this.featureIdCounter;
+            this.featureIdCounter++;
+            this.vectorSource.addFeature(feature);
+            this.localObserver.publish("featureUpdate", this.vectorSource);
+          }
         }
-      }
-    });
+      });
+    } else {
+      this.publishMessage(
+        "Du måste ange attribut på ytan innan du kan skapa en ny!",
+        "error",
+        false
+      );
+    }
   };
 
   setFeatureProperties() {
@@ -268,15 +277,34 @@ class MarkisModel {
     this.draw.on("drawend", event => {
       this.handleDrawEnd(event);
     });
+
     this.map.addInteraction(this.draw);
   }
 
   handleDrawEnd = event => {
-    event.feature.modification = "added";
-    event.feature.setId(this.featureIdCounter);
-    this.featureIdCounter++;
-    this.localObserver.publish("featureUpdate", this.vectorSource);
+    if (!this.editFeatureId) {
+      this.lastGeometryHandled = false;
+      event.feature.modification = "added";
+      event.feature.setId(this.featureIdCounter);
+      this.editFeatureId = this.featureIdCounter;
+      this.featureIdCounter++;
+      this.localObserver.publish("featureUpdate", this.vectorSource);
+    } else {
+      this.publishMessage(
+        "Du måste ange attribut på ytan innan du kan skapa en ny!",
+        "error",
+        false
+      );
+      this.vectorSource.once("addfeature", event => {
+        const feature = event.feature;
+        this.vectorSource.removeFeature(feature);
+      });
+    }
   };
+
+  resetEditFeatureId() {
+    this.editFeatureId = undefined;
+  }
 
   removeInteraction() {
     if (this.draw) {

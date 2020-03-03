@@ -9,6 +9,17 @@ import FormControl from "@material-ui/core/FormControl";
 import NativeSelect from "@material-ui/core/NativeSelect";
 import FormLabel from "@material-ui/core/FormLabel";
 import Input from "@material-ui/core/Input";
+import ToggleButton from "@material-ui/lab/ToggleButton";
+import ToggleButtonGroup from "@material-ui/lab/ToggleButtonGroup";
+import Grid from "@material-ui/core/Grid";
+import EditIcon from "@material-ui/icons/Edit";
+import FormatShapesIcon from "@material-ui/icons/FormatShapes";
+import TuneIcon from "@material-ui/icons/Tune";
+import DeleteIcon from "@material-ui/icons/Delete";
+import TimelineIcon from "@material-ui/icons/Timeline";
+import TouchAppIcon from "@material-ui/icons/TouchApp";
+import Chip from "@material-ui/core/Chip";
+import Tooltip from "@material-ui/core/Tooltip";
 
 const styles = theme => ({
   container: {
@@ -24,22 +35,10 @@ const styles = theme => ({
     display: "flex",
     flexWrap: "wrap"
   },
-  listCreateChoices: {
-    margin: theme.spacing(1),
-    marginTop: theme.spacing(2),
-    marginBottom: theme.spacing(2),
-    display: "flex",
-    flexWrap: "wrap"
-  },
   formControl: {
     margin: theme.spacing(1),
-    minWidth: 120
-  },
-  selectEmpty: {
-    marginTop: theme.spacing(2)
-  },
-  row: {
-    marginBottom: theme.spacing(1)
+    minWidth: 120,
+    width: "100%"
   },
   createButtons: {
     margin: theme.spacing(1),
@@ -49,6 +48,27 @@ const styles = theme => ({
     marginLeft: 0,
     marginRight: 0,
     width: "100%"
+  },
+  styledButtonGroup: {
+    margin: theme.spacing(0),
+    display: "flex",
+    width: "100%"
+  },
+  styledToggleButton: {
+    margin: theme.spacing(0),
+    border: "1px solid #575757",
+    color: "#575757",
+    width: 125
+  },
+  centerElements: {
+    textAlign: "center"
+  },
+  toolIcons: {
+    margin: theme.spacing(0.5)
+  },
+  chip: {
+    marginBottom: theme.spacing(1),
+    textAlign: "center"
   }
 });
 
@@ -165,7 +185,7 @@ class MarkisView extends React.PureComponent {
           <>
             <TextField
               id={field.id}
-              label={field.name}
+              label={field.displayName}
               className={classes.textField}
               margin="normal"
               variant="outlined"
@@ -194,7 +214,7 @@ class MarkisView extends React.PureComponent {
               <NativeSelect
                 value={this.state.formValues[field.name]}
                 disabled={!this.state.editFeatureId}
-                input={<Input name={field.name} id={field.name} />}
+                input={<Input name={field.displayName} id={field.name} />}
                 onChange={e => {
                   this.checkText(field.name, e.target.value);
                 }}
@@ -251,7 +271,8 @@ class MarkisView extends React.PureComponent {
 
     this.props.enqueueSnackbar(message, {
       variant: variant || "error",
-      persist: true,
+      autoHideDuration: 7000,
+      persist: false,
       action
     });
   };
@@ -356,19 +377,18 @@ class MarkisView extends React.PureComponent {
     });
   }
 
-  renderInfoText() {
+  renderInfoChip() {
     if (
       this.state.userMode === "Create" &&
       this.state.type === "Contract" &&
       this.state.inCreation
     ) {
       return (
-        <Typography>
-          Du kan nu uppdatera avtalsytan för avtalsnummer:
-          <br />
-          <b>{this.state.objectId}</b>
-          <br />
-        </Typography>
+        <Chip
+          label={`Uppdaterar ${this.state.objectId}`}
+          color="primary"
+          variant="outlined"
+        />
       );
     } else if (
       this.state.userMode === "Create" &&
@@ -376,13 +396,15 @@ class MarkisView extends React.PureComponent {
       this.state.inCreation
     ) {
       return (
-        <Typography>
-          Du kan nu skapa en{" "}
-          {this.model.displayConnections[this.state.type].toLowerCase()}.
-          <br />
-        </Typography>
+        <Chip
+          label={`Skapar ${this.model.displayConnections[
+            this.state.type
+          ].toLowerCase()}`}
+          color="primary"
+          variant="outlined"
+        />
       );
-    } else if (this.state.userMode === "Show") {
+    } else if (this.state.userMode === "Show" && this.state.objectId) {
       return (
         <Typography>
           Du visar nu{" "}
@@ -405,77 +427,203 @@ class MarkisView extends React.PureComponent {
   };
 
   handleChange = name => event => {
-    this.setState({ [name]: event.target.value });
-    this.props.model.setCreateMethod(event.target.value);
+    if (this.state[name] === event.currentTarget.value) {
+      this.setState({ [name]: undefined });
+      this.props.model.setCreateMethod("abort");
+    } else {
+      this.setState({ [name]: event.currentTarget.value });
+      this.props.model.setCreateMethod(event.currentTarget.value);
+    }
+  };
+
+  acceptAttributes = () => {
+    this.setState({
+      editFeatureId: undefined
+    });
+    this.model.resetEditFeatureId();
   };
 
   renderBtns() {
     const { classes } = this.props;
 
     const btnAbort = (
-      <Button
-        variant="contained"
-        className={classes.createButtons}
-        onClick={this.abortCreation}
-      >
-        Avbryt
-      </Button>
+      <Tooltip title="Avbryt pågående arbete.">
+        <span>
+          <Button
+            variant="contained"
+            className={classes.createButtons}
+            onClick={this.abortCreation}
+          >
+            Återgå
+          </Button>
+        </span>
+      </Tooltip>
     );
 
     const btnSave = (
-      <Button
-        variant="contained"
-        className={classes.createButtons}
-        onClick={this.saveCreated}
-        disabled={!this.state.geometryExists}
-      >
-        Skapa
-      </Button>
+      <Tooltip title="Spara och stäng.">
+        <span>
+          <Button
+            variant="contained"
+            color="primary"
+            className={classes.createButtons}
+            onClick={this.saveCreated}
+            disabled={!this.state.geometryExists}
+          >
+            Spara
+          </Button>
+        </span>
+      </Tooltip>
     );
 
     const btnRemoveResult = (
+      <Tooltip title="Rensa bort sökresultat från kartan.">
+        <span>
+          <Button
+            variant="contained"
+            className={classes.createButtons}
+            onClick={this.clearSearchResult}
+            disabled={!this.state.objectId}
+          >
+            Rensa
+          </Button>
+        </span>
+      </Tooltip>
+    );
+
+    const btnAcceptAttributes = (
       <Button
         variant="contained"
         className={classes.createButtons}
-        onClick={this.clearSearchResult}
-        disabled={!this.state.objectId}
+        onClick={this.acceptAttributes}
       >
-        Rensa
+        Ok
       </Button>
     );
 
-    const listCreateChoices = (
-      <FormControl className={classes.listCreateChoices}>
-        <FormLabel component="legend">Välj verktyg</FormLabel>
-        <NativeSelect
-          value={this.state.createMethod}
-          onChange={this.handleChange("createMethod")}
-          input={<Input name="createMethod" id="createMethod-native-helper" />}
-        >
-          <option value="abort">Inget aktivt verktyg</option>
-          <option value="add" disabled={!this.state.allowPolygon}>
-            Rita yta
-          </option>
-          <option value="addLine" disabled={!this.state.allowLine}>
-            Rita linje
-          </option>
-          <option value="addEstate">Välj yta i kartan</option>
-          <option value="remove">Radera yta</option>
-          <option value="edit">Editera yta</option>
-          <option value="editAttributes">Ange attribut</option>
-        </NativeSelect>
-      </FormControl>
+    const buttonGroup = (
+      <Grid container spacing={1} direction="column" alignItems="center">
+        <Grid item>
+          <ToggleButtonGroup
+            variant="contained"
+            className={classes.styledButtonGroup}
+            size="medium"
+            exclusive
+            onChange={this.handleChange("createMethod")}
+            value={this.state.createMethod}
+          >
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={1}
+              value="add"
+              disabled={!this.state.allowPolygon}
+              title="Skapa en ny yta."
+            >
+              <FormatShapesIcon className={classes.toolIcons} />
+              SKAPA YTA
+            </ToggleButton>
+            <ToggleButton
+              className={classes.styledToggleButton}
+              disabled={!this.state.allowLine}
+              key={2}
+              value="addLine"
+              title="Skapa en ny linje."
+            >
+              <TimelineIcon fontSize="large" className={classes.toolIcons} />
+              SKAPA LINJE
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Grid>
+        <Grid item>
+          <ToggleButtonGroup
+            variant="contained"
+            className={classes.styledButtonGroup}
+            exclusive
+            onChange={this.handleChange("createMethod")}
+            size="medium"
+            value={this.state.createMethod}
+          >
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={3}
+              value="addEstate"
+              title="Välj en yta i kartan att utgå från."
+              disabled={!this.state.allowPolygon}
+            >
+              <TouchAppIcon className={classes.toolIcons} />
+              VÄLJ YTA
+            </ToggleButton>
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={4}
+              value="edit"
+              title="Redigera en yta genom att dra i kartan."
+            >
+              <EditIcon className={classes.toolIcons} />
+              REDIGERA
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Grid>
+        <Grid item>
+          <ToggleButtonGroup
+            variant="contained"
+            className={classes.styledButtonGroup}
+            exclusive
+            onChange={this.handleChange("createMethod")}
+            size="medium"
+            value={this.state.createMethod}
+          >
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={5}
+              value="remove"
+              title="Ta bort en yta genom att markera den i kartan."
+            >
+              <DeleteIcon className={classes.toolIcons} />
+              RADERA YTA
+            </ToggleButton>
+            <ToggleButton
+              className={classes.styledToggleButton}
+              key={6}
+              value="editAttributes"
+              title="Ändra ytans attribut genom att markera den i kartan."
+            >
+              <TuneIcon className={classes.toolIcons} />
+              ÄNDRA ATTRIBUT
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </Grid>
+      </Grid>
     );
 
-    if (this.state.userMode === "Create" && this.state.inCreation) {
+    if (
+      this.state.userMode === "Create" &&
+      this.state.inCreation &&
+      !this.state.editFeatureId
+    ) {
       return (
         <div>
-          <div>{listCreateChoices}</div>
-          <div>{this.createForm()}</div>
-          <div>
+          <div>{buttonGroup}</div>
+          <div className={classes.centerElements}>
             {btnAbort}
             {btnSave}
           </div>
+        </div>
+      );
+    } else if (
+      this.state.userMode === "Create" &&
+      this.state.inCreation &&
+      this.state.editFeatureId
+    ) {
+      return (
+        <div>
+          <div className={classes.text}>
+            <Typography>
+              <b>Ange ytans attribut nedan: </b>{" "}
+            </Typography>
+          </div>
+          <div>{this.createForm()}</div>
+          <div>{btnAcceptAttributes}</div>
         </div>
       );
     } else {
@@ -487,7 +635,7 @@ class MarkisView extends React.PureComponent {
     const { classes } = this.props;
     return (
       <>
-        <div className={classes.text}>{this.renderInfoText()}</div>
+        <div className={classes.chip}>{this.renderInfoChip()}</div>
         {this.renderBtns()}
       </>
     );
