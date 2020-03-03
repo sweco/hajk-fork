@@ -18,8 +18,8 @@ import TuneIcon from "@material-ui/icons/Tune";
 import DeleteIcon from "@material-ui/icons/Delete";
 import TimelineIcon from "@material-ui/icons/Timeline";
 import TouchAppIcon from "@material-ui/icons/TouchApp";
-import Avatar from "@material-ui/core/Avatar";
 import Chip from "@material-ui/core/Chip";
+import Tooltip from "@material-ui/core/Tooltip";
 
 const styles = theme => ({
   container: {
@@ -37,7 +37,8 @@ const styles = theme => ({
   },
   formControl: {
     margin: theme.spacing(1),
-    minWidth: 120
+    minWidth: 120,
+    width: "100%"
   },
   createButtons: {
     margin: theme.spacing(1),
@@ -184,7 +185,7 @@ class MarkisView extends React.PureComponent {
           <>
             <TextField
               id={field.id}
-              label={field.name}
+              label={field.displayName}
               className={classes.textField}
               margin="normal"
               variant="outlined"
@@ -213,7 +214,7 @@ class MarkisView extends React.PureComponent {
               <NativeSelect
                 value={this.state.formValues[field.name]}
                 disabled={!this.state.editFeatureId}
-                input={<Input name={field.name} id={field.name} />}
+                input={<Input name={field.displayName} id={field.name} />}
                 onChange={e => {
                   this.checkText(field.name, e.target.value);
                 }}
@@ -385,7 +386,6 @@ class MarkisView extends React.PureComponent {
       return (
         <Chip
           label={`Uppdaterar ${this.state.objectId}`}
-          avatar={<Avatar>A</Avatar>}
           color="primary"
           variant="outlined"
         />
@@ -400,7 +400,6 @@ class MarkisView extends React.PureComponent {
           label={`Skapar ${this.model.displayConnections[
             this.state.type
           ].toLowerCase()}`}
-          avatar={<Avatar>K/S</Avatar>}
           color="primary"
           variant="outlined"
         />
@@ -437,39 +436,68 @@ class MarkisView extends React.PureComponent {
     }
   };
 
+  acceptAttributes = () => {
+    this.setState({
+      editFeatureId: undefined
+    });
+    this.model.resetEditFeatureId();
+  };
+
   renderBtns() {
     const { classes } = this.props;
 
     const btnAbort = (
-      <Button
-        variant="contained"
-        className={classes.createButtons}
-        onClick={this.abortCreation}
-      >
-        Återgå
-      </Button>
+      <Tooltip title="Avbryt pågående arbete.">
+        <span>
+          <Button
+            variant="contained"
+            className={classes.createButtons}
+            onClick={this.abortCreation}
+          >
+            Återgå
+          </Button>
+        </span>
+      </Tooltip>
     );
 
     const btnSave = (
-      <Button
-        variant="contained"
-        color="primary"
-        className={classes.createButtons}
-        onClick={this.saveCreated}
-        disabled={!this.state.geometryExists}
-      >
-        Spara
-      </Button>
+      <Tooltip title="Spara och stäng.">
+        <span>
+          <Button
+            variant="contained"
+            color="primary"
+            className={classes.createButtons}
+            onClick={this.saveCreated}
+            disabled={!this.state.geometryExists}
+          >
+            Spara
+          </Button>
+        </span>
+      </Tooltip>
     );
 
     const btnRemoveResult = (
+      <Tooltip title="Rensa bort sökresultat från kartan.">
+        <span>
+          <Button
+            variant="contained"
+            className={classes.createButtons}
+            onClick={this.clearSearchResult}
+            disabled={!this.state.objectId}
+          >
+            Rensa
+          </Button>
+        </span>
+      </Tooltip>
+    );
+
+    const btnAcceptAttributes = (
       <Button
         variant="contained"
         className={classes.createButtons}
-        onClick={this.clearSearchResult}
-        disabled={!this.state.objectId}
+        onClick={this.acceptAttributes}
       >
-        Rensa
+        Ok
       </Button>
     );
 
@@ -489,6 +517,7 @@ class MarkisView extends React.PureComponent {
               key={1}
               value="add"
               disabled={!this.state.allowPolygon}
+              title="Skapa en ny yta."
             >
               <FormatShapesIcon className={classes.toolIcons} />
               SKAPA YTA
@@ -498,6 +527,7 @@ class MarkisView extends React.PureComponent {
               disabled={!this.state.allowLine}
               key={2}
               value="addLine"
+              title="Skapa en ny linje."
             >
               <TimelineIcon fontSize="large" className={classes.toolIcons} />
               SKAPA LINJE
@@ -517,6 +547,7 @@ class MarkisView extends React.PureComponent {
               className={classes.styledToggleButton}
               key={3}
               value="addEstate"
+              title="Välj en yta i kartan att utgå från."
               disabled={!this.state.allowPolygon}
             >
               <TouchAppIcon className={classes.toolIcons} />
@@ -526,6 +557,7 @@ class MarkisView extends React.PureComponent {
               className={classes.styledToggleButton}
               key={4}
               value="edit"
+              title="Redigera en yta genom att dra i kartan."
             >
               <EditIcon className={classes.toolIcons} />
               REDIGERA
@@ -545,6 +577,7 @@ class MarkisView extends React.PureComponent {
               className={classes.styledToggleButton}
               key={5}
               value="remove"
+              title="Ta bort en yta genom att markera den i kartan."
             >
               <DeleteIcon className={classes.toolIcons} />
               RADERA YTA
@@ -553,6 +586,7 @@ class MarkisView extends React.PureComponent {
               className={classes.styledToggleButton}
               key={6}
               value="editAttributes"
+              title="Ändra ytans attribut genom att markera den i kartan."
             >
               <TuneIcon className={classes.toolIcons} />
               ÄNDRA ATTRIBUT
@@ -562,15 +596,34 @@ class MarkisView extends React.PureComponent {
       </Grid>
     );
 
-    if (this.state.userMode === "Create" && this.state.inCreation) {
+    if (
+      this.state.userMode === "Create" &&
+      this.state.inCreation &&
+      !this.state.editFeatureId
+    ) {
       return (
         <div>
           <div>{buttonGroup}</div>
-          <div>{this.createForm()}</div>
           <div className={classes.centerElements}>
             {btnAbort}
             {btnSave}
           </div>
+        </div>
+      );
+    } else if (
+      this.state.userMode === "Create" &&
+      this.state.inCreation &&
+      this.state.editFeatureId
+    ) {
+      return (
+        <div>
+          <div className={classes.text}>
+            <Typography>
+              <b>Ange ytans attribut nedan: </b>{" "}
+            </Typography>
+          </div>
+          <div>{this.createForm()}</div>
+          <div>{btnAcceptAttributes}</div>
         </div>
       );
     } else {
