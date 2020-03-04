@@ -254,6 +254,7 @@ class MarkisModel {
         feature.setProperties({
           [this.editSource.columnNames.createdBy]: this.markisParameters
             .createdBy,
+          [this.editSource.columnNames.phase]: 0,
           [this.editSource.columnNames.regDate]: this.getTimeStampDate()
         });
       }
@@ -1002,6 +1003,7 @@ class MarkisModel {
               );
               if (contractCollectionOk) {
                 this.enableContractCreation(createContractObject, result);
+                this.localObserver.publish("featureUpdate", this.vectorSource);
               } else {
                 this.highlightImpact(result);
                 this.localObserver.publish("updateMarkisView", {});
