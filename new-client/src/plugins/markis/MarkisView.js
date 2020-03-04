@@ -210,7 +210,7 @@ class MarkisView extends React.PureComponent {
         return (
           <div className={classes.root}>
             <FormControl component="fieldset" className={classes.formControl}>
-              <FormLabel component="legend">{field.name}</FormLabel>
+              <FormLabel component="legend">{field.displayName}</FormLabel>
               <NativeSelect
                 value={this.state.formValues[field.name]}
                 disabled={!this.state.editFeatureId}
@@ -577,10 +577,10 @@ class MarkisView extends React.PureComponent {
               className={classes.styledToggleButton}
               key={5}
               value="remove"
-              title="Ta bort en yta genom att markera den i kartan."
+              title="Ta bort ett objekt genom att markera det i kartan."
             >
               <DeleteIcon className={classes.toolIcons} />
-              RADERA YTA
+              RADERA
             </ToggleButton>
             <ToggleButton
               className={classes.styledToggleButton}
