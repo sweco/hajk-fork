@@ -1105,7 +1105,7 @@ class MarkisModel {
     var isLikeFilters = source.searchFields.map(searchField => {
       return new IsLike(
         searchField,
-        searchInput + "*",
+        searchInput,
         "*", // wild card
         ".", // single char
         "!", // escape char
