@@ -136,7 +136,10 @@ class EditModel {
         .filter(feature => feature.modification === mode);
 
     var features = {
-      updates: find("updated"),
+      updates: find("updated").map(feature => {
+        feature.unset("boundedBy");
+        return feature;
+      }),
       inserts: find("added"),
       deletes: find("removed")
     };
