@@ -219,7 +219,9 @@ class MarkisView extends React.PureComponent {
                   this.checkText(field.name, e.target.value);
                 }}
               >
-                <option value="">-Välj värde-</option>
+                <option value="">
+                  {field.nullDisplayName || "-Välj värde-"}
+                </option>
                 {options}
               </NativeSelect>
             </FormControl>
