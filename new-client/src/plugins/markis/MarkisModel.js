@@ -542,9 +542,9 @@ class MarkisModel {
 
   validateShowMessage(message) {
     if (this.markisParameters.type === "Contract") {
-      if (message.objectId.length !== 10) {
+      if (message.objectId.length < 3) {
         this.publishMessage(
-          "Avtalsnumret måste bestå av 10 tecken.",
+          "Avtalsnumret måste bestå av minst 3 tecken.",
           "error",
           true
         );

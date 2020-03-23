@@ -51,7 +51,7 @@ class Markis extends React.PureComponent {
           type="markis"
           custom={{
             icon: <DesktopWindowsIcon />,
-            title: "Klientkoppling",
+            title: "Markiskoppling",
             description: "Markisanslutning",
             height: 315,
             width: 280,
