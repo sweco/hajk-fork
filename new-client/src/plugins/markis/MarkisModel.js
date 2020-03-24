@@ -36,6 +36,10 @@ class MarkisModel {
     this.longLeaseLayerName = settings.options.longLeaseLayerName;
     this.longLeaseWfsName = settings.options.longLeaseWfsName;
     this.wfstSources = settings.options.wfstSources;
+    this.promptForAttributes = false;
+    this.geometriesExist = false;
+    this.featureModified = false;
+    this.editingExisting = false;
     this.displayConnections = {
       LongLease: "Tomträtter",
       Contract: "Avtal",
@@ -139,6 +143,7 @@ class MarkisModel {
     this.editSource = this.wfstSources.find(
       wfstSource => wfstSource.layers[0] === layerName
     );
+    this.promptForAttributes = this.editSource.editableFields.length > 0;
     this.editLayer = new Vector({
       source: this.vectorSource,
       style: this.getSketchStyle()
@@ -207,7 +212,13 @@ class MarkisModel {
 
   /**Lets the user select existing features for editing. Only handles single select and is restricted to polygon*/
   onSelectFeatures = evt => {
-    if (!this.editFeatureId) {
+    if (this.promptForAttributes && this.editFeatureId) {
+      this.publishMessage(
+        "Du måste ange attribut på ytan innan du kan skapa en ny!",
+        "error",
+        false
+      );
+    } else {
       handleClick(evt, evt.map, response => {
         if (response.features.length === 1) {
           const estateFeature = response.features[0];
@@ -221,16 +232,11 @@ class MarkisModel {
             this.editFeatureId = this.featureIdCounter;
             this.featureIdCounter++;
             this.vectorSource.addFeature(feature);
+            this.geometriesExist = true;
             this.localObserver.publish("featureUpdate", this.vectorSource);
           }
         }
       });
-    } else {
-      this.publishMessage(
-        "Du måste ange attribut på ytan innan du kan skapa en ny!",
-        "error",
-        false
-      );
     }
   };
 
@@ -283,14 +289,7 @@ class MarkisModel {
   }
 
   handleDrawEnd = event => {
-    if (!this.editFeatureId) {
-      this.lastGeometryHandled = false;
-      event.feature.modification = "added";
-      event.feature.setId(this.featureIdCounter);
-      this.editFeatureId = this.featureIdCounter;
-      this.featureIdCounter++;
-      this.localObserver.publish("featureUpdate", this.vectorSource);
-    } else {
+    if (this.promptForAttributes && this.editFeatureId) {
       this.publishMessage(
         "Du måste ange attribut på ytan innan du kan skapa en ny!",
         "error",
@@ -300,6 +299,13 @@ class MarkisModel {
         const feature = event.feature;
         this.vectorSource.removeFeature(feature);
       });
+    } else {
+      event.feature.modification = "added";
+      event.feature.setId(this.featureIdCounter);
+      this.editFeatureId = this.featureIdCounter;
+      this.featureIdCounter++;
+      this.geometriesExist = true;
+      this.localObserver.publish("featureUpdate", this.vectorSource);
     }
   };
 
@@ -330,6 +336,13 @@ class MarkisModel {
           feature.modification = "removed";
         }
         feature.setStyle(this.getHiddenStyle());
+        this.geometriesExist =
+          this.vectorSource
+            .getFeatures()
+            .filter(
+              feature => ["added", "updated"].indexOf(feature.modification) > -1
+            ).length > 0;
+        this.featureModified = true;
         this.localObserver.publish("featureUpdate", this.vectorSource);
       }
     });
@@ -538,6 +551,9 @@ class MarkisModel {
       type: undefined
     });
     this.sourceName = undefined;
+    this.editingExisting = false;
+    this.featureModified = false;
+    this.geometriesExist = false;
   }
 
   validateShowMessage(message) {
@@ -1026,6 +1042,8 @@ class MarkisModel {
     if (this.sourceName) {
       this.localObserver.publish("updateMarkisView", {});
       if (existingGeom) {
+        this.geometriesExist = true;
+        this.editingExisting = true;
         const existingFeatures = new GeoJSON({
           geometryName: this.geometryName
         }).readFeatures(existingGeom[0]);

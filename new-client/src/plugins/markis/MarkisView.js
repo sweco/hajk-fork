@@ -81,7 +81,10 @@ class MarkisView extends React.PureComponent {
     geometryExists: false,
     editFeatureId: undefined,
     allowLine: true,
-    allowPolygon: true
+    allowPolygon: true,
+    promptForAttributes: false,
+    featureModified: false,
+    editingExisting: false
   };
 
   constructor(props) {
@@ -97,10 +100,13 @@ class MarkisView extends React.PureComponent {
       }
     });
     this.localObserver.subscribe("featureUpdate", vectorSource => {
+      console.log("geometry exists: ", this.model.geometriesExist);
       this.setState({
-        geometryExists: vectorSource.getFeatures().length > 0 || false,
+        geometryExists: this.model.geometriesExist,
         editFeatureId: this.model.editFeatureId || undefined,
-        formValues: this.initiateFormValues() || {}
+        formValues: this.initiateFormValues() || {},
+        featureModified: this.model.featureModified,
+        editingExisting: this.model.editingExisting
       });
     });
     this.localObserver.subscribe("updateMarkisView", message => {
@@ -237,7 +243,7 @@ class MarkisView extends React.PureComponent {
 
   createForm() {
     const { classes } = this.props;
-    if (this.model.editFeatureId >= 0) {
+    if (this.model.editFeatureId) {
       var markup = this.model.editSource.editableFields.map((field, i) => {
         var valueMarkup = this.getValueMarkup(field);
         return (
@@ -440,7 +446,8 @@ class MarkisView extends React.PureComponent {
 
   acceptAttributes = () => {
     this.setState({
-      editFeatureId: undefined
+      editFeatureId: undefined,
+      featureModified: true
     });
     this.model.resetEditFeatureId();
   };
@@ -470,7 +477,10 @@ class MarkisView extends React.PureComponent {
             color="primary"
             className={classes.createButtons}
             onClick={this.saveCreated}
-            disabled={!this.state.geometryExists}
+            disabled={
+              !(this.state.geometryExists && !this.state.editingExisting) ||
+              !(this.state.featureModified && this.state.editingExisting)
+            }
           >
             Spara
           </Button>
@@ -558,6 +568,7 @@ class MarkisView extends React.PureComponent {
             <ToggleButton
               className={classes.styledToggleButton}
               key={4}
+              disabled={!this.state.geometryExists}
               value="edit"
               title="Redigera en yta genom att dra i kartan."
             >
@@ -578,6 +589,7 @@ class MarkisView extends React.PureComponent {
             <ToggleButton
               className={classes.styledToggleButton}
               key={5}
+              disabled={!this.state.geometryExists}
               value="remove"
               title="Ta bort ett objekt genom att markera det i kartan."
             >
@@ -586,6 +598,9 @@ class MarkisView extends React.PureComponent {
             </ToggleButton>
             <ToggleButton
               className={classes.styledToggleButton}
+              disabled={
+                !this.model.promptForAttributes || !this.state.geometryExists
+              }
               key={6}
               value="editAttributes"
               title="Ändra ytans attribut genom att markera den i kartan."
@@ -598,36 +613,30 @@ class MarkisView extends React.PureComponent {
       </Grid>
     );
 
-    if (
-      this.state.userMode === "Create" &&
-      this.state.inCreation &&
-      !this.state.editFeatureId
-    ) {
-      return (
-        <div>
-          <div>{buttonGroup}</div>
-          <div className={classes.centerElements}>
-            {btnAbort}
-            {btnSave}
+    if (this.state.userMode === "Create" && this.state.inCreation) {
+      if (this.model.promptForAttributes && this.state.editFeatureId) {
+        return (
+          <div>
+            <div className={classes.text}>
+              <Typography>
+                <b>Ange ytans attribut nedan: </b>{" "}
+              </Typography>
+            </div>
+            <div>{this.createForm()}</div>
+            <div>{btnAcceptAttributes}</div>
           </div>
-        </div>
-      );
-    } else if (
-      this.state.userMode === "Create" &&
-      this.state.inCreation &&
-      this.state.editFeatureId
-    ) {
-      return (
-        <div>
-          <div className={classes.text}>
-            <Typography>
-              <b>Ange ytans attribut nedan: </b>{" "}
-            </Typography>
+        );
+      } else {
+        return (
+          <div>
+            <div>{buttonGroup}</div>
+            <div className={classes.centerElements}>
+              {btnAbort}
+              {btnSave}
+            </div>
           </div>
-          <div>{this.createForm()}</div>
-          <div>{btnAcceptAttributes}</div>
-        </div>
-      );
+        );
+      }
     } else {
       return <div>{btnRemoveResult}</div>;
     }
