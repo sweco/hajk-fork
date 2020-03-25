@@ -100,7 +100,6 @@ class MarkisView extends React.PureComponent {
       }
     });
     this.localObserver.subscribe("featureUpdate", vectorSource => {
-      console.log("geometry exists: ", this.model.geometriesExist);
       this.setState({
         geometryExists: this.model.geometriesExist,
         editFeatureId: this.model.editFeatureId || undefined,
@@ -108,6 +107,7 @@ class MarkisView extends React.PureComponent {
         featureModified: this.model.featureModified,
         editingExisting: this.model.editingExisting
       });
+      this.forceUpdate();
     });
     this.localObserver.subscribe("updateMarkisView", message => {
       this.setState({
@@ -298,7 +298,10 @@ class MarkisView extends React.PureComponent {
       inCreation: true,
       allowLine: this.model.editSource.allowedGeometries.indexOf("Line") > -1,
       allowPolygon:
-        this.model.editSource.allowedGeometries.indexOf("Polygon") > -1
+        this.model.editSource.allowedGeometries.indexOf("Polygon") > -1,
+      geometryExists: this.model.geometriesExist,
+      featureModified: this.model.featureModified,
+      editingExisting: this.model.editingExisting
     });
   };
 
@@ -478,7 +481,7 @@ class MarkisView extends React.PureComponent {
             className={classes.createButtons}
             onClick={this.saveCreated}
             disabled={
-              !(this.state.geometryExists && !this.state.editingExisting) ||
+              !(this.state.geometryExists && !this.state.editingExisting) &&
               !(this.state.featureModified && this.state.editingExisting)
             }
           >

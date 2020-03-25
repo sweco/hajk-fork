@@ -244,24 +244,17 @@ class MarkisModel {
     this.vectorSource.forEachFeature(feature => {
       feature.setGeometryName(this.geometryName);
       feature.unset("bbox", true);
-      if (this.markisParameters.type === "Contract") {
-        feature.setProperties({
-          [this.editSource.columnNames.contractId]: this.markisParameters
-            .objectId,
-          [this.editSource.columnNames.createdBy]: this.markisParameters
-            .createdBy,
-          [this.editSource.columnNames.regDate]: this.getTimeStampDate(),
-          [this.editSource.columnNames.status]: this.markisParameters
-            .objectStatus,
-          [this.editSource.columnNames.handlopnr]: this.markisParameters
-            .objectSerial
-        });
-      } else {
-        feature.setProperties({
-          [this.editSource.columnNames.createdBy]: this.markisParameters
-            .createdBy,
-          [this.editSource.columnNames.phase]: 0,
-          [this.editSource.columnNames.regDate]: this.getTimeStampDate()
+      if (this.editSource.setProperties) {
+        this.editSource.setProperties.forEach(property => {
+          if (property.fromMarkis) {
+            feature.setProperties({
+              [property.columnName]: this.markisParameters[property.value]
+            });
+          } else {
+            feature.setProperties({
+              [property.columnName]: [property.value]
+            });
+          }
         });
       }
     });
@@ -311,6 +304,7 @@ class MarkisModel {
 
   resetEditFeatureId() {
     this.editFeatureId = undefined;
+    this.featureModified = true;
   }
 
   removeInteraction() {
@@ -374,6 +368,11 @@ class MarkisModel {
     });
     this.edit = new Modify({ features: features });
     this.map.addInteraction(this.edit);
+
+    this.edit.on("modifyend", event => {
+      this.featureModified = true;
+      this.localObserver.publish("featureUpdate", this.vectorSource);
+    });
   }
 
   setCreateMethod(method) {
@@ -548,7 +547,8 @@ class MarkisModel {
       objectStatus: undefined,
       createdBy: undefined,
       userMode: undefined,
-      type: undefined
+      type: undefined,
+      regDate: undefined
     });
     this.sourceName = undefined;
     this.editingExisting = false;
@@ -668,7 +668,8 @@ class MarkisModel {
       objectId: (message.objectId || "").toUpperCase(),
       objectSerial: message.objectSerial,
       objectStatus: (message.objectStatus || "").toUpperCase(),
-      createdBy: message.userName
+      createdBy: message.userName,
+      regDate: this.getTimeStampDate()
     });
   }
 
@@ -978,6 +979,7 @@ class MarkisModel {
           this.sourceName = this.purchaseWfsName;
           this.searchResultLayer.getSource().clear();
           this.localObserver.publish("updateMarkisView", {});
+          this.localObserver.publish("featureUpdate", this.vectorSource);
           this.toggleLayerVisibility([this.purchaseLayerName], true);
         }
       }.bind(this)
@@ -996,6 +998,7 @@ class MarkisModel {
           this.sourceName = this.saleWfsName;
           this.searchResultLayer.getSource().clear();
           this.localObserver.publish("updateMarkisView", {});
+          this.localObserver.publish("featureUpdate", this.vectorSource);
           this.toggleLayerVisibility([this.saleLayerName], true);
         }
       }.bind(this)
@@ -1026,6 +1029,7 @@ class MarkisModel {
               }
             } else {
               this.enableContractCreation(createContractObject, null);
+              this.localObserver.publish("featureUpdate", this.vectorSource);
             }
           });
         } else {
