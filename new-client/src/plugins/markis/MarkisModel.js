@@ -305,6 +305,7 @@ class MarkisModel {
   resetEditFeatureId() {
     this.editFeatureId = undefined;
     this.featureModified = true;
+    this.localObserver.publish("featureUpdate", this.vectorSource);
   }
 
   removeInteraction() {
@@ -527,10 +528,15 @@ class MarkisModel {
 
   clearSearchResult() {
     this.searchResultLayer.getSource().clear();
+    Object.assign(this.markisParameters, {
+      objectId: undefined
+    });
+    this.localObserver.publish("featureUpdate", this.vectorSource);
   }
 
   reset() {
     this.vectorSource.clear();
+    this.removeInteraction();
     this.toggleLayerVisibility(
       [
         this.estateLayerName,
@@ -540,6 +546,9 @@ class MarkisModel {
       ],
       false
     );
+    if (this.sourceName && this.markisParameters.userMode === "Show") {
+      this.toggleLayerVisibility([this.sourceName], false);
+    }
     this.editFeatureId = undefined;
     Object.assign(this.markisParameters, {
       objectId: undefined,
@@ -1098,7 +1107,7 @@ class MarkisModel {
   }
 
   publishMessage(message, variant, reset) {
-    this.localObserver.publish("markisErrorEvent", {
+    this.localObserver.publish("markisMessageEvent", {
       message: message,
       variant: variant,
       reset: reset
