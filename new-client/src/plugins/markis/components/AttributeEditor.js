@@ -40,10 +40,18 @@ class AttributeEditor extends React.Component {
       formValues: {}
     };
 
-    props.observer.subscribe("featureUpdate", vectorSource => {
+    props.observer.subscribe("feature-selected-for-edit", vectorSource => {
       this.setState({
         formValues: this.initFormValues() || {}
       });
+    });
+
+    props.observer.subscribe("feature-added", vectorSource => {
+      if (this.props.model.promptForAttributes) {
+        this.setState({
+          formValues: this.initFormValues() || {}
+        });
+      }
     });
   }
 

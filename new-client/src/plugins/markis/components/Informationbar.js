@@ -6,42 +6,34 @@ class Informationbar extends React.Component {
   renderInformation() {
     const { model } = this.props;
 
-    if (
-      model.markisParameters.userMode === "Create" &&
-      model.markisParameters.type === "Contract"
-    ) {
+    if (this.props.userMode === "Create" && this.props.type === "Contract") {
       return (
         <Chip
-          label={`Uppdaterar ${model.markisParameters.objectId}`}
+          label={`Uppdaterar ${this.props.objectId}`}
           color="primary"
           variant="outlined"
         />
       );
     } else if (
-      model.markisParameters.userMode === "Create" &&
-      (model.markisParameters.type === "Purchase" ||
-        model.markisParameters.type === "Sale")
+      this.props.userMode === "Create" &&
+      (this.props.type === "Purchase" || this.props.type === "Sale")
     ) {
       return (
         <Chip
           label={`Skapar ${model.displayConnections[
-            model.markisParameters.type
+            this.props.type
           ].toLowerCase()}`}
           color="primary"
           variant="outlined"
         />
       );
-    } else if (
-      model.markisParameters.userMode === "Show" &&
-      model.markisParameters.objectId
-    ) {
+    } else if (this.props.userMode === "Show" && this.props.objectId) {
       return (
         <Typography>
-          Du visar nu{" "}
-          {model.displayConnections[model.markisParameters.type].toLowerCase()}{" "}
+          Du visar nu {model.displayConnections[this.props.type].toLowerCase()}{" "}
           kopplade till:
           <br />
-          <b>{model.markisParameters.objectId}</b>
+          <b>{this.props.objectId}</b>
         </Typography>
       );
     } else {

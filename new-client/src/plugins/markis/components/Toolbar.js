@@ -48,7 +48,7 @@ const styles = theme => ({
 class Toolbar extends React.Component {
   state = {
     createMethod: "abort",
-    geometryExists: false,
+    featuresExist: false,
     editFeatureId: undefined,
     allowLine: true,
     allowPolygon: true,
@@ -60,18 +60,9 @@ class Toolbar extends React.Component {
   constructor(props) {
     super(props);
 
-    props.observer.subscribe("updateMarkisView", message => {
-      if (props.model.markisParameters) {
-        this.setState({
-          userMode: props.model.markisParameters.userMode,
-          type: props.model.markisParameters.type
-        });
-      }
-    });
-
-    props.observer.subscribe("featureUpdate", vectorSource => {
+    props.observer.subscribe("create-contract", message => {
       this.setState({
-        geometryExists: props.model.geometriesExist,
+        featuresExist: props.model.geometriesExist,
         editFeatureId: props.model.editFeatureId,
         featureModified: props.model.featureModified,
         editingExisting: props.model.editingExisting,
@@ -80,6 +71,45 @@ class Toolbar extends React.Component {
         allowPolygon:
           props.model.editSource.allowedGeometries.indexOf("Polygon") > -1,
         promptForAttributes: props.model.promptForAttributes
+      });
+    });
+
+    props.observer.subscribe("feature-modified", vectorSource => {
+      this.setState({
+        featureModified: props.model.featureModified
+      });
+    });
+
+    props.observer.subscribe("feature-added", message => {
+      this.setState({
+        editFeatureId: this.props.model.editFeatureId,
+        featuresExist: true
+      });
+    });
+
+    props.observer.subscribe("feature-deleted-by-user", message => {
+      this.setState({
+        featuresExist: this.props.model.geometriesExist
+      });
+    });
+
+    props.observer.subscribe("editing-existing-contract", message => {
+      this.setState({
+        editingExisting: true,
+        featuresExist: true
+      });
+    });
+
+    props.observer.subscribe("feature-selected-for-edit", message => {
+      this.setState({
+        editFeatureId: this.props.model.editFeatureId
+      });
+    });
+
+    props.observer.subscribe("edit-feature-reset", message => {
+      this.setState({
+        editFeatureId: undefined,
+        featureModified: true
       });
     });
   }
@@ -221,7 +251,7 @@ class Toolbar extends React.Component {
             <ToggleButton
               className={classes.styledToggleButton}
               key={4}
-              disabled={!this.state.geometryExists}
+              disabled={!this.state.featuresExist}
               value="edit"
               title="Redigera en yta genom att dra i kartan."
             >
@@ -242,7 +272,7 @@ class Toolbar extends React.Component {
             <ToggleButton
               className={classes.styledToggleButton}
               key={5}
-              disabled={!this.state.geometryExists}
+              disabled={!this.state.featuresExist}
               value="remove"
               title="Ta bort ett objekt genom att markera det i kartan."
             >
@@ -251,9 +281,7 @@ class Toolbar extends React.Component {
             </ToggleButton>
             <ToggleButton
               className={classes.styledToggleButton}
-              disabled={
-                !model.promptForAttributes || !this.state.geometryExists
-              }
+              disabled={!model.promptForAttributes || !this.state.featuresExist}
               key={6}
               value="editAttributes"
               title="Ändra ytans attribut genom att markera den i kartan."
@@ -275,7 +303,7 @@ class Toolbar extends React.Component {
             className={classes.createButtons}
             onClick={this.saveCreated}
             disabled={
-              !(this.state.geometryExists && !this.state.editingExisting) &&
+              !(this.state.featuresExist && !this.state.editingExisting) &&
               !(this.state.featureModified && this.state.editingExisting)
             }
           >
@@ -314,7 +342,9 @@ class Toolbar extends React.Component {
       </Tooltip>
     );
 
-    if (this.props.enabled) {
+    if (
+      !(this.props.model.editFeatureId && this.props.model.promptForAttributes)
+    ) {
       if (model.markisParameters.userMode === "Create") {
         return (
           <div>

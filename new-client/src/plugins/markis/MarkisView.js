@@ -14,15 +14,17 @@ const styles = theme => ({
   }
 });
 
-class MarkisView extends React.PureComponent {
-  state = {
-    userMode: undefined,
-    type: undefined,
-    objectId: undefined
-  };
-
+class MarkisView extends React.Component {
   constructor(props) {
     super(props);
+    this.state = {
+      userMode: undefined,
+      type: undefined,
+      objectId: undefined,
+      editFeatureId: undefined,
+      featuresExist: undefined
+    };
+
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
 
@@ -32,25 +34,25 @@ class MarkisView extends React.PureComponent {
         this.reset();
       }
     });
-    // this.localObserver.subscribe("featureUpdate", vectorSource => {
-    //   this.setState({
-    //     geometryExists: this.props.model.geometriesExist,
-    //     editFeatureId: this.props.model.editFeatureId || undefined,
-    //     featureModified: this.props.model.featureModified,
-    //     editingExisting: this.props.model.editingExisting,
-    //     objectId: this.props.model.markisParameters.objectId
-    //   });
-    // });
-    this.localObserver.subscribe("updateMarkisView", message => {
-      // this.setState({
-      //   userMode: this.props.model.markisParameters.userMode,
-      //   type: this.props.model.markisParameters.type,
-      //   objectId: this.props.model.markisParameters.objectId
-      // });
-      if (this.props.model.markisParameters.userMode === "Create") {
-        console.log("Here");
-        this.openCreateDialog();
-      }
+
+    this.localObserver.subscribe("show-existing-contract", message => {
+      this.updateState();
+    });
+
+    this.localObserver.subscribe("create-contract", message => {
+      this.updateState();
+    });
+
+    this.localObserver.subscribe("search-results-cleared", message => {
+      this.updateState();
+    });
+  }
+
+  updateState() {
+    this.setState({
+      userMode: this.props.model.markisParameters.userMode,
+      type: this.props.model.markisParameters.type,
+      objectId: this.props.model.markisParameters.objectId
     });
   }
 
@@ -75,43 +77,18 @@ class MarkisView extends React.PureComponent {
     });
   };
 
-  openCreateDialog = () => {
-    this.props.model.setEditLayer(this.props.model.sourceName);
-    if (this.props.model.markisParameters.type === "Contract") {
-      this.props.model.toggleLayerVisibility(
-        [this.props.model.estateLayerName],
-        true
-      );
-    }
-    this.props.model.toggleLayerVisibility([this.props.model.sourceName], true);
-    // this.setState({
-    //   inCreation: true,
-    //   allowLine: this.model.editSource.allowedGeometries.indexOf("Line") > -1,
-    //   allowPolygon:
-    //     this.model.editSource.allowedGeometries.indexOf("Polygon") > -1,
-    //   geometryExists: this.model.geometriesExist,
-    //   featureModified: this.model.featureModified,
-    //   editingExisting: this.model.editingExisting
-    // });
-  };
-
   reset() {
     this.props.model.reset();
-    // this.setState({
-    //   inCreation: false,
-    //   geometryExists: false,
-    //   createMethod: "abort",
-    //   formValues: {},
-    //   objectId: undefined,
-    //   serialNumber: undefined,
-    //   createdBy: undefined,
-    //   allowLine: true,
-    //   allowPolygon: true
-    // });
+    this.setState({
+      userMode: this.props.model.markisParameters.userMode,
+      type: this.props.model.markisParameters.type,
+      objectId: undefined,
+      editFeatureId: undefined,
+      featuresExist: undefined
+    });
   }
 
   render() {
-    console.log("Hello: ", this.props.model);
     const { classes } = this.props;
     return (
       <>
@@ -119,6 +96,9 @@ class MarkisView extends React.PureComponent {
           <Informationbar
             model={this.props.model}
             observer={this.props.localObserver}
+            userMode={this.state.userMode}
+            type={this.state.type}
+            objectId={this.state.objectId}
           />
         </div>
         <div>
@@ -127,12 +107,8 @@ class MarkisView extends React.PureComponent {
             observer={this.props.localObserver}
             messageHandler={this.showAdvancedSnackbar}
             panel={this}
-            enabled={
-              !(
-                this.props.model.editFeatureId &&
-                this.props.model.promptForAttributes
-              )
-            }
+            userMode={this.state.userMode}
+            type={this.state.type}
           />
         </div>
         <div>

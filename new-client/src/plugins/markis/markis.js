@@ -15,7 +15,7 @@ class Markis extends React.PureComponent {
 
     this.sessionId = this.getUrlParams("sid");
 
-    this.localObserver.subscribe("updateMarkisView", message => {
+    this.localObserver.subscribe("create-contract", message => {
       props.app.globalObserver.publish("showMarkis", {
         runCallBack: false,
         hideOtherPluginWindows: false

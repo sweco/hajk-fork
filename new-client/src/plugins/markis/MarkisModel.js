@@ -233,7 +233,7 @@ class MarkisModel {
             this.featureIdCounter++;
             this.vectorSource.addFeature(feature);
             this.geometriesExist = true;
-            this.localObserver.publish("featureUpdate", this.vectorSource);
+            this.localObserver.publish("feature-added", this.vectorSource);
           }
         }
       });
@@ -298,14 +298,14 @@ class MarkisModel {
       this.editFeatureId = this.featureIdCounter;
       this.featureIdCounter++;
       this.geometriesExist = true;
-      this.localObserver.publish("featureUpdate", this.vectorSource);
+      this.localObserver.publish("feature-added");
     }
   };
 
   resetEditFeatureId() {
     this.editFeatureId = undefined;
     this.featureModified = true;
-    this.localObserver.publish("featureUpdate", this.vectorSource);
+    this.localObserver.publish("edit-feature-reset");
   }
 
   removeInteraction() {
@@ -316,7 +316,6 @@ class MarkisModel {
       this.map.removeInteraction(this.edit);
     }
     this.editFeatureId = undefined;
-    this.localObserver.publish("featureUpdate", this.vectorSource);
     this.map.un("singleclick", this.removeSelected);
     this.map.un("singleclick", this.onSelectFeatures);
     this.map.un("singleclick", this.selectForEdit);
@@ -338,7 +337,7 @@ class MarkisModel {
               feature => ["added", "updated"].indexOf(feature.modification) > -1
             ).length > 0;
         this.featureModified = true;
-        this.localObserver.publish("featureUpdate", this.vectorSource);
+        this.localObserver.publish("feature-deleted-by-user");
       }
     });
   };
@@ -358,7 +357,7 @@ class MarkisModel {
         this.editFeatureId = feature.getId();
         feature.setStyle(this.getHighlightStyle());
       }
-      this.localObserver.publish("featureUpdate", this.vectorSource);
+      this.localObserver.publish("feature-selected-for-edit");
     });
   };
 
@@ -372,7 +371,7 @@ class MarkisModel {
 
     this.edit.on("modifyend", event => {
       this.featureModified = true;
-      this.localObserver.publish("featureUpdate", this.vectorSource);
+      this.localObserver.publish("feature-modified");
     });
   }
 
@@ -531,11 +530,12 @@ class MarkisModel {
     Object.assign(this.markisParameters, {
       objectId: undefined
     });
-    this.localObserver.publish("featureUpdate", this.vectorSource);
+    this.localObserver.publish("search-results-cleared");
   }
 
   reset() {
     this.vectorSource.clear();
+    this.searchResultLayer.getSource().clear();
     this.removeInteraction();
     this.toggleLayerVisibility(
       [
@@ -928,7 +928,7 @@ class MarkisModel {
         });
         const showObj = JSON.parse(showMessage);
         if (this.validateMessageParameters(showObj)) {
-          this.localObserver.publish("updateMarkisView", {});
+          this.localObserver.publish("show-existing-contract", {});
           this.doSearch(showObj.objectId, undefined);
         }
       }.bind(this)
@@ -947,7 +947,7 @@ class MarkisModel {
           const estateSource = this.sources.find(
             source => source.layers[0] === this.estateWfsName
           );
-          this.localObserver.publish("updateMarkisView", {});
+          this.localObserver.publish("show-existing-contract", {});
           this.doSearch(showEstateObj.objectId, estateSource);
           this.toggleLayerVisibility([this.estateLayerName], true);
         }
@@ -968,7 +968,7 @@ class MarkisModel {
             source => source.layers[0] === this.longLeaseWfsName
           );
 
-          this.localObserver.publish("updateMarkisView", {});
+          this.localObserver.publish("show-existing-contract", {});
           this.doSearch(showLongLeaseObj.objectId, longLeaseSource);
           this.toggleLayerVisibility([this.longLeaseLayerName], true);
         }
@@ -986,9 +986,9 @@ class MarkisModel {
         const createPurchaseObj = JSON.parse(message);
         if (this.validateMessageParameters(createPurchaseObj)) {
           this.sourceName = this.purchaseWfsName;
+          this.setEditLayer(this.sourceName);
           this.searchResultLayer.getSource().clear();
-          this.localObserver.publish("updateMarkisView", {});
-          this.localObserver.publish("featureUpdate", this.vectorSource);
+          this.localObserver.publish("create-contract", {});
           this.toggleLayerVisibility([this.purchaseLayerName], true);
         }
       }.bind(this)
@@ -1005,9 +1005,9 @@ class MarkisModel {
         const createSaleObj = JSON.parse(message);
         if (this.validateMessageParameters(createSaleObj)) {
           this.sourceName = this.saleWfsName;
+          this.setEditLayer(this.sourceName);
           this.searchResultLayer.getSource().clear();
-          this.localObserver.publish("updateMarkisView", {});
-          this.localObserver.publish("featureUpdate", this.vectorSource);
+          this.localObserver.publish("create-contract", {});
           this.toggleLayerVisibility([this.saleLayerName], true);
         }
       }.bind(this)
@@ -1031,14 +1031,18 @@ class MarkisModel {
               );
               if (contractCollectionOk) {
                 this.enableContractCreation(createContractObject, result);
-                this.localObserver.publish("featureUpdate", this.vectorSource);
+                this.localObserver.publish("create-contract", {});
               } else {
                 this.highlightImpact(result);
-                this.localObserver.publish("updateMarkisView", {});
+                Object.assign(this.markisParameters, {
+                  userMode: "Show",
+                  type: "Contract"
+                });
+                this.localObserver.publish("show-existing-contract", {});
               }
             } else {
               this.enableContractCreation(createContractObject, null);
-              this.localObserver.publish("featureUpdate", this.vectorSource);
+              this.localObserver.publish("create-contract", {});
             }
           });
         } else {
@@ -1052,11 +1056,13 @@ class MarkisModel {
   enableContractCreation(createObject, existingGeom) {
     this.searchResultLayer.getSource().clear();
     this.sourceName = this.getContractSource();
+    this.toggleLayerVisibility([this.estateLayerName, this.sourceName], true);
     if (this.sourceName) {
-      this.localObserver.publish("updateMarkisView", {});
+      this.setEditLayer(this.sourceName);
       if (existingGeom) {
         this.geometriesExist = true;
         this.editingExisting = true;
+        this.localObserver.publish("editing-existing-contract");
         const existingFeatures = new GeoJSON({
           geometryName: this.geometryName
         }).readFeatures(existingGeom[0]);
@@ -1095,7 +1101,6 @@ class MarkisModel {
         });
         const extent = this.vectorSource.getExtent();
         this.map.getView().fit(extent, this.map.getSize());
-        this.localObserver.publish("featureUpdate", this.vectorSource);
       }
     } else {
       this.publishMessage(
