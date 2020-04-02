@@ -1,4 +1,3 @@
-// Generic imports – all plugins need these
 import React from "react";
 import BaseWindowPlugin from "../BaseWindowPlugin";
 
@@ -15,7 +14,7 @@ class Markis extends React.PureComponent {
 
     this.sessionId = this.getUrlParams("sid");
 
-    this.localObserver.subscribe("updateMarkisView", message => {
+    this.localObserver.subscribe("create-contract", message => {
       props.app.globalObserver.publish("showMarkis", {
         runCallBack: false,
         hideOtherPluginWindows: false
@@ -53,7 +52,7 @@ class Markis extends React.PureComponent {
             icon: <DesktopWindowsIcon />,
             title: "Markiskoppling",
             description: "Markisanslutning",
-            height: 315,
+            height: 320,
             width: 280,
             top: undefined,
             left: undefined
