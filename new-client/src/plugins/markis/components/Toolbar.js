@@ -11,6 +11,8 @@ import TouchAppIcon from "@material-ui/icons/TouchApp";
 import Tooltip from "@material-ui/core/Tooltip";
 import Button from "@material-ui/core/Button";
 import { withStyles } from "@material-ui/core/styles";
+import SaveIcon from "@material-ui/icons/Save";
+import CancelIcon from "@material-ui/icons/Cancel";
 
 const styles = theme => ({
   container: {
@@ -24,7 +26,12 @@ const styles = theme => ({
   },
   createButtons: {
     margin: theme.spacing(1),
-    width: 90
+    width: 110
+  },
+  clearSearchButton: {
+    margin: theme.spacing(1),
+    width: 110,
+    textAlign: "center"
   },
   styledButtonGroup: {
     margin: theme.spacing(0),
@@ -83,13 +90,15 @@ class Toolbar extends React.Component {
     props.observer.subscribe("feature-added", message => {
       this.setState({
         editFeatureId: this.props.model.editFeatureId,
-        featuresExist: true
+        featuresExist: true,
+        featureModified: true
       });
     });
 
     props.observer.subscribe("feature-deleted-by-user", message => {
       this.setState({
-        featuresExist: this.props.model.geometriesExist
+        featuresExist: this.props.model.geometriesExist,
+        featureModified: true
       });
     });
 
@@ -302,6 +311,7 @@ class Toolbar extends React.Component {
             color="primary"
             className={classes.createButtons}
             onClick={this.saveCreated}
+            startIcon={<SaveIcon />}
             disabled={
               !(this.state.featuresExist && !this.state.editingExisting) &&
               !(this.state.featureModified && this.state.editingExisting)
@@ -320,6 +330,7 @@ class Toolbar extends React.Component {
             variant="contained"
             className={classes.createButtons}
             onClick={this.abortCreation}
+            startIcon={<CancelIcon />}
           >
             Avbryt
           </Button>
@@ -356,7 +367,9 @@ class Toolbar extends React.Component {
           </div>
         );
       } else {
-        return <div>{btnRemoveSearchResult}</div>;
+        return (
+          <div className={classes.centerElements}>{btnRemoveSearchResult}</div>
+        );
       }
     } else {
       return null;

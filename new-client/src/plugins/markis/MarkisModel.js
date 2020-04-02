@@ -10,13 +10,18 @@ import VectorSource from "ol/source/Vector";
 import Vector from "ol/layer/Vector";
 import GeoJSON from "ol/format/GeoJSON";
 import { arraySort } from "./../../utils/ArraySort.js";
-import { Stroke, Style, Circle, Fill } from "ol/style.js";
 import { Draw } from "ol/interaction";
 import X2JS from "x2js";
 import { handleClick } from "../../models/Click.js";
 import { Modify } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
 import { Feature } from "ol";
+import { validateMessageParameters } from "./utils/MessageValidator.js";
+import {
+  getSketchStyle,
+  getHighlightStyle,
+  getHiddenStyle
+} from "./utils/FeatureStyle.js";
 
 class MarkisModel {
   constructor(settings) {
@@ -27,26 +32,14 @@ class MarkisModel {
     this.hubUrl = settings.options.hubUrl;
     this.isConnected = false;
     this.sources = settings.options.sources;
-    this.estateLayerName = settings.options.estateLayerName;
-    this.estateWfsName = settings.options.estateWfsName;
-    this.purchaseLayerName = settings.options.purchaseLayerName;
-    this.purchaseWfsName = settings.options.purchaseWfsName;
-    this.saleLayerName = settings.options.saleLayerName;
-    this.saleWfsName = settings.options.saleWfsName;
-    this.longLeaseLayerName = settings.options.longLeaseLayerName;
-    this.longLeaseWfsName = settings.options.longLeaseWfsName;
+    this.estateSource = settings.options.estateSource;
     this.wfstSources = settings.options.wfstSources;
     this.promptForAttributes = false;
     this.geometriesExist = false;
     this.featureModified = false;
     this.editingExisting = false;
-    this.displayConnections = {
-      LongLease: "Tomträtter",
-      Contract: "Avtal",
-      Estate: "Fastigheter",
-      Purchase: "Förvärvsyta",
-      Sale: "Försäljningsyta"
-    };
+    this.layerNames = settings.options.layerNames;
+    this.displayConnections = settings.options.displayConnections;
     this.type = "Polygon";
     this.markisParameters = {};
     this.featureIdCounter = 1;
@@ -57,86 +50,11 @@ class MarkisModel {
     this.vectorSource = new VectorSource({});
     this.searchResultLayer = new VectorLayer({
       source: new VectorSource({}),
-      style: this.getSketchStyle()
+      style: getSketchStyle()
     });
     this.map.addLayer(this.searchResultLayer);
     this.searchResultLayer.set("type", "markisResultLayer");
     this.searchResultLayer.set("queryable", true);
-  }
-
-  /**Style for search results and sketching */
-  getSketchStyle() {
-    return [
-      new Style({
-        fill: new Fill({
-          color: "rgba(255, 0, 0, 0.5)"
-        }),
-        stroke: new Stroke({
-          color: "rgba(200, 0, 0, 0.5)",
-          width: 4
-        }),
-        image: new Circle({
-          radius: 6,
-          fill: new Fill({
-            color: "rgba(0, 0, 0, 0.5)"
-          }),
-          stroke: new Stroke({
-            color: "rgba(255, 255, 255, 0.5)",
-            width: 2
-          })
-        })
-      })
-    ];
-  }
-
-  /**Style for highlighted (selected) features */
-  getHighlightStyle() {
-    return [
-      new Style({
-        fill: new Fill({
-          color: "rgba(0, 255, 0, 0.5)"
-        }),
-        stroke: new Stroke({
-          color: "rgba(0, 200, 0, 0.5)",
-          width: 4
-        }),
-        image: new Circle({
-          radius: 6,
-          fill: new Fill({
-            color: "rgba(0, 0, 0, 0.5)"
-          }),
-          stroke: new Stroke({
-            color: "rgba(255, 255, 255, 0.5)",
-            width: 2
-          })
-        })
-      })
-    ];
-  }
-
-  /**Style for hidden features */
-  getHiddenStyle() {
-    return [
-      new Style({
-        stroke: new Stroke({
-          color: "rgba(0, 0, 0, 0)",
-          width: 0
-        }),
-        fill: new Fill({
-          color: "rgba(1, 2, 3, 0)"
-        }),
-        image: new Circle({
-          fill: new Fill({
-            color: "rgba(0, 0, 0, 0)"
-          }),
-          stroke: new Stroke({
-            color: "rgba(0, 0, 0, 0)",
-            width: 0
-          }),
-          radius: 0
-        })
-      })
-    ];
   }
 
   setEditLayer(layerName) {
@@ -146,7 +64,7 @@ class MarkisModel {
     this.promptForAttributes = this.editSource.editableFields.length > 0;
     this.editLayer = new Vector({
       source: this.vectorSource,
-      style: this.getSketchStyle()
+      style: getSketchStyle()
     });
 
     if (this.editLayer) {
@@ -270,7 +188,7 @@ class MarkisModel {
     this.draw = new Draw({
       source: this.vectorSource,
       type: this.type,
-      style: this.getSketchStyle(),
+      style: getSketchStyle(),
       geometryName: this.geometryName
     });
 
@@ -324,12 +242,15 @@ class MarkisModel {
   removeSelected = e => {
     this.map.forEachFeatureAtPixel(e.pixel, feature => {
       if (this.vectorSource.getFeatures().some(f => f === feature)) {
-        if (feature.modification === "added") {
+        if (
+          feature.modification === "added" ||
+          feature.modification === undefined
+        ) {
           feature.modification = undefined;
         } else {
           feature.modification = "removed";
         }
-        feature.setStyle(this.getHiddenStyle());
+        feature.setStyle(getHiddenStyle());
         this.geometriesExist =
           this.vectorSource
             .getFeatures()
@@ -345,7 +266,7 @@ class MarkisModel {
   removeHighlight() {
     this.vectorSource.getFeatures().forEach(feature => {
       if (feature.modification && feature.modification !== "removed") {
-        feature.setStyle(this.getSketchStyle);
+        feature.setStyle(getSketchStyle);
       }
     });
   }
@@ -355,7 +276,7 @@ class MarkisModel {
       if (this.vectorSource.getFeatures().some(f => f === feature)) {
         this.removeHighlight();
         this.editFeatureId = feature.getId();
-        feature.setStyle(this.getHighlightStyle());
+        feature.setStyle(getHighlightStyle());
       }
       this.localObserver.publish("feature-selected-for-edit");
     });
@@ -429,6 +350,8 @@ class MarkisModel {
         version: "1.1.0", // or "1.0.0"
         srsName: this.editSource.projection
       };
+    console.log("Features are: ", features);
+    console.log("Options: ", options);
     return format.writeTransaction(
       features.inserts,
       features.updates,
@@ -475,7 +398,7 @@ class MarkisModel {
     }
   }
 
-  /**Updates the id:s on the features so that they are saved correctly in the database.
+  /**Updates the id:s on the features so that they are saved correctly.
    */
   updateFeatureIds(features) {
     if (features.inserts.length > 0) {
@@ -499,6 +422,7 @@ class MarkisModel {
   }
 
   save(done) {
+    console.log("SAVE");
     this.setFeatureProperties();
 
     const find = mode =>
@@ -537,19 +461,9 @@ class MarkisModel {
     this.vectorSource.clear();
     this.searchResultLayer.getSource().clear();
     this.removeInteraction();
-    this.toggleLayerVisibility(
-      [
-        this.estateLayerName,
-        this.saleLayerName,
-        this.purchaseLayerName,
-        this.longLeaseLayerName
-      ],
-      false
-    );
     if (this.sourceName && this.markisParameters.userMode === "Show") {
       this.toggleLayerVisibility([this.sourceName], false);
     }
-    this.editFeatureId = undefined;
     Object.assign(this.markisParameters, {
       objectId: undefined,
       objectSerial: undefined,
@@ -562,100 +476,8 @@ class MarkisModel {
     this.sourceName = undefined;
     this.editingExisting = false;
     this.featureModified = false;
+    this.editFeatureId = undefined;
     this.geometriesExist = false;
-  }
-
-  validateShowMessage(message) {
-    if (this.markisParameters.type === "Contract") {
-      if (message.objectId.length < 3) {
-        this.publishMessage(
-          "Avtalsnumret måste bestå av minst 3 tecken.",
-          "error",
-          true
-        );
-        return false;
-      } else {
-        this.assignMessageParameters(message);
-        return true;
-      }
-    } else if (this.markisParameters.type === "LongLease") {
-      if (message.objectId.length < 4) {
-        this.publishMessage(
-          "Du måste ange fler tecken för att kunna visa en tomträtt.",
-          "error",
-          true
-        );
-        return false;
-      } else {
-        this.assignMessageParameters(message);
-        return true;
-      }
-    } else if (this.markisParameters.type === "Estate") {
-      if (message.objectId.length < 4) {
-        this.publishMessage(
-          "Du måste ange fler tecken för att kunna visa en fastighet.",
-          "error",
-          true
-        );
-        return false;
-      } else {
-        this.assignMessageParameters(message);
-        return true;
-      }
-    }
-  }
-
-  validateCreateTradeMessage(message) {
-    if (!message.userName) {
-      this.publishMessage(
-        "Markis skickade inte ett giltligt användarnamn",
-        "error",
-        true
-      );
-      return false;
-    } else {
-      this.assignMessageParameters(message);
-      return true;
-    }
-  }
-
-  validateCreateContractMessage(message) {
-    if (message.objectId.length !== 10) {
-      this.publishMessage(
-        "Avtalsnumret måste bestå av 10 tecken.",
-        "error",
-        true
-      );
-      return false;
-    } else if (message.objectStatus.toUpperCase() === "G") {
-      this.publishMessage(
-        "Du kan inte skapa en avtalsyta med gällande status.",
-        "error",
-        true
-      );
-      return false;
-    } else if (
-      isNaN(message.objectSerial) ||
-      message.objectSerial === "0" ||
-      message.objectSerial === ""
-    ) {
-      this.publishMessage(
-        "Markis skickade inte ett giltligt händelselöpnummer.",
-        "error",
-        true
-      );
-      return false;
-    } else if (!message.userName) {
-      this.publishMessage(
-        "Markis skickade inte ett giltligt användarnamn",
-        "error",
-        true
-      );
-      return false;
-    } else {
-      this.assignMessageParameters(message);
-      return true;
-    }
   }
 
   validateTradeGeometries() {
@@ -680,21 +502,6 @@ class MarkisModel {
       createdBy: message.userName,
       regDate: this.getTimeStampDate()
     });
-  }
-
-  validateMessageParameters(message) {
-    if (this.markisParameters.userMode === "Show") {
-      return this.validateShowMessage(message);
-    } else if (this.markisParameters.userMode === "Create") {
-      if (this.markisParameters.type === "Contract") {
-        return this.validateCreateContractMessage(message);
-      } else if (
-        this.markisParameters.type === "Purchase" ||
-        this.markisParameters.type === "Sale"
-      ) {
-        return this.validateCreateTradeMessage(message);
-      }
-    }
   }
 
   /**Validates that each feature in the existing contract is ok before allowing
@@ -809,7 +616,7 @@ class MarkisModel {
     let promises = [];
     let createdFeatures = [];
     const estateSource = this.sources.find(
-      source => source.layers[0] === this.estateWfsName
+      source => source.layers[0] === this.estateSource
     );
 
     this.vectorSource.getFeatures().forEach(feature => {
@@ -927,9 +734,16 @@ class MarkisModel {
           type: "Contract"
         });
         const showObj = JSON.parse(showMessage);
-        if (this.validateMessageParameters(showObj)) {
+        const validationResult = validateMessageParameters(
+          this.markisParameters,
+          showObj
+        );
+        if (validationResult[0]) {
+          this.assignMessageParameters(showObj);
           this.localObserver.publish("show-existing-contract", {});
           this.doSearch(showObj.objectId, undefined);
+        } else {
+          this.publishMessage(validationResult[1], "error", true);
         }
       }.bind(this)
     );
@@ -943,13 +757,23 @@ class MarkisModel {
           type: "Estate"
         });
         const showEstateObj = JSON.parse(message);
-        if (this.validateMessageParameters(showEstateObj)) {
+        const validationResult = validateMessageParameters(
+          this.markisParameters,
+          showEstateObj
+        );
+        if (validationResult[0]) {
+          this.assignMessageParameters(showEstateObj);
           const estateSource = this.sources.find(
-            source => source.layers[0] === this.estateWfsName
+            source => source.layers[0] === this.estateSource
           );
           this.localObserver.publish("show-existing-contract", {});
           this.doSearch(showEstateObj.objectId, estateSource);
-          this.toggleLayerVisibility([this.estateLayerName], true);
+          this.toggleLayerVisibility(
+            [this.layerNames["estateLayerName"]],
+            true
+          );
+        } else {
+          this.publishMessage(validationResult[1], "error", true);
         }
       }.bind(this)
     );
@@ -963,14 +787,24 @@ class MarkisModel {
           type: "LongLease"
         });
         const showLongLeaseObj = JSON.parse(message);
-        if (this.validateMessageParameters(showLongLeaseObj)) {
+        const validationResult = validateMessageParameters(
+          this.markisParameters,
+          showLongLeaseObj
+        );
+        if (validationResult[0]) {
+          this.assignMessageParameters(showLongLeaseObj);
           const longLeaseSource = this.sources.find(
-            source => source.layers[0] === this.longLeaseWfsName
+            source => source.layers[0] === this.layerNames["longLeaseLayerName"]
           );
 
           this.localObserver.publish("show-existing-contract", {});
           this.doSearch(showLongLeaseObj.objectId, longLeaseSource);
-          this.toggleLayerVisibility([this.longLeaseLayerName], true);
+          this.toggleLayerVisibility(
+            [this.layerNames["longLeaseLayerName"]],
+            true
+          );
+        } else {
+          this.publishMessage(validationResult[1], "error", true);
         }
       }.bind(this)
     );
@@ -984,12 +818,19 @@ class MarkisModel {
           type: "Purchase"
         });
         const createPurchaseObj = JSON.parse(message);
-        if (this.validateMessageParameters(createPurchaseObj)) {
-          this.sourceName = this.purchaseWfsName;
+        const validationResult = validateMessageParameters(
+          this.markisParameters,
+          createPurchaseObj
+        );
+        if (validationResult[0]) {
+          this.assignMessageParameters(createPurchaseObj);
+          this.sourceName = this.layerNames["purchaseLayerName"];
           this.setEditLayer(this.sourceName);
           this.searchResultLayer.getSource().clear();
           this.localObserver.publish("create-contract", {});
-          this.toggleLayerVisibility([this.purchaseLayerName], true);
+          this.toggleLayerVisibility([this.sourceName], true);
+        } else {
+          this.publishMessage(validationResult[1], "error", true);
         }
       }.bind(this)
     );
@@ -1003,12 +844,19 @@ class MarkisModel {
           type: "Sale"
         });
         const createSaleObj = JSON.parse(message);
-        if (this.validateMessageParameters(createSaleObj)) {
-          this.sourceName = this.saleWfsName;
+        const validationResult = validateMessageParameters(
+          this.markisParameters,
+          createSaleObj
+        );
+        if (validationResult[0]) {
+          this.assignMessageParameters(createSaleObj);
+          this.sourceName = this.layerNames["saleLayerName"];
           this.setEditLayer(this.sourceName);
           this.searchResultLayer.getSource().clear();
           this.localObserver.publish("create-contract", {});
-          this.toggleLayerVisibility([this.saleLayerName], true);
+          this.toggleLayerVisibility([this.sourceName], true);
+        } else {
+          this.publishMessage(validationResult[1], "error", true);
         }
       }.bind(this)
     );
@@ -1022,7 +870,12 @@ class MarkisModel {
           type: "Contract"
         });
         const createContractObject = JSON.parse(createMessage);
-        if (this.validateMessageParameters(createContractObject)) {
+        const validationResult = validateMessageParameters(
+          this.markisParameters,
+          createContractObject
+        );
+        if (validationResult[0]) {
+          this.assignMessageParameters(createContractObject);
           this.search(this.markisParameters.objectId, undefined, result => {
             let numExistingContracts = this.getNumberOfResults(result);
             if (numExistingContracts > 0) {
@@ -1046,7 +899,7 @@ class MarkisModel {
             }
           });
         } else {
-          this.reset();
+          this.publishMessage(validationResult[1], "error", true);
         }
       }.bind(this)
     );
@@ -1056,7 +909,10 @@ class MarkisModel {
   enableContractCreation(createObject, existingGeom) {
     this.searchResultLayer.getSource().clear();
     this.sourceName = this.getContractSource();
-    this.toggleLayerVisibility([this.estateLayerName, this.sourceName], true);
+    this.toggleLayerVisibility(
+      [this.layerNames["estateLayerName"], this.sourceName],
+      true
+    );
     if (this.sourceName) {
       this.setEditLayer(this.sourceName);
       if (existingGeom) {

@@ -37,7 +37,9 @@ class AttributeEditor extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      formValues: {}
+      formValues: {},
+      editFeatureId: undefined,
+      featureModified: false
     };
 
     props.observer.subscribe("feature-selected-for-edit", vectorSource => {
@@ -52,6 +54,13 @@ class AttributeEditor extends React.Component {
           formValues: this.initFormValues() || {}
         });
       }
+    });
+
+    props.observer.subscribe("edit-feature-reset", message => {
+      this.setState({
+        editFeatureId: undefined,
+        featureModified: true
+      });
     });
   }
 
@@ -85,7 +94,6 @@ class AttributeEditor extends React.Component {
 
   updateFeature(feature) {
     var props = feature.getProperties();
-    console.log("THIS:STATE:FORMVALUES: ", this.state.formValues);
     Object.keys(this.state.formValues).forEach(key => {
       var value = this.state.formValues[key];
       if (value === "") value = null;
