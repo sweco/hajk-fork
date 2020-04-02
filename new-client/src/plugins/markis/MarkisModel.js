@@ -350,8 +350,6 @@ class MarkisModel {
         version: "1.1.0", // or "1.0.0"
         srsName: this.editSource.projection
       };
-    console.log("Features are: ", features);
-    console.log("Options: ", options);
     return format.writeTransaction(
       features.inserts,
       features.updates,
@@ -422,7 +420,6 @@ class MarkisModel {
   }
 
   save(done) {
-    console.log("SAVE");
     this.setFeatureProperties();
 
     const find = mode =>

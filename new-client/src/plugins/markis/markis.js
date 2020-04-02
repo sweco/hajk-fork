@@ -53,7 +53,7 @@ class Markis extends React.PureComponent {
             title: "Markiskoppling",
             description: "Markisanslutning",
             height: 320,
-            width: 280,
+            width: 290,
             top: undefined,
             left: undefined
           }}

@@ -161,6 +161,18 @@ class Informationbar extends React.Component {
           <b>{this.props.objectId}</b>
         </Typography>
       );
+    } else if (
+      this.props.model.promptForAttributes &&
+      this.props.model.editFeatureId
+    ) {
+      return (
+        <Typography>
+          Du visar nu {model.displayConnections[this.props.type].toLowerCase()}{" "}
+          kopplade till:
+          <br />
+          <b>{this.props.objectId}</b>
+        </Typography>
+      );
     } else {
       return <Typography>Du visar ingen yta just nu.</Typography>;
     }

@@ -2,6 +2,7 @@ import React from "react";
 import { withStyles } from "@material-ui/core/styles";
 import Button from "@material-ui/core/Button";
 import TextField from "@material-ui/core/TextField";
+import Typography from "@material-ui/core/Typography";
 import FormControl from "@material-ui/core/FormControl";
 import NativeSelect from "@material-ui/core/NativeSelect";
 import FormLabel from "@material-ui/core/FormLabel";
@@ -29,7 +30,11 @@ const styles = theme => ({
   textField: {
     marginLeft: 0,
     marginRight: 0,
+    marginTop: 4,
     width: "100%"
+  },
+  centerElements: {
+    textAlign: "center"
   }
 });
 
@@ -173,14 +178,22 @@ class AttributeEditor extends React.Component {
   createAttributeForm() {
     const { model, classes } = this.props;
 
+    const infoText = (
+      <Typography>
+        <b>Ange attribut:</b>
+      </Typography>
+    );
+
     const btnAcceptAttributes = (
-      <Button
-        variant="contained"
-        className={classes.attributeButtons}
-        onClick={this.acceptAttributes}
-      >
-        Ok
-      </Button>
+      <div className={classes.centerElements}>
+        <Button
+          variant="contained"
+          className={classes.attributeButtons}
+          onClick={this.acceptAttributes}
+        >
+          Ok
+        </Button>
+      </div>
     );
 
     if (
@@ -198,6 +211,7 @@ class AttributeEditor extends React.Component {
         });
         return (
           <div>
+            {infoText}
             {markup}
             {btnAcceptAttributes}
           </div>
