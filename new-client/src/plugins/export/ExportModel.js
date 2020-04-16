@@ -388,6 +388,8 @@ class ExportModel {
             text = feature.getProperties().description;
           } else if (feature.getProperties().name) {
             text = feature.getProperties().name;
+          } else if (feature.getProperties().text) {
+            text = feature.getProperties().text;
           } else {
             text = "";
           }
