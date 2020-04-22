@@ -50,7 +50,7 @@ class MarkisModel {
     this.vectorSource = new VectorSource({});
     this.searchResultLayer = new VectorLayer({
       source: new VectorSource({}),
-      style: getSketchStyle()
+      style: getSketchStyle
     });
     this.map.addLayer(this.searchResultLayer);
     this.searchResultLayer.set("type", "markisResultLayer");
@@ -64,7 +64,7 @@ class MarkisModel {
     this.promptForAttributes = this.editSource.editableFields.length > 0;
     this.editLayer = new Vector({
       source: this.vectorSource,
-      style: getSketchStyle()
+      style: getSketchStyle
     });
 
     if (this.editLayer) {
@@ -250,7 +250,7 @@ class MarkisModel {
         } else {
           feature.modification = "removed";
         }
-        feature.setStyle(getHiddenStyle());
+        feature.setStyle(getHiddenStyle);
         this.geometriesExist =
           this.vectorSource
             .getFeatures()
@@ -276,7 +276,7 @@ class MarkisModel {
       if (this.vectorSource.getFeatures().some(f => f === feature)) {
         this.removeHighlight();
         this.editFeatureId = feature.getId();
-        feature.setStyle(getHighlightStyle());
+        feature.setStyle(getHighlightStyle);
       }
       this.localObserver.publish("feature-selected-for-edit");
     });
