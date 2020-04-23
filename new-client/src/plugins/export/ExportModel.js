@@ -189,11 +189,11 @@ class ExportModel {
         }
       }
 
-      var fillColor = "#FC345C",
+      var fillColor = "#FF0000",
         fillOpacity = 0.5,
-        strokeColor = "#FC345C",
+        strokeColor = "#C80000",
         strokeOpacity = 1,
-        strokeWidth = 3,
+        strokeWidth = 4,
         strokeLinecap = "round",
         strokeDashstyle = "solid",
         pointRadius = 10,
@@ -435,7 +435,8 @@ class ExportModel {
             coords;
 
           if (!feature.getStyle() && layer) {
-            let layerStyle = layer.getStyle()(feature)[0];
+            //let layerStyle = layer.getStyle()(feature)[0];
+            let layerStyle = layer.getStyleFunction();
             feature.setStyle(layerStyle);
           }
 
