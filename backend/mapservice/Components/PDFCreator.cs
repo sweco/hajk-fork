@@ -96,8 +96,8 @@ namespace MapService.Components
 
             Dictionary<int, string> scaleBarTexts = new Dictionary<int, string>()
                     {
-                        {250, "25 m"},
-                        {500, "50 m"},
+                        {250, "10 m"},
+                        {500, "25 m"},
                         {1000, "50 m"},
                         {2500, "100 m"},
                         {5000, "200 m"},
@@ -110,8 +110,8 @@ namespace MapService.Components
 
             Dictionary<int, int> scaleBarLengths = new Dictionary<int, int>()
                     {
-                        {250, 25},
-                        {500, 50},
+                        {250, 10},
+                        {500, 25},
                         {1000, 50},
                         {2500, 100},
                         {5000, 200},
