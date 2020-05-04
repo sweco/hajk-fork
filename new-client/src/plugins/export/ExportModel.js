@@ -42,6 +42,7 @@ class ExportModel {
     this.app = settings.app;
     this.localObserver = settings.localObserver;
     this.exportUrl = settings.options.exportUrl;
+    this.exportTiffUrl = settings.options.exportTiffUrl;
     this.scales = this.validateScales(settings.options.scales);
     this.copyright = "© Lantmäteriverket i2009/00858";
     this.autoScale = false;
@@ -557,6 +558,63 @@ class ExportModel {
       bottom = extent[1],
       top = extent[3],
       url = this.exportUrl,
+      data = {
+        wmsLayers: [],
+        vectorLayers: [],
+        size: null,
+        resolution: options.resolution,
+        bbox: null
+      };
+
+    data.vectorLayers = this.findVector() || [];
+    data.wmsLayers = this.findWMS() || [];
+    data.wmtsLayers = this.findWMTS() || [];
+    data.arcgisLayers = this.findArcGIS() || [];
+
+    data.size = [
+      parseInt(options.size.width * options.resolution),
+      parseInt(options.size.height * options.resolution)
+    ];
+
+    data.bbox = [left, right, bottom, top];
+    data.orientation = options.orientation;
+    data.format = options.format;
+    data.scale = options.scale;
+
+    fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        data: JSON.stringify(data)
+      })
+    })
+      .then(response => {
+        response.text().then(fileUrl => {
+          if (callback) {
+            callback(fileUrl);
+          }
+        });
+      })
+      .catch(error => {
+        alert("Det gick inte att exportera kartan. " + error);
+        console.error(error);
+      });
+  }
+
+  exportTIFF(options, callback) {
+    var extent = this.previewLayer
+        .getSource()
+        .getFeatures()[0]
+        .getGeometry()
+        .getExtent(),
+      left = extent[0],
+      right = extent[2],
+      bottom = extent[1],
+      top = extent[3],
+      url = this.exportTiffUrl,
       data = {
         wmsLayers: [],
         vectorLayers: [],
