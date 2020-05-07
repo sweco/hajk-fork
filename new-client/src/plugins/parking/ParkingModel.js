@@ -1,12 +1,8 @@
 import { WFS } from "ol/format";
-import GeometryType from "ol/geom/GeometryType";
 import IsLike from "ol/format/filter/IsLike";
-import Intersects from "ol/format/filter/Intersects";
 import Or from "ol/format/filter/Or";
-import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
 import { handleClick } from "../../models/Click.js";
-import { Feature } from "ol";
 import X2JS from "x2js";
 import { buffer } from "ol/extent";
 import Vector from "ol/layer/Vector";
@@ -15,12 +11,10 @@ import { arraySort } from "./../../utils/ArraySort.js";
 import { Draw } from "ol/interaction";
 import { Modify } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
-import {
-  getSearchResultStyle,
-  getDrawStyle,
-  getHighlightStyle,
-  getHiddenStyle
-} from "./utils/FeatureStyle.js";
+import { getDrawStyle } from "./utils/FeatureStyle.js";
+import { transform } from "ol/proj";
+import { Feature } from "ol";
+import { LineString, Point, Polygon, LinearRing } from "ol/geom";
 
 export default class ParkingModel {
   constructor(settings) {
@@ -32,6 +26,7 @@ export default class ParkingModel {
     this.controllers = [];
     this.featureIdCounter = 1;
     this.controllers = [];
+    this.numLots = 0;
     this.vectorSource = new VectorSource({});
     this.editLayer = new Vector({
       source: this.vectorSource,
@@ -92,6 +87,9 @@ export default class ParkingModel {
     this.editLayer.getSource().clear();
     this.removeInteractions();
     this.editSource = undefined;
+    this.numLots = 0;
+    this.parkingCoordinates = [];
+    this.startCoord = undefined;
   }
 
   removeInteractions() {
@@ -102,6 +100,7 @@ export default class ParkingModel {
       this.map.removeInteraction(this.edit);
     }
     this.map.un("singleclick", this.onSelectFeatures);
+    this.map.un("pointermove", this.generateParkingSpaces);
   }
 
   activateAttributeEditor(layerName) {
@@ -169,6 +168,135 @@ export default class ParkingModel {
 
   deActivateParkingAreaCreation() {
     this.reset();
+  }
+
+  deActivateParkingSpaceCreation() {
+    this.map.un("pointermove", this.generateParkingSpaces);
+    this.reset();
+  }
+  finishParkingSpaces() {
+    this.map.un("pointermove", this.generateParkingSpaces);
+    this.editLayer
+      .getSource()
+      .getFeatures()
+      .forEach(feature => {
+        feature.modification = "added";
+      });
+    this.localObserver.publish("spaces-added");
+    this.numLots = 0;
+    this.parkingCoordinates = [];
+    this.startCoord = undefined;
+  }
+
+  activateParkingSpaceCreation() {
+    this.startCoord = undefined;
+    this.parkingCoordinates = [];
+    this.totalDistances = [];
+    this.setEditSource(this.layerNames["parkeringsytor"]);
+    this.map.once("singleclick", evt => {
+      this.startCoord = evt.coordinate;
+      this.parkingCoordinates.push(this.startCoord);
+      this.map.once("singleclick", evt => {
+        this.finishParkingSpaces();
+      });
+    });
+
+    this.map.on("pointermove", this.generateParkingSpaces);
+  }
+
+  eqDistanceBetweenPoints(a1, a2) {
+    var line = new LineString([a1, a2]);
+    return Math.round(line.getLength() * 100) / 100;
+  }
+
+  getAngleBetweenPoints(a1, a2) {
+    if (Math.abs(a2[0] - a1[0]) > 0) {
+      var dx =
+        Math.round(new LineString([a1, [a2[0], a1[1]]]).getLength() * 100) /
+        100;
+    }
+    if (Math.abs(a2[1] - a1[1]) > 0) {
+      var dy =
+        Math.round(new LineString([a1, [a1[0], a2[1]]]).getLength() * 100) /
+        100;
+    }
+
+    return Math.atan(dy / dx);
+  }
+
+  generateParkingSpaces = evt => {
+    if (this.parkingCoordinates.length > 0) {
+      this.totalDistances = this.totalDistances.slice(
+        this.totalDistances.length - 1
+      );
+      var totalDistance = this.eqDistanceBetweenPoints(
+        this.startCoord,
+        evt.coordinate
+      );
+      this.totalDistances.push(totalDistance);
+      var distanceFromLast = this.eqDistanceBetweenPoints(
+        this.parkingCoordinates.slice(-1)[0],
+        evt.coordinate
+      );
+
+      var angle = this.getAngleBetweenPoints(this.startCoord, evt.coordinate);
+
+      if (this.totalDistances.length === 1 && distanceFromLast > 2.5) {
+        this.editLayer.getSource().clear();
+        this.parkingCoordinates.push(evt.coordinate);
+        this.reDrawParkingSpaces(angle);
+      } else if (
+        this.totalDistances[0] < this.totalDistances[1] &&
+        distanceFromLast > 2.5 &&
+        this.numLots < Math.floor(totalDistance / 2.5)
+      ) {
+        this.editLayer.getSource().clear();
+        this.parkingCoordinates.push(evt.coordinate);
+        this.reDrawParkingSpaces(angle);
+      } else if (
+        this.totalDistances[0] > this.totalDistances[1] &&
+        distanceFromLast > 2.5 &&
+        this.numLots > Math.floor(totalDistance / 2.5)
+      ) {
+        this.editLayer.getSource().clear();
+        this.parkingCoordinates.pop();
+        this.reDrawParkingSpaces(angle);
+      }
+    }
+  };
+
+  reDrawParkingSpaces(angle) {
+    var numLots = this.parkingCoordinates.length - 1;
+    this.numLots = numLots;
+    for (var i = 0; i < numLots; i++) {
+      let p1 = new Point([
+        this.parkingCoordinates[0][0] + Math.cos(angle) * i * 2.5,
+        this.parkingCoordinates[0][1] + Math.sin(angle) * i * 2.5
+      ]);
+      let p1Coords = p1.getCoordinates();
+      let p2 = new Point([
+        p1Coords[0] + Math.cos(angle) * 1 * 2.5,
+        p1Coords[1] + Math.sin(angle) * 1 * 2.5
+      ]);
+      let p2Coords = p2.getCoordinates();
+      let p3 = new Point([p2Coords[0], p2Coords[1] + 5]);
+      let p4 = new Point([p1Coords[0], p1Coords[1] + 5]);
+      p3.rotate(angle, p2Coords);
+      p4.rotate(angle, p1Coords);
+      let geometry = new Polygon([
+        [
+          p1.getCoordinates(),
+          p2.getCoordinates(),
+          p3.getCoordinates(),
+          p4.getCoordinates(),
+          p1.getCoordinates()
+        ]
+      ]);
+      var feature = new Feature({
+        geometry: geometry
+      });
+      this.editLayer.getSource().addFeature(feature);
+    }
   }
 
   handleDrawEnd = event => {
@@ -335,7 +463,6 @@ export default class ParkingModel {
   }
 
   saveEditedFeatures() {
-    console.log("i save");
     this.save(r => {
       console.log("Feature update result: ", r);
       this.refreshLayer(this.layerNames["overvakningsomraden"]);
@@ -360,14 +487,27 @@ export default class ParkingModel {
       if (numHits > 0) {
         this.localObserver.publish("areaAlreadyExistsError", {});
       } else {
-        console.log("i else!");
-        console.log("features: ", this.editLayer.getSource().getFeatures());
         this.save(r => {
           console.log("Feature saved result: ", r);
           this.refreshLayer(this.layerNames["overvakningsomraden"]);
           this.localObserver.publish("featuresAdded", {});
         });
       }
+    });
+  }
+
+  saveCreatedParkingSpaces() {
+    console.log(
+      "features tidigare: ",
+      this.editLayer.getSource().getFeatures()
+    );
+    const source = this.sources.find(
+      source => source.layers[0] === this.layerNames["parkeringsytor"]
+    );
+    this.save(r => {
+      console.log("Feature saved result: ", r);
+      this.refreshLayer(this.layerNames["parkeringsytor"]);
+      this.localObserver.publish("spaces-saved", {});
     });
   }
 

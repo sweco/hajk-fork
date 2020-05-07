@@ -83,6 +83,14 @@ class ParkingAreaTools extends React.PureComponent {
     });
   }
 
+  componentWillUnmount() {
+    this.localObserver.unsubscribe("feature-added");
+    this.localObserver.unsubscribe("featuresRemoved");
+    this.localObserver.unsubscribe("featuresAdded");
+    this.localObserver.unsubscribe("areaAlreadyExistsError");
+    this.reset();
+  }
+
   renderCreateNewParkingArea() {
     const { classes } = this.props;
     if (this.state.setGeomAttributes) {

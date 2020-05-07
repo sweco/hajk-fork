@@ -63,6 +63,12 @@ class AttributeEditor extends React.Component {
         formValues: this.initFormValues()
       });
     });
+
+    this.localObserver.subscribe("spaces-added", message => {
+      this.setState({
+        formValues: this.initFormValues()
+      });
+    });
   }
 
   initFormValues() {
@@ -77,6 +83,10 @@ class AttributeEditor extends React.Component {
         formValues[editableFields[i].name] =
           editFeature.get(editableFields[i].name) || "";
       }
+    } else {
+      for (var j = 0; j < editableFields.length; j++) {
+        formValues[editableFields[j].name] = "";
+      }
     }
 
     return formValues;
@@ -88,11 +98,15 @@ class AttributeEditor extends React.Component {
     this.setState({
       formValues: formValues
     });
-    this.updateFeature(
-      this.props.model.vectorSource.getFeatureById(
-        this.props.model.editFeatureId
-      )
-    );
+    if (this.props.model.editFeatureId) {
+      this.updateFeature(
+        this.props.model.vectorSource.getFeatureById(
+          this.props.model.editFeatureId
+        )
+      );
+    } else {
+      this.updateAllFeatures();
+    }
   }
 
   updateFeature(feature) {
@@ -109,6 +123,24 @@ class AttributeEditor extends React.Component {
       props[key] = value;
     });
     feature.setProperties(props);
+  }
+
+  updateAllFeatures() {
+    this.props.model.vectorSource.getFeatures().forEach(feature => {
+      var props = feature.getProperties();
+      Object.keys(this.state.formValues).forEach(key => {
+        var value = this.state.formValues[key];
+        if (value === "") value = null;
+        if (Array.isArray(value)) {
+          value = value
+            .filter(v => v.checked)
+            .map(v => v.name)
+            .join(";");
+        }
+        props[key] = value;
+      });
+      feature.setProperties(props);
+    });
   }
 
   getValueMarkup(field) {

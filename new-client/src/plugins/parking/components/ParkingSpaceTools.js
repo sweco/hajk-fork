@@ -48,7 +48,8 @@ class ParkingAreaTools extends React.PureComponent {
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
 
-    this.localObserver.subscribe("feature-added", message => {
+    this.localObserver.subscribe("spaces-added", message => {
+      console.log("hejhej");
       this.setState({
         setGeomAttributes: true
       });
@@ -69,7 +70,7 @@ class ParkingAreaTools extends React.PureComponent {
       });
     });
 
-    this.localObserver.subscribe("featuresAdded", message => {
+    this.localObserver.subscribe("spaces-saved", message => {
       this.reset();
     });
 
@@ -85,6 +86,7 @@ class ParkingAreaTools extends React.PureComponent {
 
   renderCreateNewParkingArea() {
     const { classes } = this.props;
+    console.log("this.state.setGeomAttributes", this.state.setGeomAttributes);
     if (this.state.setGeomAttributes) {
       return <div className={classes.root}>{this.renderAttributeForm()}</div>;
     }
@@ -93,12 +95,12 @@ class ParkingAreaTools extends React.PureComponent {
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Tryck på knappen nedan för att rita ett område.
+              Tryck på knappen nedan för att skapa parkeringsytor
             </Typography>
             <Button
               className={classes.buttonWithSetWidth}
               variant="contained"
-              onClick={() => this.activateParkingAreaCreation()}
+              onClick={() => this.activateParkingSpaceCreation()}
               fullWidth={true}
             >
               Rita i kartan
@@ -111,12 +113,12 @@ class ParkingAreaTools extends React.PureComponent {
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Du kan nu rita i kartan. Dubbelklicka när du är klar.
+              Du kan nu rita i kartan. Klicka en gång när du är klar.
             </Typography>
             <Button
               className={classes.buttonWithSetWidth}
               variant="contained"
-              onClick={() => this.deActivateParkingAreaCreation()}
+              onClick={() => this.deActivateParkingSpaceCreation()}
               fullWidth={true}
             >
               Avbryt
@@ -142,7 +144,7 @@ class ParkingAreaTools extends React.PureComponent {
           <div className={classes.root}>
             <Button
               className={classes.text}
-              onClick={() => this.model.saveCreatedParkingArea()}
+              onClick={() => this.model.saveCreatedParkingSpaces()}
               variant="contained"
             >
               Spara
@@ -302,7 +304,7 @@ class ParkingAreaTools extends React.PureComponent {
   renderEditParkingAreaAttributes() {
     const { classes } = this.props;
     this.model.activateAttributeEditor(
-      this.model.layerNames["overvakningsomraden"]
+      this.model.layerNames["parkeringsomraden"]
     );
     if (!this.state.setGeomAttributes) {
       return (
@@ -359,18 +361,18 @@ class ParkingAreaTools extends React.PureComponent {
     this.model.reset();
   }
 
-  activateParkingAreaCreation() {
+  activateParkingSpaceCreation() {
     this.setState({
       drawActivated: true
     });
-    this.model.activateParkingAreaCreation();
+    this.model.activateParkingSpaceCreation();
   }
 
-  deActivateParkingAreaCreation() {
+  deActivateParkingSpaceCreation() {
     this.setState({
       drawActivated: false
     });
-    this.model.deActivateParkingAreaCreation();
+    this.model.deActivateParkingSpaceCreation();
   }
 
   changeActiveTool(value) {
@@ -382,7 +384,7 @@ class ParkingAreaTools extends React.PureComponent {
     } else {
       this.localObserver.publish(
         "activateLayer",
-        this.model.layerNames["overvakningsomraden"]
+        this.model.layerNames["parkeringsytor"]
       );
       this.setState({
         activeTool: value
