@@ -45,25 +45,6 @@ class AttributeEditor extends React.Component {
       editFeatureId: undefined
     };
 
-    // this.localObserver.subscribe("feature-selected-for-edit", vectorSource => {
-    //   this.setState({
-    //     formValues: this.initFormValues() || {}
-    //   });
-    // });
-
-    // this.localObserver.subscribe("edit-feature-reset", message => {
-    //   this.setState({
-    //     editFeatureId: undefined,
-    //     featureModified: true
-    //   });
-    // });
-
-    this.localObserver.subscribe("feature-added", message => {
-      this.setState({
-        formValues: this.initFormValues()
-      });
-    });
-
     this.localObserver.subscribe("spaces-added", message => {
       this.setState({
         formValues: this.initFormValues()
@@ -75,10 +56,8 @@ class AttributeEditor extends React.Component {
     const { model } = this.props;
     var formValues = {};
     var editableFields = model.editSource.editableFields;
-    console.log("model: ", model);
     if (model.editFeatureId) {
       var editFeature = model.vectorSource.getFeatureById(model.editFeatureId);
-      console.log("editfeature: ", editFeature);
       for (var i = 0; i < editableFields.length; i++) {
         formValues[editableFields[i].name] =
           editFeature.get(editableFields[i].name) || "";

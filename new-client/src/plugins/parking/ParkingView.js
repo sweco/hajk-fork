@@ -7,6 +7,7 @@ import MenuIcon from "@material-ui/icons/Menu";
 import { Typography } from "@material-ui/core";
 import ParkingAreaTools from "./components/ParkingAreaTools";
 import ParkingSpaceTools from "./components/ParkingSpaceTools";
+import SignPackageTools from "./components/SignPackageTools";
 import clsx from "clsx";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
@@ -59,11 +60,7 @@ class ParkingView extends React.PureComponent {
     this.toolNames = this.props.options.toolNames;
 
     this.localObserver.subscribe("messageEvent", message => {
-      console.log("weve got meail");
       this.showAdvancedSnackbar(message.message, message.variant);
-      // if (message.reset) {
-      //   this.reset();
-      // }
     });
   }
 
@@ -100,10 +97,22 @@ class ParkingView extends React.PureComponent {
     );
   }
 
-  renderParkingSpotTools() {
+  renderParkingSpaceTools() {
     return (
       <div>
         <ParkingSpaceTools
+          model={this.model}
+          app={this.props.app}
+          localObserver={this.localObserver}
+        />
+      </div>
+    );
+  }
+
+  renderSignPackageTools() {
+    return (
+      <div>
+        <SignPackageTools
           model={this.model}
           app={this.props.app}
           localObserver={this.localObserver}
@@ -116,14 +125,6 @@ class ParkingView extends React.PureComponent {
     return (
       <div>
         <Typography>Biljettautomatverktyg</Typography>
-      </div>
-    );
-  }
-
-  renderSignPackageTools() {
-    return (
-      <div>
-        <Typography>Skyltpaketverktyg</Typography>
       </div>
     );
   }
@@ -200,9 +201,9 @@ class ParkingView extends React.PureComponent {
               onClick={this.toggleDrawer(!this.state.drawerVisible)}
             />
             {this.state.activeTool === 0 && this.renderParkingAreaTools()}
-            {this.state.activeTool === 1 && this.renderParkingSpotTools()}
-            {this.state.activeTool === 2 && this.renderTicketMachineTools()}
-            {this.state.activeTool === 3 && this.renderSignPackageTools()}
+            {this.state.activeTool === 1 && this.renderParkingSpaceTools()}
+            {this.state.activeTool === 2 && this.renderSignPackageTools()}
+            {this.state.activeTool === 3 && this.renderTicketMachineTools()}
           </div>
         </div>
       </>

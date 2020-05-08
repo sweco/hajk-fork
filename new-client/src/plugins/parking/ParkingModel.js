@@ -12,9 +12,9 @@ import { Draw } from "ol/interaction";
 import { Modify } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
 import { getDrawStyle } from "./utils/FeatureStyle.js";
-import { transform } from "ol/proj";
+import Intersects from "ol/format/filter/Intersects";
 import { Feature } from "ol";
-import { LineString, Point, Polygon, LinearRing } from "ol/geom";
+import { LineString, Point, Polygon } from "ol/geom";
 
 export default class ParkingModel {
   constructor(settings) {
@@ -78,10 +78,6 @@ export default class ParkingModel {
     }
   }
 
-  getMap() {
-    return this.map;
-  }
-
   reset() {
     this.resetEditFeatureId();
     this.editLayer.getSource().clear();
@@ -101,6 +97,9 @@ export default class ParkingModel {
     }
     this.map.un("singleclick", this.onSelectFeatures);
     this.map.un("pointermove", this.generateParkingSpaces);
+    this.map.un("singleclick", evt => {
+      this.finishParkingSpaces();
+    });
   }
 
   activateAttributeEditor(layerName) {
@@ -113,15 +112,12 @@ export default class ParkingModel {
       if (response.features.length === 1) {
         this.editLayer.getSource().clear();
         const selectedFeature = response.features[0];
-        console.log("selectedFeature", selectedFeature);
         selectedFeature.setGeometryName(this.geometryName);
-        //selectedFeature.setGeometry(selectedFeature.getGeometry());
         selectedFeature.modification = "updated";
         selectedFeature.setId(this.featureIdCounter);
         selectedFeature.setStyle(getDrawStyle());
         this.editFeatureId = this.featureIdCounter;
         this.featureIdCounter++;
-        console.log("selectedFeature", selectedFeature);
         this.editLayer.getSource().addFeature(selectedFeature);
         this.localObserver.publish("feature-added");
       }
@@ -141,10 +137,10 @@ export default class ParkingModel {
     this.map.addInteraction(this.edit);
   }
 
-  activateDraw() {
+  activateDraw(type) {
     this.draw = new Draw({
       source: this.vectorSource,
-      type: "Polygon",
+      type: type,
       style: getDrawStyle(),
       geometryName: this.geometryName
     });
@@ -157,7 +153,7 @@ export default class ParkingModel {
   }
 
   activateParkingAreaCreation() {
-    this.activateDraw();
+    this.activateDraw("Polygon");
     this.setEditSource(this.layerNames["overvakningsomraden"]);
   }
 
@@ -174,6 +170,95 @@ export default class ParkingModel {
     this.map.un("pointermove", this.generateParkingSpaces);
     this.reset();
   }
+
+  activateSignPackageCreation() {
+    this.activateDraw("Point");
+    this.setEditSource(this.layerNames["skyltpaket"]);
+  }
+
+  acceptSignPackages() {
+    this.removeInteractions();
+    let parkingAreaId = "";
+    this.getPossibleAreaConnection(parkingAreaIds => {
+      if (parkingAreaIds.every(val => val === parkingAreaIds[0])) {
+        parkingAreaId = parkingAreaIds[0];
+      }
+      this.editLayer
+        .getSource()
+        .getFeatures()
+        .forEach(feature => {
+          feature.modification = "added";
+          feature.setProperties({
+            overvakningsomradeid: parkingAreaId
+          });
+        });
+      this.localObserver.publish("sign-packages-added");
+    });
+  }
+
+  getPossibleAreaConnection(callback) {
+    let promises = [];
+    let parkingAreaIds = [];
+    const source = this.sources.find(
+      source => source.layers[0] === this.layerNames["overvakningsomraden"]
+    );
+
+    this.editLayer
+      .getSource()
+      .getFeatures()
+      .forEach(feature => {
+        promises.push(this.lookupParkingArea(source, feature));
+      });
+
+    Promise.all(promises).then(parkingAreaCollections => {
+      if (parkingAreaCollections) {
+        parkingAreaCollections.forEach(parkingAreaCollection => {
+          parkingAreaCollection.features.forEach(parkingArea => {
+            parkingAreaIds.push(parkingArea.properties.overvakningsomradeid);
+          });
+        });
+      }
+      if (callback) callback(parkingAreaIds);
+    });
+  }
+
+  lookupParkingArea(source, feature) {
+    const projCode = this.map
+      .getView()
+      .getProjection()
+      .getCode();
+
+    const geometry = feature.getGeometry();
+
+    const options = {
+      featureTypes: source.layers,
+      srsName: projCode,
+      outputFormat: "JSON", //source.outputFormat,
+      geometryName: source.geometryField,
+      filter: new Intersects(source.geometryField, geometry, projCode)
+    };
+
+    const node = this.wfsParser.writeGetFeature(options);
+    const xmlSerializer = new XMLSerializer();
+    const xmlString = xmlSerializer.serializeToString(node);
+
+    const request = {
+      credentials: "same-origin",
+      method: "POST",
+      headers: {
+        "Content-Type": "text/xml"
+      },
+      body: xmlString
+    };
+
+    return fetch(
+      this.app.config.appConfig.searchProxy + source.url,
+      request
+    ).then(response => {
+      return response.json();
+    });
+  }
+
   finishParkingSpaces() {
     this.map.un("pointermove", this.generateParkingSpaces);
     this.editLayer
@@ -388,7 +473,6 @@ export default class ParkingModel {
       }
       Promise.all(promises)
         .then(responses => {
-          console.log("responses, ", responses);
           Promise.all(responses.map(result => result.json()))
             .then(jsonResults => {
               jsonResults.forEach((jsonResult, i) => {
@@ -456,7 +540,6 @@ export default class ParkingModel {
       feature.modification = "removed";
     });
     this.save(r => {
-      console.log("r", r);
       this.refreshLayer(layerName);
       this.localObserver.publish("featuresRemoved", {});
     });
@@ -464,17 +547,12 @@ export default class ParkingModel {
 
   saveEditedFeatures() {
     this.save(r => {
-      console.log("Feature update result: ", r);
       this.refreshLayer(this.layerNames["overvakningsomraden"]);
       this.localObserver.publish("featuresAdded", {});
     });
   }
 
   saveCreatedParkingArea() {
-    console.log(
-      "features tidigare: ",
-      this.editLayer.getSource().getFeatures()
-    );
     const source = this.sources.find(
       source => source.layers[0] === this.layerNames["overvakningsomraden"]
     );
@@ -488,7 +566,6 @@ export default class ParkingModel {
         this.localObserver.publish("areaAlreadyExistsError", {});
       } else {
         this.save(r => {
-          console.log("Feature saved result: ", r);
           this.refreshLayer(this.layerNames["overvakningsomraden"]);
           this.localObserver.publish("featuresAdded", {});
         });
@@ -496,16 +573,15 @@ export default class ParkingModel {
     });
   }
 
-  saveCreatedParkingSpaces() {
-    console.log(
-      "features tidigare: ",
-      this.editLayer.getSource().getFeatures()
-    );
-    const source = this.sources.find(
-      source => source.layers[0] === this.layerNames["parkeringsytor"]
-    );
+  saveCreatedSignPackages() {
     this.save(r => {
-      console.log("Feature saved result: ", r);
+      this.refreshLayer(this.layerNames["skyltpaket"]);
+      this.localObserver.publish("sign-packages-saved", {});
+    });
+  }
+
+  saveCreatedParkingSpaces() {
+    this.save(r => {
       this.refreshLayer(this.layerNames["parkeringsytor"]);
       this.localObserver.publish("spaces-saved", {});
     });
@@ -576,7 +652,6 @@ export default class ParkingModel {
   }
 
   write(features) {
-    console.log("features: ", features);
     const format = new WFS(),
       lr = this.editSource.layers[0].split(":"),
       fp = lr.length === 2 ? lr[0] : "",
@@ -619,7 +694,6 @@ export default class ParkingModel {
     //Quick fix for incorrect geometryname
     payload = payload.replace(new RegExp("<geometry>", "g"), "<geom>");
     payload = payload.replace(new RegExp("</geometry>", "g"), "</geom>");
-    console.log("PAYLOAD: ", payload);
     if (payload) {
       fetch(src.posturl, {
         method: "POST",

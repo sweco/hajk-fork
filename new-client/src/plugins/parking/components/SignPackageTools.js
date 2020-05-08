@@ -33,13 +33,14 @@ const styles = theme => ({
   }
 });
 
-class ParkingAreaTools extends React.PureComponent {
+class SignPackageTools extends React.PureComponent {
   state = {
     activeTool: "",
     drawActivated: false,
-    setParkingAttributes: false,
+    setGeomAttributes: false,
     searchTerm: "",
-    featureExists: false
+    featureExists: false,
+    signPackagesSaved: false
   };
 
   constructor(props) {
@@ -48,26 +49,52 @@ class ParkingAreaTools extends React.PureComponent {
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
 
-    this.localObserver.subscribe("spaces-added", message => {
+    this.localObserver.subscribe("sign-packages-added", message => {
       this.setState({
-        setParkingAttributes: true
+        setGeomAttributes: true
       });
     });
 
-    this.localObserver.subscribe("spaces-saved", message => {
+    this.localObserver.subscribe("featureExists", message => {
+      this.setState({
+        featureExists: true
+      });
+      if (this.state.activeTool === "editParkingArea") {
+        this.model.activateParkingAreaEditing();
+      }
+    });
+
+    this.localObserver.subscribe("sign-packages-saved", message => {
+      this.setState({
+        signPackagesSaved: true
+      });
+    });
+
+    this.localObserver.subscribe("featuresAdded", message => {
+      this.reset();
+    });
+
+    this.localObserver.subscribe("areaAlreadyExistsError", message => {
+      this.localObserver.publish("messageEvent", {
+        message: "Det finns redan ett parkeringsområde med detta ID",
+        variant: "error",
+        reset: true
+      });
       this.reset();
     });
   }
 
   componentWillUnmount() {
-    this.localObserver.unsubscribe("spaces-added");
-    this.localObserver.unsubscribe("spaces-saved");
+    this.localObserver.unsubscribe("sign-packages-added");
+    this.localObserver.unsubscribe("featuresRemoved");
+    this.localObserver.unsubscribe("featuresAdded");
+    this.localObserver.unsubscribe("areaAlreadyExistsError");
     this.reset();
   }
 
-  renderCreateNewParkingSpaces() {
+  renderCreateNewSignPackage() {
     const { classes } = this.props;
-    if (this.state.setParkingAttributes) {
+    if (this.state.setGeomAttributes) {
       return <div className={classes.root}>{this.renderAttributeForm()}</div>;
     }
     if (!this.state.drawActivated) {
@@ -75,12 +102,12 @@ class ParkingAreaTools extends React.PureComponent {
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Tryck på knappen nedan för att skapa parkeringsytor
+              Tryck på knappen nedan för att skapa ett nytt skyltpaket
             </Typography>
             <Button
               className={classes.buttonWithSetWidth}
               variant="contained"
-              onClick={() => this.activateParkingSpaceCreation()}
+              onClick={() => this.activateSignPackageCreation()}
               fullWidth={true}
             >
               Rita i kartan
@@ -93,16 +120,24 @@ class ParkingAreaTools extends React.PureComponent {
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Du kan nu rita i kartan. Klicka en gång när du är klar.
+              Du kan nu sätta ut skyltpaket i kartan.
             </Typography>
-            <Button
-              className={classes.buttonWithSetWidth}
-              variant="contained"
-              onClick={() => this.deActivateParkingSpaceCreation()}
-              fullWidth={true}
-            >
-              Avbryt
-            </Button>
+            <div className={classes.root}>
+              <Button
+                className={classes.text}
+                variant="contained"
+                onClick={() => this.acceptSignPackages()}
+              >
+                OK
+              </Button>
+              <Button
+                className={classes.text}
+                variant="contained"
+                onClick={() => this.reset()}
+              >
+                Avbryt
+              </Button>
+            </div>
           </Paper>
         </div>
       );
@@ -114,7 +149,9 @@ class ParkingAreaTools extends React.PureComponent {
     return (
       <div className={classes.root}>
         <Paper elevation={3} className={classes.toolPaper}>
-          <Typography className={classes.text}>Ange ytans attribut</Typography>
+          <Typography className={classes.text}>
+            Ange område som skyltpaketen ska kopplas till:
+          </Typography>
           <div className={classes.textField}>
             <AttributeEditor
               model={this.props.model}
@@ -124,7 +161,7 @@ class ParkingAreaTools extends React.PureComponent {
           <div className={classes.root}>
             <Button
               className={classes.text}
-              onClick={() => this.model.saveCreatedParkingSpaces()}
+              onClick={() => this.model.saveCreatedSignPackages()}
               variant="contained"
             >
               Spara
@@ -142,7 +179,7 @@ class ParkingAreaTools extends React.PureComponent {
     );
   }
 
-  renderRemoveParkingSpaces() {
+  renderRemoveParkingArea() {
     const { classes } = this.props;
     if (!this.state.featureExists) {
       return (
@@ -212,7 +249,7 @@ class ParkingAreaTools extends React.PureComponent {
     }
   }
 
-  renderEditParkingSpaces() {
+  renderEditParkingArea() {
     const { classes } = this.props;
     if (!this.state.featureExists) {
       return (
@@ -284,9 +321,9 @@ class ParkingAreaTools extends React.PureComponent {
   renderEditParkingAreaAttributes() {
     const { classes } = this.props;
     this.model.activateAttributeEditor(
-      this.model.layerNames["parkeringsomraden"]
+      this.model.layerNames["overvakningsomraden"]
     );
-    if (!this.state.setParkingAttributes) {
+    if (!this.state.setGeomAttributes) {
       return (
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
@@ -334,25 +371,25 @@ class ParkingAreaTools extends React.PureComponent {
   reset() {
     this.setState({
       drawActivated: false,
-      setParkingAttributes: false,
+      setGeomAttributes: false,
       searchTerm: "",
       featureExists: false
     });
     this.model.reset();
   }
 
-  activateParkingSpaceCreation() {
+  activateSignPackageCreation() {
     this.setState({
       drawActivated: true
     });
-    this.model.activateParkingSpaceCreation();
+    this.model.activateSignPackageCreation();
   }
 
-  deActivateParkingSpaceCreation() {
+  acceptSignPackages() {
     this.setState({
       drawActivated: false
     });
-    this.model.deActivateParkingSpaceCreation();
+    this.model.acceptSignPackages();
   }
 
   changeActiveTool(value) {
@@ -364,7 +401,11 @@ class ParkingAreaTools extends React.PureComponent {
     } else {
       this.localObserver.publish(
         "activateLayer",
-        this.model.layerNames["parkeringsytor"]
+        this.model.layerNames["overvakningsomraden"]
+      );
+      this.localObserver.publish(
+        "activateLayer",
+        this.model.layerNames["skyltpaket"]
       );
       this.setState({
         activeTool: value
@@ -383,10 +424,10 @@ class ParkingAreaTools extends React.PureComponent {
           value="createNewParkingArea"
           onClick={() => this.changeActiveTool("createNewParkingArea")}
         >
-          Skapa nya parkeringsytor
+          Skapa nytt skyltpaket
         </Button>
         {this.state.activeTool === "createNewParkingArea" &&
-          this.renderCreateNewParkingSpaces()}
+          this.renderCreateNewSignPackage()}
         <Button
           className={classes.buttonWithBottomMargin}
           variant="contained"
@@ -394,10 +435,10 @@ class ParkingAreaTools extends React.PureComponent {
           value="removeParkingArea"
           onClick={() => this.changeActiveTool("removeParkingArea")}
         >
-          Uppdatera attribut på parkeringsytor
+          Radera skyltpaket
         </Button>
         {this.state.activeTool === "removeParkingArea" &&
-          this.renderRemoveParkingSpaces()}
+          this.renderRemoveParkingArea()}
         <Button
           className={classes.buttonWithBottomMargin}
           variant="contained"
@@ -405,13 +446,24 @@ class ParkingAreaTools extends React.PureComponent {
           value="editParkingArea"
           onClick={() => this.changeActiveTool("editParkingArea")}
         >
-          Redigera parkeringsytor
+          Flytta skyltpaket
         </Button>
         {this.state.activeTool === "editParkingArea" &&
-          this.renderEditParkingSpaces()}
+          this.renderEditParkingArea()}
+        <Button
+          className={classes.buttonWithBottomMargin}
+          variant="contained"
+          fullWidth={true}
+          value="editParkingAreaAttributes"
+          onClick={() => this.changeActiveTool("editParkingAreaAttributes")}
+        >
+          Flytta etikett
+        </Button>
+        {this.state.activeTool === "editParkingAreaAttributes" &&
+          this.renderEditParkingAreaAttributes()}
       </>
     );
   }
 }
 
-export default withStyles(styles)(withSnackbar(ParkingAreaTools));
+export default withStyles(styles)(withSnackbar(SignPackageTools));
