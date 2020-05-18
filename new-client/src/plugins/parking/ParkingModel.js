@@ -1,15 +1,17 @@
 import { WFS } from "ol/format";
+import { Circle as CircleStyle, Fill, Stroke, Style } from "ol/style.js";
 import IsLike from "ol/format/filter/IsLike";
 import Or from "ol/format/filter/Or";
 import VectorSource from "ol/source/Vector";
 import { handleClick } from "../../models/Click.js";
 import X2JS from "x2js";
+import GeometryType from "ol/geom/GeometryType";
 import { buffer } from "ol/extent";
 import Vector from "ol/layer/Vector";
 import GeoJSON from "ol/format/GeoJSON";
 import { arraySort } from "./../../utils/ArraySort.js";
 import { Draw } from "ol/interaction";
-import { Modify } from "ol/interaction.js";
+import { Modify, Translate } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
 import { getDrawStyle } from "./utils/FeatureStyle.js";
 import Intersects from "ol/format/filter/Intersects";
@@ -27,6 +29,7 @@ export default class ParkingModel {
     this.featureIdCounter = 1;
     this.controllers = [];
     this.numLots = 0;
+    this.parkingAreaId = "";
     this.vectorSource = new VectorSource({});
     this.editLayer = new Vector({
       source: this.vectorSource,
@@ -37,6 +40,27 @@ export default class ParkingModel {
     this.layerNames = settings.options.layerNames;
     this.wfstSources = settings.options.wfstSources;
     this.sources = settings.options.wfsSources;
+    this.sketchStyle = [
+      new Style({
+        fill: new Fill({
+          color: "rgba(255, 255, 255, 0.5)"
+        }),
+        stroke: new Stroke({
+          color: "rgba(0, 0, 0, 0.5)",
+          width: 4
+        }),
+        image: new CircleStyle({
+          radius: 6,
+          fill: new Fill({
+            color: "rgba(0, 0, 0, 0.5)"
+          }),
+          stroke: new Stroke({
+            color: "rgba(255, 255, 255, 0.5)",
+            width: 2
+          })
+        })
+      })
+    ];
 
     this.localObserver.subscribe("activateLayer", layerName => {
       this.toggleLayerVisibility([layerName], true);
@@ -91,11 +115,18 @@ export default class ParkingModel {
   removeInteractions() {
     if (this.draw) {
       this.map.removeInteraction(this.draw);
+      this.draw = undefined;
     }
     if (this.edit) {
       this.map.removeInteraction(this.edit);
+      this.edit = undefined;
+    }
+    if (this.move) {
+      this.map.removeInteraction(this.move);
+      this.move = undefined;
     }
     this.map.un("singleclick", this.onSelectFeatures);
+    this.map.un("singleclick", this.onSelectPointFeatures);
     this.map.un("pointermove", this.generateParkingSpaces);
     this.map.un("singleclick", evt => {
       this.finishParkingSpaces();
@@ -152,6 +183,27 @@ export default class ParkingModel {
     this.map.addInteraction(this.draw);
   }
 
+  setMoveActive() {
+    this.move = new Translate({
+      features: this.editLayer.getSource().getFeaturesCollection()
+    });
+    this.map.addInteraction(this.move);
+    this.map.on("singleclick", this.onSelectPointFeatures);
+  }
+
+  onSelectPointFeatures = evt => {
+    handleClick(evt, evt.map, response => {
+      response.features.forEach(feature => {
+        const geometryType = feature.getGeometry().getType();
+        if (geometryType === GeometryType.POINT) {
+          feature.modification = "updated";
+          this.editLayer.getSource().addFeature(feature);
+          this.localObserver.publish("move-feature-added");
+        }
+      });
+    });
+  };
+
   activateParkingAreaCreation() {
     this.activateDraw("Polygon");
     this.setEditSource(this.layerNames["overvakningsomraden"]);
@@ -176,12 +228,25 @@ export default class ParkingModel {
     this.setEditSource(this.layerNames["skyltpaket"]);
   }
 
+  activateMoveSignPackage() {
+    this.setEditSource(this.layerNames["skyltpaket"]);
+    if (!this.move) {
+      this.setMoveActive();
+    }
+  }
+
+  activateMoveSignPackageLabels() {
+    this.setEditSource(this.layerNames["skyltpaket_etiketter"]);
+    if (!this.move) {
+      this.setMoveActive();
+    }
+  }
+
   acceptSignPackages() {
     this.removeInteractions();
-    let parkingAreaId = "";
     this.getPossibleAreaConnection(parkingAreaIds => {
       if (parkingAreaIds.every(val => val === parkingAreaIds[0])) {
-        parkingAreaId = parkingAreaIds[0];
+        this.parkingAreaId = parkingAreaIds[0];
       }
       this.editLayer
         .getSource()
@@ -189,7 +254,7 @@ export default class ParkingModel {
         .forEach(feature => {
           feature.modification = "added";
           feature.setProperties({
-            overvakningsomradeid: parkingAreaId
+            overvakningsomradeid: this.parkingAreaId
           });
         });
       this.localObserver.publish("sign-packages-added");
@@ -267,7 +332,7 @@ export default class ParkingModel {
       .forEach(feature => {
         feature.modification = "added";
       });
-    this.localObserver.publish("spaces-added");
+    this.localObserver.publish("parking-spaces-added");
     this.numLots = 0;
     this.parkingCoordinates = [];
     this.startCoord = undefined;
@@ -509,7 +574,7 @@ export default class ParkingModel {
       const numHits = this.getNumberOfResults(d);
       if (numHits > 0) {
         this.highlightImpact(d);
-        this.localObserver.publish("featureExists", {});
+        this.localObserver.publish("searched-area-highlighted", {});
       } else {
         this.localObserver.publish("messageEvent", {
           message: "Det finns inga parkeringsytor kopplade till det ID:et.",
@@ -541,14 +606,22 @@ export default class ParkingModel {
     });
     this.save(r => {
       this.refreshLayer(layerName);
-      this.localObserver.publish("featuresRemoved", {});
+      this.localObserver.publish("parking-area-removed", {});
+      this.localObserver.publish("messageEvent", {
+        message: "Parkeringsområdet togs bort utan problem!",
+        variant: "success"
+      });
     });
   }
 
-  saveEditedFeatures() {
+  saveEditedFeatures(layerName) {
     this.save(r => {
-      this.refreshLayer(this.layerNames["overvakningsomraden"]);
-      this.localObserver.publish("featuresAdded", {});
+      this.refreshLayer(layerName);
+      this.localObserver.publish("parking-area-saved", {});
+      this.localObserver.publish("messageEvent", {
+        message: "Uppdateringen sparades utan problem!",
+        variant: "success"
+      });
     });
   }
 
@@ -567,23 +640,89 @@ export default class ParkingModel {
       } else {
         this.save(r => {
           this.refreshLayer(this.layerNames["overvakningsomraden"]);
-          this.localObserver.publish("featuresAdded", {});
+          this.localObserver.publish("parking-area-saved", {});
+          this.localObserver.publish("messageEvent", {
+            message: "Parkeringsområdet skapades utan problem!",
+            variant: "success"
+          });
         });
       }
     });
   }
 
   saveCreatedSignPackages() {
+    this.signPackageLabelConnection = this.getRandomArbitrary(
+      99999,
+      999999
+    ).toString();
+    this.editLayer
+      .getSource()
+      .getFeatures()
+      .forEach(feature => {
+        feature.setProperties({
+          etikettid: this.signPackageLabelConnection
+        });
+      });
     this.save(r => {
       this.refreshLayer(this.layerNames["skyltpaket"]);
       this.localObserver.publish("sign-packages-saved", {});
+      this.localObserver.publish("messageEvent", {
+        message: "Skyltpaketet skapades utan problem!",
+        variant: "success"
+      });
+    });
+  }
+
+  getRandomArbitrary(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+  }
+
+  createSignPackageLabel() {
+    let labelFeatures = [];
+    this.setEditSource(this.layerNames["skyltpaket_etiketter"]);
+
+    this.editLayer
+      .getSource()
+      .getFeatures()
+      .forEach(feature => {
+        let labelPoint = new Point([
+          feature.getGeometry().getCoordinates()[0] + 10,
+          feature.getGeometry().getCoordinates()[1] + 10
+        ]);
+        let labelFeature = new Feature({
+          geometry: labelPoint
+        });
+        labelFeatures.push(labelFeature);
+      });
+
+    this.editLayer.getSource().clear();
+    labelFeatures.forEach(feature => {
+      feature.modification = "added";
+      feature.setProperties({
+        skyltpaketid: this.signPackageLabelConnection,
+        index: "10"
+      });
+      this.editLayer.getSource().addFeature(feature);
+    });
+
+    this.save(r => {
+      this.refreshLayer(this.layerNames["skyltpaket_etiketter"]);
+      this.localObserver.publish("sign-package-labels-saved", {});
+      this.localObserver.publish("messageEvent", {
+        message: "Etiketten skapades utan problem!",
+        variant: "success"
+      });
     });
   }
 
   saveCreatedParkingSpaces() {
     this.save(r => {
       this.refreshLayer(this.layerNames["parkeringsytor"]);
-      this.localObserver.publish("spaces-saved", {});
+      this.localObserver.publish("parking-spaces-saved", {});
+      this.localObserver.publish("messageEvent", {
+        message: "Parkeringsytorna skapades utan problem!",
+        variant: "success"
+      });
     });
   }
 
@@ -648,7 +787,6 @@ export default class ParkingModel {
     this.updateFeatureIds(this.featuresToTransact);
     this.transact(this.featuresToTransact, done);
     this.featuresToTransact = undefined;
-    this.editLayer.getSource().clear();
   }
 
   write(features) {

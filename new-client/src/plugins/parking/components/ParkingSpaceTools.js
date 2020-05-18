@@ -48,20 +48,20 @@ class ParkingAreaTools extends React.PureComponent {
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
 
-    this.localObserver.subscribe("spaces-added", message => {
+    this.localObserver.subscribe("parking-spaces-added", message => {
       this.setState({
         setParkingAttributes: true
       });
     });
 
-    this.localObserver.subscribe("spaces-saved", message => {
+    this.localObserver.subscribe("parking-spaces-saved", message => {
       this.reset();
     });
   }
 
   componentWillUnmount() {
-    this.localObserver.unsubscribe("spaces-added");
-    this.localObserver.unsubscribe("spaces-saved");
+    this.localObserver.unsubscribe("parking-spaces-added");
+    this.localObserver.unsubscribe("parking-spaces-saved");
     this.reset();
   }
 

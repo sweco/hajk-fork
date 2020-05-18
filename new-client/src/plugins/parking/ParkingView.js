@@ -56,7 +56,6 @@ class ParkingView extends React.PureComponent {
     this.model = this.props.model;
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
-
     this.toolNames = this.props.options.toolNames;
 
     this.localObserver.subscribe("messageEvent", message => {

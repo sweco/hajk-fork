@@ -54,7 +54,7 @@ class ParkingAreaTools extends React.PureComponent {
       });
     });
 
-    this.localObserver.subscribe("featureExists", message => {
+    this.localObserver.subscribe("searched-area-highlighted", message => {
       this.setState({
         featureExists: true
       });
@@ -63,13 +63,13 @@ class ParkingAreaTools extends React.PureComponent {
       }
     });
 
-    this.localObserver.subscribe("featuresRemoved", message => {
+    this.localObserver.subscribe("parking-area-removed", message => {
       this.setState({
         featureExists: false
       });
     });
 
-    this.localObserver.subscribe("featuresAdded", message => {
+    this.localObserver.subscribe("parking-area-saved", message => {
       this.reset();
     });
 
@@ -85,8 +85,9 @@ class ParkingAreaTools extends React.PureComponent {
 
   componentWillUnmount() {
     this.localObserver.unsubscribe("feature-added");
-    this.localObserver.unsubscribe("featuresRemoved");
-    this.localObserver.unsubscribe("featuresAdded");
+    this.localObserver.unsubscribe("searched-area-highlighted");
+    this.localObserver.unsubscribe("parking-area-removed");
+    this.localObserver.unsubscribe("parking-area-saved");
     this.localObserver.unsubscribe("areaAlreadyExistsError");
     this.reset();
   }
@@ -338,7 +339,11 @@ class ParkingAreaTools extends React.PureComponent {
             <div className={classes.root}>
               <Button
                 className={classes.text}
-                onClick={() => this.model.saveEditedFeatures()}
+                onClick={() =>
+                  this.model.saveEditedFeatures(
+                    this.model.layerNames["overvakningsomraden"]
+                  )
+                }
                 variant="contained"
               >
                 Spara

@@ -40,7 +40,8 @@ class SignPackageTools extends React.PureComponent {
     setGeomAttributes: false,
     searchTerm: "",
     featureExists: false,
-    signPackagesSaved: false
+    signPackagesSaved: false,
+    moveFeatureExists: false
   };
 
   constructor(props) {
@@ -55,40 +56,30 @@ class SignPackageTools extends React.PureComponent {
       });
     });
 
-    this.localObserver.subscribe("featureExists", message => {
-      this.setState({
-        featureExists: true
-      });
-      if (this.state.activeTool === "editParkingArea") {
-        this.model.activateParkingAreaEditing();
-      }
-    });
-
     this.localObserver.subscribe("sign-packages-saved", message => {
       this.setState({
-        signPackagesSaved: true
+        signPackagesSaved: true,
+        setGeomAttributes: false
       });
     });
 
-    this.localObserver.subscribe("featuresAdded", message => {
+    this.localObserver.subscribe("sign-package-labels-saved", message => {
       this.reset();
     });
 
-    this.localObserver.subscribe("areaAlreadyExistsError", message => {
-      this.localObserver.publish("messageEvent", {
-        message: "Det finns redan ett parkeringsområde med detta ID",
-        variant: "error",
-        reset: true
+    this.localObserver.subscribe("move-feature-added", message => {
+      this.setState({
+        moveFeatureExists: true
       });
-      this.reset();
     });
   }
 
   componentWillUnmount() {
     this.localObserver.unsubscribe("sign-packages-added");
     this.localObserver.unsubscribe("featuresRemoved");
-    this.localObserver.unsubscribe("featuresAdded");
-    this.localObserver.unsubscribe("areaAlreadyExistsError");
+    this.localObserver.unsubscribe("sign-packages-saved");
+    this.localObserver.unsubscribe("sign-package-labels-saved");
+    this.localObserver.unsubscribe("move-feature-added");
     this.reset();
   }
 
@@ -96,6 +87,33 @@ class SignPackageTools extends React.PureComponent {
     const { classes } = this.props;
     if (this.state.setGeomAttributes) {
       return <div className={classes.root}>{this.renderAttributeForm()}</div>;
+    }
+    if (this.state.signPackagesSaved) {
+      return (
+        <div className={classes.root}>
+          <Paper elevation={3} className={classes.toolPaper}>
+            <Typography className={classes.text}>
+              Vill du koppla etiketter till skyltpaketen?
+            </Typography>
+            <div className={classes.root}>
+              <Button
+                className={classes.text}
+                variant="contained"
+                onClick={() => this.model.createSignPackageLabel()}
+              >
+                JA
+              </Button>
+              <Button
+                className={classes.text}
+                variant="contained"
+                onClick={() => this.reset()}
+              >
+                NEJ
+              </Button>
+            </div>
+          </Paper>
+        </div>
+      );
     }
     if (!this.state.drawActivated) {
       return (
@@ -120,7 +138,8 @@ class SignPackageTools extends React.PureComponent {
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Du kan nu sätta ut skyltpaket i kartan.
+              Du kan nu placera ut skyltpaket i kartan. Tryck på OK när du är
+              klar.
             </Typography>
             <div className={classes.root}>
               <Button
@@ -179,7 +198,7 @@ class SignPackageTools extends React.PureComponent {
     );
   }
 
-  renderRemoveParkingArea() {
+  renderShowLines() {
     const { classes } = this.props;
     if (!this.state.featureExists) {
       return (
@@ -249,39 +268,16 @@ class SignPackageTools extends React.PureComponent {
     }
   }
 
-  renderEditParkingArea() {
+  renderMoveSignPackage() {
     const { classes } = this.props;
-    if (!this.state.featureExists) {
+    this.model.activateMoveSignPackage();
+    if (!this.state.moveFeatureExists) {
       return (
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Ange ett områdes-id:
+              Tryck på det skyltpaket som du vill flytta.
             </Typography>
-            <div className={classes.textField}>
-              <TextField
-                className={classes.text}
-                size="small"
-                id="area-id-input-edit"
-                label="Områdes-id"
-                variant="outlined"
-                onChange={e => {
-                  this.setState({ searchTerm: e.target.value });
-                }}
-              />
-              <Button
-                className={classes.text}
-                onClick={() =>
-                  this.model.checkIfGeometryExists(
-                    this.state.searchTerm,
-                    "overvakningsomraden"
-                  )
-                }
-                variant="contained"
-              >
-                Sök
-              </Button>
-            </div>
           </Paper>
         </div>
       );
@@ -290,14 +286,14 @@ class SignPackageTools extends React.PureComponent {
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Redigera området genom att ändra noderna i kartan.
+              Dra skyltpaketet dit du vill ha det och klicka sedan på spara.
             </Typography>
             <div className={classes.textField}>
               <Button
                 className={classes.text}
                 onClick={() =>
                   this.model.saveEditedFeatures(
-                    this.model.layerNames["overvakningsomraden"]
+                    this.model.layerNames["skyltpaket"]
                   )
                 }
                 variant="contained"
@@ -318,17 +314,15 @@ class SignPackageTools extends React.PureComponent {
     }
   }
 
-  renderEditParkingAreaAttributes() {
+  renderMoveSignPackageLabels() {
     const { classes } = this.props;
-    this.model.activateAttributeEditor(
-      this.model.layerNames["overvakningsomraden"]
-    );
-    if (!this.state.setGeomAttributes) {
+    this.model.activateMoveSignPackageLabels();
+    if (!this.state.moveFeatureExists) {
       return (
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Klicka på ett område för att ändra dess attribut
+              Tryck på det skyltpaket som du vill flytta.
             </Typography>
           </Paper>
         </div>
@@ -338,18 +332,16 @@ class SignPackageTools extends React.PureComponent {
         <div className={classes.root}>
           <Paper elevation={3} className={classes.toolPaper}>
             <Typography className={classes.text}>
-              Ange ytans attribut
+              Dra skyltpaketet dit du vill ha det och klicka sedan på spara.
             </Typography>
             <div className={classes.textField}>
-              <AttributeEditor
-                model={this.props.model}
-                localObserver={this.props.localObserver}
-              />
-            </div>
-            <div className={classes.root}>
               <Button
                 className={classes.text}
-                onClick={() => this.model.saveEditedFeatures()}
+                onClick={() =>
+                  this.model.saveEditedFeatures(
+                    this.model.layerNames["skyltpaket_etiketter"]
+                  )
+                }
                 variant="contained"
               >
                 Spara
@@ -373,7 +365,9 @@ class SignPackageTools extends React.PureComponent {
       drawActivated: false,
       setGeomAttributes: false,
       searchTerm: "",
-      featureExists: false
+      featureExists: false,
+      signPackagesSaved: false,
+      moveFeatureExists: false
     });
     this.model.reset();
   }
@@ -407,6 +401,10 @@ class SignPackageTools extends React.PureComponent {
         "activateLayer",
         this.model.layerNames["skyltpaket"]
       );
+      this.localObserver.publish(
+        "activateLayer",
+        this.model.layerNames["skyltpaket_etiketter"]
+      );
       this.setState({
         activeTool: value
       });
@@ -435,10 +433,10 @@ class SignPackageTools extends React.PureComponent {
           value="removeParkingArea"
           onClick={() => this.changeActiveTool("removeParkingArea")}
         >
-          Radera skyltpaket
+          Visa linjer
         </Button>
         {this.state.activeTool === "removeParkingArea" &&
-          this.renderRemoveParkingArea()}
+          this.renderShowLines()}
         <Button
           className={classes.buttonWithBottomMargin}
           variant="contained"
@@ -449,7 +447,7 @@ class SignPackageTools extends React.PureComponent {
           Flytta skyltpaket
         </Button>
         {this.state.activeTool === "editParkingArea" &&
-          this.renderEditParkingArea()}
+          this.renderMoveSignPackage()}
         <Button
           className={classes.buttonWithBottomMargin}
           variant="contained"
@@ -457,10 +455,10 @@ class SignPackageTools extends React.PureComponent {
           value="editParkingAreaAttributes"
           onClick={() => this.changeActiveTool("editParkingAreaAttributes")}
         >
-          Flytta etikett
+          Flytta etiketter
         </Button>
         {this.state.activeTool === "editParkingAreaAttributes" &&
-          this.renderEditParkingAreaAttributes()}
+          this.renderMoveSignPackageLabels()}
       </>
     );
   }

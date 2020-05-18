@@ -90,9 +90,9 @@ class Parking extends React.PureComponent {
         custom={{
           icon: <LocalParkingIcon />, // Custom icon for this plugin
           title: "Parkeringsbolaget", // Custom title (will be shown in Window's toolbar and on the Drawer/Widget button)
-          description: "Parkeringsbolaget verktyg", // Shown on Widget button
-          height: 450, // Custom height/width etc | Use "auto" for automatic or leave undefined
-          width: 400
+          description: "Parkeringsbolagets verktyg", // Shown on Widget button
+          height: 600,
+          width: 300
         }}
       >
         {/* This is the child object of BaseWindowPlugin. It will be displayed
