@@ -8,6 +8,7 @@ import { Typography } from "@material-ui/core";
 import ParkingAreaTools from "./components/ParkingAreaTools";
 import ParkingSpaceTools from "./components/ParkingSpaceTools";
 import SignPackageTools from "./components/SignPackageTools";
+import LayoutTools from "./components/LayoutTools";
 import clsx from "clsx";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
@@ -120,10 +121,14 @@ class ParkingView extends React.PureComponent {
     );
   }
 
-  renderTicketMachineTools() {
+  renderLayoutTools() {
     return (
       <div>
-        <Typography>Biljettautomatverktyg</Typography>
+        <LayoutTools
+          model={this.model}
+          app={this.props.app}
+          localObserver={this.localObserver}
+        />
       </div>
     );
   }
@@ -202,7 +207,7 @@ class ParkingView extends React.PureComponent {
             {this.state.activeTool === 0 && this.renderParkingAreaTools()}
             {this.state.activeTool === 1 && this.renderParkingSpaceTools()}
             {this.state.activeTool === 2 && this.renderSignPackageTools()}
-            {this.state.activeTool === 3 && this.renderTicketMachineTools()}
+            {this.state.activeTool === 3 && this.renderLayoutTools()}
           </div>
         </div>
       </>

@@ -49,7 +49,9 @@ class SignPackageTools extends React.PureComponent {
     this.model = this.props.model;
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
+  }
 
+  componentDidMount() {
     this.localObserver.subscribe("sign-packages-added", message => {
       this.setState({
         setGeomAttributes: true
@@ -76,7 +78,6 @@ class SignPackageTools extends React.PureComponent {
 
   componentWillUnmount() {
     this.localObserver.unsubscribe("sign-packages-added");
-    this.localObserver.unsubscribe("featuresRemoved");
     this.localObserver.unsubscribe("sign-packages-saved");
     this.localObserver.unsubscribe("sign-package-labels-saved");
     this.localObserver.unsubscribe("move-feature-added");

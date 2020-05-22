@@ -47,7 +47,9 @@ class ParkingAreaTools extends React.PureComponent {
     this.model = this.props.model;
     this.localObserver = this.props.localObserver;
     this.globalObserver = this.props.app.globalObserver;
+  }
 
+  componentDidMount() {
     this.localObserver.subscribe("parking-spaces-added", message => {
       this.setState({
         setParkingAttributes: true

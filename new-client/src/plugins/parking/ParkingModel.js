@@ -13,10 +13,17 @@ import { arraySort } from "./../../utils/ArraySort.js";
 import { Draw } from "ol/interaction";
 import { Modify, Translate } from "ol/interaction.js";
 import Collection from "ol/Collection.js";
-import { getDrawStyle } from "./utils/FeatureStyle.js";
+import {
+  getDrawStyle,
+  getParkingAreaStyle,
+  getParkingSpaceStyle,
+  getSignPackageStyle,
+  getSignPackageLabelStyle,
+  getLineStyle
+} from "./utils/FeatureStyle.js";
 import Intersects from "ol/format/filter/Intersects";
 import { Feature } from "ol";
-import { LineString, Point, Polygon } from "ol/geom";
+import { LineString, Point, Polygon, Circle } from "ol/geom";
 
 export default class ParkingModel {
   constructor(settings) {
@@ -35,8 +42,12 @@ export default class ParkingModel {
       source: this.vectorSource,
       style: getDrawStyle
     });
+    this.layoutPreviewLayer = new Vector({
+      source: new VectorSource({})
+    });
     this.editSource = undefined;
     this.map.addLayer(this.editLayer);
+    this.map.addLayer(this.layoutPreviewLayer);
     this.layerNames = settings.options.layerNames;
     this.wfstSources = settings.options.wfstSources;
     this.sources = settings.options.wfsSources;
@@ -105,6 +116,7 @@ export default class ParkingModel {
   reset() {
     this.resetEditFeatureId();
     this.editLayer.getSource().clear();
+    this.layoutPreviewLayer.getSource().clear();
     this.removeInteractions();
     this.editSource = undefined;
     this.numLots = 0;
@@ -272,7 +284,7 @@ export default class ParkingModel {
       .getSource()
       .getFeatures()
       .forEach(feature => {
-        promises.push(this.lookupParkingArea(source, feature));
+        promises.push(this.lookupIntersecting(source, feature));
       });
 
     Promise.all(promises).then(parkingAreaCollections => {
@@ -287,7 +299,7 @@ export default class ParkingModel {
     });
   }
 
-  lookupParkingArea(source, feature) {
+  lookupIntersecting(source, feature) {
     const projCode = this.map
       .getView()
       .getProjection()
@@ -577,12 +589,159 @@ export default class ParkingModel {
         this.localObserver.publish("searched-area-highlighted", {});
       } else {
         this.localObserver.publish("messageEvent", {
-          message: "Det finns inga parkeringsytor kopplade till det ID:et.",
+          message: "Det finns inga parkeringsområden kopplade till det ID:et.",
           variant: "error",
           reset: true
         });
       }
     });
+  }
+
+  addParkingArea(areaId, layerName) {
+    const source = this.sources.find(
+      source => source.layers[0] === this.layerNames[layerName]
+    );
+    this.search(areaId, source, d => {
+      const olFeatures = new GeoJSON().readFeatures(d[0]);
+      olFeatures.forEach(feature => {
+        feature.setStyle(getParkingAreaStyle());
+        feature.featureType = "overvakningsomrade";
+      });
+      this.layoutPreviewLayer.getSource().addFeatures(olFeatures);
+      this.layoutPreviewLayer.setVisible(true);
+    });
+  }
+
+  addParkingSpaces(layerName) {
+    let promises = [];
+    const source = this.sources.find(
+      source => source.layers[0] === this.layerNames[layerName]
+    );
+    this.editLayer
+      .getSource()
+      .getFeatures()
+      .forEach(feature => {
+        promises.push(this.lookupIntersecting(source, feature));
+      });
+    Promise.all(promises).then(parkingSpaceCollections => {
+      if (parkingSpaceCollections) {
+        parkingSpaceCollections.forEach(parkingSpaceCollection => {
+          const olFeatures = new GeoJSON().readFeatures(parkingSpaceCollection);
+          olFeatures.forEach(feature => {
+            feature.setStyle(getParkingSpaceStyle(feature));
+            feature.featureType = "parkeringsyta";
+          });
+          this.layoutPreviewLayer.getSource().addFeatures(olFeatures);
+        });
+        this.layoutPreviewLayer.setVisible(true);
+      }
+    });
+  }
+
+  addSignPackages(areaId, layerName, callback) {
+    let signPackageLabelIds = [];
+    const source = this.sources.find(
+      source => source.layers[0] === this.layerNames[layerName]
+    );
+    this.search(areaId, source, d => {
+      const olFeatures = new GeoJSON().readFeatures(d[0]);
+      olFeatures.forEach(feature => {
+        feature.setStyle(getSignPackageStyle());
+        feature.featureType = "skyltpaket";
+        signPackageLabelIds.push(feature.get("etikettid"));
+      });
+      this.layoutPreviewLayer.getSource().addFeatures(olFeatures);
+      this.layoutPreviewLayer.setVisible(true);
+      if (callback) {
+        callback(signPackageLabelIds);
+      }
+    });
+  }
+
+  addSignPackageLabel(labelId, radius, callback) {
+    const source = this.sources.find(
+      source => source.layers[0] === this.layerNames["skyltpaket_etiketter"]
+    );
+    this.search(labelId, source, d => {
+      const olFeatures = new GeoJSON().readFeatures(d[0]);
+      olFeatures.forEach(feature => {
+        feature.setProperties({
+          type: "Text",
+          description: feature.get("index")
+        });
+        feature.featureType = "skyltpaket_etikett";
+        feature.setGeometry(
+          new Circle(feature.getGeometry().getCoordinates(), radius)
+        );
+        feature.setStyle(getSignPackageLabelStyle(feature));
+      });
+      this.layoutPreviewLayer.getSource().addFeatures(olFeatures);
+      this.layoutPreviewLayer.setVisible(true);
+      callback();
+    });
+  }
+
+  addSignPackagesAndLabels(areaId, labelRadius, callback) {
+    this.addSignPackages(areaId, "skyltpaket", labelIds => {
+      let requests = labelIds.map(labelId => {
+        return new Promise(resolve => {
+          this.addSignPackageLabel(labelId, labelRadius, resolve);
+        });
+      });
+      Promise.all(requests).then(() => callback(labelIds));
+    });
+  }
+
+  addLines(labelIds) {
+    labelIds.forEach(labelId => {
+      let connectedFeatures = this.layoutPreviewLayer
+        .getSource()
+        .getFeatures()
+        .filter(
+          feature =>
+            feature.get("etikettid") === labelId ||
+            feature.get("skyltpaketid") === labelId
+        );
+    });
+  }
+
+  createLayout(areaId) {
+    if (areaId === "") {
+      return;
+    }
+    const currentZoom = Math.floor(this.map.getView().getZoom());
+    const labelRadius = this.getLabelRadius(currentZoom);
+    this.layoutPreviewLayer.getSource().clear();
+    this.addParkingArea(areaId, "overvakningsomraden");
+    this.addParkingSpaces("parkeringsytor");
+    this.addSignPackagesAndLabels(areaId, labelRadius, labelIds => {
+      this.addLines(labelIds);
+    });
+    this.editLayer.getSource().clear();
+    this.toggleLayerVisibility(
+      [
+        this.layerNames["overvakningsomraden"],
+        this.layerNames["parkeringsytor"],
+        this.layerNames["skyltpaket"],
+        this.layerNames["skyltpaket_etiketter"]
+      ],
+      false
+    );
+  }
+
+  getLabelRadius(zoomLevel) {
+    switch (zoomLevel) {
+      case 4:
+        return 10;
+      case 5:
+        return 9;
+      case 6:
+        return 4;
+      case 7:
+        return 2;
+      default:
+        return 1;
+    }
   }
 
   getNumberOfResults = result => {
@@ -632,7 +791,7 @@ export default class ParkingModel {
     let searchTerm = this.editLayer
       .getSource()
       .getFeatures()[0]
-      .getProperties().parkeringsomradeid;
+      .getProperties().overvakningsomradeid;
     this.search(searchTerm, source, d => {
       const numHits = this.getNumberOfResults(d);
       if (numHits > 0) {
