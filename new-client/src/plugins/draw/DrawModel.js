@@ -687,10 +687,10 @@ class DrawModel {
     this.select.on("select", evt => {
       const { selected, deselected } = evt;
       selected.forEach(f => {
-        if (f.getStyle() !== this.sketchStyle) {
-          f.set("_s", f.getStyle());
+        if (this.getStyle(f) !== this.sketchStyle) {
+          f.set("_s", this.getStyle(f));
         }
-        f.setStyle(f.getStyle().concat(this.sketchStyle));
+        f.setStyle(this.getStyle(f).concat(this.sketchStyle));
       });
       deselected.forEach(f => {
         f.setStyle(f.get("_s"));
