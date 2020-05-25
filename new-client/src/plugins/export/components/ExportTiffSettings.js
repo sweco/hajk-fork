@@ -120,11 +120,7 @@ class ExportTiffSettings extends React.PureComponent {
         break;
     }
 
-    console.log(scale);
     const scaleIsAvailable = this.props.model.scales.indexOf(scale) > -1;
-
-    console.log(this.props.model.scales);
-    console.log(scaleIsAvailable);
 
     if (scaleIsAvailable) {
       return scale;
