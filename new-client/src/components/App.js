@@ -380,6 +380,27 @@ class App extends React.PureComponent {
     );
   }
 
+  renderCookieNotice() {
+    const defaultCookieNoticeMessage = this.isString(
+      this.props.config.mapConfig.map.defaultCookieNoticeMessage
+    )
+      ? this.props.config.mapConfig.map.defaultCookieNoticeMessage
+      : undefined;
+
+    const defaultCookieNoticeUrl = this.isString(
+      this.props.config.mapConfig.map.defaultCookieNoticeUrl
+    )
+      ? this.props.config.mapConfig.map.defaultCookieNoticeUrl
+      : undefined;
+    return (
+      <CookieNotice
+        globalObserver={this.globalObserver}
+        defaultCookieNoticeMessage={defaultCookieNoticeMessage}
+        defaultCookieNoticeUrl={defaultCookieNoticeUrl}
+      />
+    );
+  }
+
   renderInformationPlugin() {
     const c = this.appModel.config.mapConfig.tools.find(
       t => t.type === "information"
@@ -400,18 +421,8 @@ class App extends React.PureComponent {
 
     // If clean===true, some components won't be rendered below
     const clean = config.mapConfig.map.clean;
-
-    const defaultCookieNoticeMessage = this.isString(
-      this.props.config.mapConfig.map.defaultCookieNoticeMessage
-    )
-      ? this.props.config.mapConfig.map.defaultCookieNoticeMessage
-      : undefined;
-
-    const defaultCookieNoticeUrl = this.isString(
-      this.props.config.mapConfig.map.defaultCookieNoticeUrl
-    )
-      ? this.props.config.mapConfig.map.defaultCookieNoticeUrl
-      : undefined;
+    const alwaysHideCookieNotice =
+      config.mapConfig.map.alwaysHideCookieNotice || false;
 
     return (
       <SnackbarProvider
@@ -422,11 +433,7 @@ class App extends React.PureComponent {
         }}
       >
         <>
-          <CookieNotice
-            globalObserver={this.globalObserver}
-            defaultCookieNoticeMessage={defaultCookieNoticeMessage}
-            defaultCookieNoticeUrl={defaultCookieNoticeUrl}
-          />
+          {alwaysHideCookieNotice === false && this.renderCookieNotice()}
           <Alert
             open={this.state.alert}
             message={this.state.alertMessage}
