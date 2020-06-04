@@ -683,20 +683,6 @@ class DrawModel {
 
   setMoveActive() {
     this.select = new Select();
-
-    this.select.on("select", evt => {
-      const { selected, deselected } = evt;
-      selected.forEach(f => {
-        if (this.getStyle(f) !== this.sketchStyle) {
-          f.set("_s", this.getStyle(f));
-        }
-        f.setStyle(this.getStyle(f).concat(this.sketchStyle));
-      });
-      deselected.forEach(f => {
-        f.setStyle(f.get("_s"));
-      });
-    });
-
     this.move = new Translate({ features: this.select.getFeatures() });
     this.map.addInteraction(this.move);
     this.map.addInteraction(this.select);
