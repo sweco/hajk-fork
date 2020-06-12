@@ -138,54 +138,55 @@ class Toolbar extends React.Component {
         return;
       }
     }
-    model.invokeCompleteMessage();
-    model.save(r => {
-      if (r && r.TransactionResponse.TransactionSummary) {
-        if (
-          Number(
-            r.TransactionResponse.TransactionSummary.totalInserted.toString()
-          ) > 0
-        ) {
-          this.props.messageHandler(
-            "Geometrin skapades utan problem!",
-            "success"
-          );
-          model.refreshLayer(model.sourceName);
-          this.props.panel.reset();
-        } else if (
-          Number(
-            r.TransactionResponse.TransactionSummary.totalUpdated.toString()
-          ) > 0
-        ) {
-          this.props.messageHandler(
-            "Geometrin uppdaterades utan problem!",
-            "success"
-          );
-          model.refreshLayer(model.sourceName);
-          this.props.panel.reset();
-        } else if (
-          Number(
-            r.TransactionResponse.TransactionSummary.totalDeleted.toString()
-          ) > 0
-        ) {
-          this.props.messageHandler(
-            "Geometrin togs bort utan problem.",
-            "success"
-          );
-          model.refreshLayer(model.sourceName);
-          this.props.panel.reset();
+    model.invokeCompleteMessage(done => {
+      model.save(r => {
+        if (r && r.TransactionResponse.TransactionSummary) {
+          if (
+            Number(
+              r.TransactionResponse.TransactionSummary.totalInserted.toString()
+            ) > 0
+          ) {
+            this.props.messageHandler(
+              "Geometrin skapades utan problem!",
+              "success"
+            );
+            model.refreshLayer(model.sourceName);
+            this.props.panel.reset();
+          } else if (
+            Number(
+              r.TransactionResponse.TransactionSummary.totalUpdated.toString()
+            ) > 0
+          ) {
+            this.props.messageHandler(
+              "Geometrin uppdaterades utan problem!",
+              "success"
+            );
+            model.refreshLayer(model.sourceName);
+            this.props.panel.reset();
+          } else if (
+            Number(
+              r.TransactionResponse.TransactionSummary.totalDeleted.toString()
+            ) > 0
+          ) {
+            this.props.messageHandler(
+              "Geometrin togs bort utan problem.",
+              "success"
+            );
+            model.refreshLayer(model.sourceName);
+            this.props.panel.reset();
+          } else {
+            this.props.messageHandler(
+              "Geometrin gick inte att spara. Försök igen senare."
+            );
+            this.props.panel.reset();
+          }
         } else {
           this.props.messageHandler(
-            "Geometrin gick inte att spara. Försök igen senare."
+            "Geometrin gick inte att spara. Fösök igen senare."
           );
           this.props.panel.reset();
         }
-      } else {
-        this.props.messageHandler(
-          "Geometrin gick inte att spara. Fösök igen senare."
-        );
-        this.props.panel.reset();
-      }
+      });
     });
   };
 

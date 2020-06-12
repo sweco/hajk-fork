@@ -688,7 +688,7 @@ class MarkisModel {
     });
   }
 
-  invokeCompleteMessage() {
+  invokeCompleteMessage(done) {
     this.getAreaAndAffectedEstates(r => {
       let message_string = JSON.stringify(r);
       this.connection.invoke(
@@ -696,6 +696,7 @@ class MarkisModel {
         this.sessionId,
         message_string
       );
+      return done();
     });
   }
 
