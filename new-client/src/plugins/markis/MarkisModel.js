@@ -668,7 +668,7 @@ class MarkisModel {
               if (objIndex === -1) {
                 affectedEstates.push({
                   estateName: estate.properties.fastighet,
-                  estateId: estate.properties.fastnr_fk,
+                  estateId: estate.properties.fastnr_fk || "",
                   estateArea: estateArea,
                   affectedArea: affectedArea
                 });
@@ -678,7 +678,7 @@ class MarkisModel {
         });
         let result = {
           operation: this.markisParameters.type,
-          objectId: this.markisParameters.objectId,
+          objectId: this.markisParameters.objectId || "",
           objectSerial: this.markisParameters.objectSerial || "",
           totalArea: totalArea,
           affectedEstates: affectedEstates
@@ -903,6 +903,36 @@ class MarkisModel {
     );
   }
 
+  //Get and add features connected to the correct contract. If we are creating a new "tilläggsavtal", features
+  //from the old contract can be added to the editing area. If we are editing a "tilläggsavtal", features
+  //from the old contract should not be added.
+  addExistingFeatures(existingGeom) {
+    let featuresToAdd = undefined;
+    const existingFeatures = new GeoJSON({
+      geometryName: this.geometryName
+    }).readFeatures(existingGeom[0]);
+
+    const allFromSame = existingFeatures.every(
+      feature =>
+        feature.getProperties().handlopnr ===
+        existingFeatures[0].getProperties().handlopnr
+    );
+
+    if (!allFromSame) {
+      featuresToAdd = existingFeatures.filter(
+        feature =>
+          feature.getProperties().handlopnr.toString() ===
+          this.markisParameters.objectSerial
+      );
+    } else {
+      featuresToAdd = existingFeatures;
+    }
+
+    if (featuresToAdd) {
+      this.vectorSource.addFeatures(featuresToAdd);
+    }
+  }
+
   /**Enables creation of contract geometries. Sets the editlayer etc. */
   enableContractCreation(createObject, existingGeom) {
     this.searchResultLayer.getSource().clear();
@@ -917,16 +947,14 @@ class MarkisModel {
         this.geometriesExist = true;
         this.editingExisting = true;
         this.localObserver.publish("editing-existing-contract");
-        const existingFeatures = new GeoJSON({
-          geometryName: this.geometryName
-        }).readFeatures(existingGeom[0]);
-        this.vectorSource.addFeatures(existingFeatures);
+        this.addExistingFeatures(existingGeom);
         this.vectorSource.getFeatures().forEach(feature => {
           feature.setId(this.featureIdCounter);
           this.featureIdCounter++;
           //If we are creating "Tilläggsavtal", all existing geometries are seen as "new" geometries (Added).
           if (feature.getProperties().status.toUpperCase() === "G") {
             feature.modification = "added";
+            feature.unset("id", true);
           } else {
             feature.modification = "updated";
           }
