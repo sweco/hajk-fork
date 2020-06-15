@@ -241,6 +241,10 @@
         "overlayLogoUrl": "http://localhost:3000/logo-share.png",
         "openOverlayButtonColor": "#ffffff",
         "showScrollButtonLimit": 400,
+        "dynamicImportUrls": {
+          "iconFonts": "https://fonts.googleapis.com/icon?family=Material+Icons",
+          "openSans": "https://fonts.googleapis.com/css?family=Open+Sans"
+        },
         "width": 600,
         "height": "90vh",
         "menuConfig": {
