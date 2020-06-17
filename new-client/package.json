@@ -40,7 +40,7 @@
     "@material-ui/icons": "^4.5.1",
     "@material-ui/lab": "^4.0.0-alpha.34",
     "@microsoft/signalr": "^3.0.0",
-    "@turf/turf": "^5.1.6",
+    "@turf/intersect": "^5.1.6",
     "abortcontroller-polyfill": "^1.4.0",
     "clsx": "^1.0.4",
     "detect-browser": "^4.8.0",
