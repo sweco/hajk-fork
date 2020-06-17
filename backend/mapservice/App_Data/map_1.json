@@ -380,38 +380,6 @@
         "selectedSources": ["30", "27", "32", "34", "33", "14", "18"]
       },
       "index": 7
-    },
-    {
-      "type": "markis",
-      "options": {
-        "target": "toolbar",
-        "visibleAtStart": false,
-        "visibleForGroups": [],
-        "hubUrl": "http://localhost:81/markishub",
-        "markerImg": "/marker_x2.png",
-        "sources": [
-          {
-            "id": "100",
-            "caption": "<Sökbar WFS>",
-            "url": "http://localhost/geoserver/wfs",
-            "layers": ["mylayername"],
-            "searchFields": ["mysearchattributename"],
-            "infobox": "",
-            "aliasDict": "",
-            "displayFields": ["myviwableattributename"],
-            "geometryField": "geom",
-            "outputFormat": "GML3",
-            "infoVisible": true,
-            "infoTitle": null,
-            "infoText": null,
-            "infoUrl": null,
-            "infoUrlText": null,
-            "infoOwner": null,
-            "zIndex": null
-          }
-        ]
-      },
-      "index": 0
     }
   ],
   "map": {

@@ -1,5 +1,5 @@
 import * as signalR from "@microsoft/signalr";
-import * as turf from "@turf/turf";
+import intersect from "@turf/intersect";
 import { WFS } from "ol/format";
 import GeometryType from "ol/geom/GeometryType";
 import IsLike from "ol/format/filter/IsLike";
@@ -644,7 +644,7 @@ class MarkisModel {
             let affectedArea = 0;
             createdFeatures.forEach(drawnArea => {
               if (drawnArea.getGeometry().getType() === GeometryType.POLYGON) {
-                let interSection = turf.intersect(
+                let interSection = intersect(
                   parser.writeFeatureObject(drawnArea),
                   estate
                 );
