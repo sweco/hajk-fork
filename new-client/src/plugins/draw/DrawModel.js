@@ -991,7 +991,7 @@ class DrawModel {
   }
 
   openDialog(open) {
-    this.globalObserver.publish("dialogOpen", open);
+    this.globalObserver.publish("core.dialogOpen", open);
   }
 }
 

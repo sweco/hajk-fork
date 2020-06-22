@@ -23,6 +23,10 @@
 import React from "react";
 import { Component } from "react";
 import FieldEditor from "../components/FieldEditor.jsx";
+import Button from "@material-ui/core/Button";
+import { withStyles } from "@material-ui/core/styles";
+import { blue } from "@material-ui/core/colors";
+import SaveIcon from "@material-ui/icons/Save";
 
 class LayerDescription extends Component {
   render() {
@@ -63,6 +67,16 @@ var defaultState = {
   editServices: [],
   layerDescription: undefined
 };
+
+const ColorButtonBlue = withStyles(theme => ({
+  root: {
+    color: theme.palette.getContrastText(blue[500]),
+    backgroundColor: blue[500],
+    "&:hover": {
+      backgroundColor: blue[700]
+    }
+  }
+}))(Button);
 
 class ToolOptions extends Component {
   /**
@@ -286,15 +300,17 @@ class ToolOptions extends Component {
       <div>
         <form>
           <p>
-            <button
-              className="btn btn-primary"
+            <ColorButtonBlue
+              variant="contained"
+              className="btn"
               onClick={e => {
                 e.preventDefault();
                 this.save();
               }}
+              startIcon={<SaveIcon />}
             >
               Spara
-            </button>
+            </ColorButtonBlue>
           </p>
           <div>
             <input
@@ -309,12 +325,15 @@ class ToolOptions extends Component {
             &nbsp;
             <label htmlFor="active">Aktiverad</label>
           </div>
+          <div className="separator">Fönsterinställningar</div>
           <div>
             <label htmlFor="index">Sorteringsordning</label>
             <input
               id="index"
               name="index"
-              type="text"
+              type="number"
+              min="0"
+              className="control-fixed-width"
               onChange={e => {
                 this.handleInputChange(e);
               }}
@@ -323,15 +342,20 @@ class ToolOptions extends Component {
           </div>
           <div>
             <label htmlFor="target">Verktygsplacering</label>
-            <input
+            <select
               id="target"
               name="target"
-              type="text"
+              className="control-fixed-width"
               onChange={e => {
                 this.handleInputChange(e);
               }}
               value={this.state.target}
-            />
+            >
+              <option value="toolbar">Drawer</option>
+              <option value="left">Widget left</option>
+              <option value="right">Widget right</option>
+              <option value="control">Control button</option>
+            </select>
           </div>
           <div>
             <label htmlFor="position">
@@ -342,15 +366,18 @@ class ToolOptions extends Component {
                 title="Placering av verktygets fönster. Anges som antingen 'left' eller 'right'."
               />
             </label>
-            <input
+            <select
               id="position"
               name="position"
-              type="text"
+              className="control-fixed-width"
               onChange={e => {
                 this.handleInputChange(e);
               }}
               value={this.state.position}
-            />
+            >
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+            </select>
           </div>
           <div>
             <label htmlFor="width">
@@ -364,7 +391,9 @@ class ToolOptions extends Component {
             <input
               id="width"
               name="width"
-              type="text"
+              type="number"
+              min="0"
+              className="control-fixed-width"
               onChange={e => {
                 this.handleInputChange(e);
               }}
@@ -383,13 +412,16 @@ class ToolOptions extends Component {
             <input
               id="height"
               name="height"
-              type="text"
+              type="number"
+              min="0"
+              className="control-fixed-width"
               onChange={e => {
                 this.handleInputChange(e);
               }}
               value={this.state.height}
             />
           </div>
+          <div className="separator">Övriga inställningar</div>
           {this.renderVisibleForGroups()}
           <div>
             <label htmlFor="url">Url</label>
@@ -497,7 +529,7 @@ class ToolOptions extends Component {
                       }}
                     />
                     <label className="full" htmlFor={service.id + "_" + i}>
-                      {service.caption}
+                      &nbsp;{service.caption}
                     </label>
                   </div>
                 );
@@ -515,6 +547,19 @@ class ToolOptions extends Component {
               });
             }}
           />
+          <p>
+            <ColorButtonBlue
+              variant="contained"
+              className="btn"
+              onClick={e => {
+                e.preventDefault();
+                this.save();
+              }}
+              startIcon={<SaveIcon />}
+            >
+              Spara
+            </ColorButtonBlue>
+          </p>
         </form>
       </div>
     );

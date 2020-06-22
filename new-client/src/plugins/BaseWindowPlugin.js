@@ -11,6 +11,7 @@ import {
 } from "@material-ui/core";
 import Window from "../components/Window.js";
 import Card from "../components/Card.js";
+import PluginControlButton from "../components/PluginControlButton";
 
 const styles = theme => {
   return {};
@@ -48,9 +49,8 @@ class BaseWindowPlugin extends React.PureComponent {
     props.app.registerWindowPlugin(this);
 
     // Subscribe to a global event that makes it possible to show/hide Windows.
-    // First we prepare a unique event name for each plugin so it looks like 'showSomeplugin'.
-    const eventName = `show${this.type.charAt(0).toUpperCase() +
-      this.type.slice(1)}`;
+    // First we prepare a unique event name for each plugin so it looks like '{pluginName}.showWindow'.
+    const eventName = `${this.type}.showWindow`;
     // Next, subscribe to that event, expect 'opts' array.
     // To find all places where this event is publish, search for 'globalObserver.publish("show'
     props.app.globalObserver.subscribe(eventName, opts => {
@@ -71,7 +71,7 @@ class BaseWindowPlugin extends React.PureComponent {
       hideOtherPluginWindows: true,
       runCallback: true
     });
-    this.props.app.globalObserver.publish("hideDrawer");
+    this.props.app.globalObserver.publish("core.onlyHideDrawerIfNeeded");
   };
 
   showWindow = opts => {
@@ -119,6 +119,12 @@ class BaseWindowPlugin extends React.PureComponent {
           onClose={this.closeWindow}
           open={this.state.windowVisible}
           onResize={this.props.custom.onResize}
+          onMaximize={this.props.custom.onMaximize}
+          onMinimize={this.props.custom.onMinimize}
+          draggingEnabled={this.props.custom.draggingEnabled}
+          resizingEnabled={this.props.custom.resizingEnabled}
+          scrollable={this.props.custom.scrollable}
+          allowMaximizedWindow={this.props.custom.allowMaximizedWindow}
           width={this.width}
           height={this.height}
           position={this.position}
@@ -134,6 +140,7 @@ class BaseWindowPlugin extends React.PureComponent {
           this.renderWidgetButton("left-column")}
         {this.props.options.target === "right" &&
           this.renderWidgetButton("right-column")}
+        {this.props.options.target === "control" && this.renderControlButton()}
       </>
     );
   }
@@ -175,6 +182,18 @@ class BaseWindowPlugin extends React.PureComponent {
         />
       </Hidden>,
       document.getElementById(id)
+    );
+  }
+
+  renderControlButton() {
+    return createPortal(
+      <PluginControlButton
+        icon={this.props.custom.icon}
+        onClick={this.handleButtonClick}
+        title={this.title}
+        abstract={this.description}
+      />,
+      document.getElementById("plugin-control-buttons")
     );
   }
 

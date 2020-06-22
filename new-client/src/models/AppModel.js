@@ -11,18 +11,19 @@ import { bindMapClickEvent } from "./Click.js";
 import { defaults as defaultInteractions } from "ol/interaction";
 import { Map, View } from "ol";
 // TODO: Uncomment and ensure they show as expected
-import // defaults as defaultControls,
+// import {
+// defaults as defaultControls,
 // Attribution,
 // Control,
 // FullScreen, // TODO: Consider implementation
 // MousePosition, // TODO: Consider implementation, perhaps in a separate plugin
 // OverviewMap // TODO: Consider implementation
 // Rotate,
-// ScaleLine,
+// ScaleLine
 // Zoom,
 // ZoomSlider,
 // ZoomToExtent
-"ol/control";
+// } from "ol/control";
 import { register } from "ol/proj/proj4";
 import VectorLayer from "ol/layer/Vector";
 import VectorSource from "ol/source/Vector";
@@ -66,6 +67,7 @@ class AppModel {
     );
     this.globalObserver = globalObserver;
     this.layersFromParams = [];
+    this.cqlFiltersFromParams = {};
     register(this.coordinateSystemLoader.getProj4());
   }
   /**
@@ -107,10 +109,18 @@ class AppModel {
   getBothDrawerAndWidgetPlugins() {
     const r = this.getPlugins()
       .filter(plugin => {
-        return ["toolbar", "left", "right"].includes(plugin.options.target);
+        return ["toolbar", "left", "right", "control"].includes(
+          plugin.options.target
+        );
       })
       .sort((a, b) => a.sortOrder - b.sortOrder);
     return r;
+  }
+
+  getDrawerPlugins() {
+    return this.getPlugins().filter(plugin => {
+      return ["toolbar"].includes(plugin.options.target);
+    });
   }
 
   /**
@@ -186,6 +196,7 @@ class AppModel {
         center: config.map.center,
         extent: config.map.extent.length > 0 ? config.map.extent : undefined, // backend will always write extent as an Array, so basic "config.map.extent || undefined" wouldn't work here
         constrainOnlyCenter: config.map.constrainOnlyCenter, // If true, the extent constraint will only apply to the view center and not the whole extent.
+        constrainResolution: config.map.constrainResolution, // If true, the view will always animate to the closest zoom level after an interaction; false means intermediary zoom levels are allowed.
         maxZoom: config.map.maxZoom || 24,
         minZoom: config.map.minZoom || 0,
         projection: config.map.projection,
@@ -200,7 +211,7 @@ class AppModel {
 
     if (config.tools.some(tool => tool.type === "infoclick")) {
       bindMapClickEvent(map, mapClickDataResult => {
-        this.globalObserver.publish("mapClick", mapClickDataResult);
+        this.globalObserver.publish("core.mapClick", mapClickDataResult);
       });
     }
     return this;
@@ -223,7 +234,7 @@ class AppModel {
           layer.getProperties().layerInfo.layerType === "layer"
         ) {
           if (layer.layerType === "group") {
-            this.globalObserver.publish("hideLayer", layer);
+            this.globalObserver.publish("layerswitcher.hideLayer", layer);
           } else {
             layer.setVisible(false);
           }
@@ -281,7 +292,7 @@ class AppModel {
   lookup(layers, type) {
     var matchedLayers = [];
     layers.forEach(layer => {
-      var layerConfig = this.config.layersConfig.find(
+      const layerConfig = this.config.layersConfig.find(
         lookupLayer => lookupLayer.id === layer.id
       );
       layer.layerType = type;
@@ -311,14 +322,10 @@ class AppModel {
   }
 
   flattern(layerSwitcherConfig) {
-    var layers = [
+    const layers = [
       ...this.lookup(layerSwitcherConfig.options.baselayers, "base"),
       ...this.lookup(this.expand(layerSwitcherConfig.options.groups), "layer")
     ];
-    // layers = layers.reduce((a, b) => {
-    //   a[b["id"]] = b;
-    //   return a;
-    // }, {});
 
     return layers;
   }
@@ -342,6 +349,7 @@ class AppModel {
             layerId => layerId === layer.id
           );
         }
+        layer.cqlFilter = this.cqlFiltersFromParams[layer.id] || null;
         this.addMapLayer(layer);
       });
 
@@ -354,13 +362,13 @@ class AppModel {
 
   addHighlightLayer(options) {
     const { anchor, scale, src, strokeColor, strokeWidth, fillColor } = options;
-    const strokeColorAsArray = [
+    const strokeColorAsArray = strokeColor && [
       strokeColor.r,
       strokeColor.g,
       strokeColor.b,
       strokeColor.a
     ];
-    const fillColorAsArray = [
+    const fillColorAsArray = fillColor && [
       fillColor.r,
       fillColor.g,
       fillColor.b,
@@ -415,13 +423,23 @@ class AppModel {
       });
     return o;
   }
-
+  /**
+   * @summary Merges two objects.
+   *
+   * @param {*} a
+   * @param {*} b
+   * @returns {*} a Result of overwritting a with values from b
+   * @memberof AppModel
+   */
   mergeConfig(a, b) {
     // clean is used to strip the UI of all elements so we get a super clean viewport back, without any plugins
     const clean =
       Boolean(b.hasOwnProperty("clean")) &&
       b.clean !== "false" &&
       b.clean !== "0";
+
+    // f contains our CQL Filters
+    const f = b.f;
 
     // Merge query params to the map config from JSON
     let x = parseFloat(b.x),
@@ -451,7 +469,31 @@ class AppModel {
       this.layersFromParams = l;
     }
 
+    if (f) {
+      // Filters come as a URI encoded JSON object, so we must parse it first
+      this.cqlFiltersFromParams = JSON.parse(decodeURIComponent(f));
+    }
+
+    // If 'v' query param is specified, it looks like we will want to search on load
+    if (b.v !== undefined && b.v.length > 0) {
+      a.map.searchOnStart = {
+        v: this.returnStringOrUndefined(b.v), // Search Value (will NOT search on start if null)
+        s: this.returnStringOrUndefined(b.s), // Search Service (will search in all, if null)
+        t: this.returnStringOrUndefined(b.t) // Search Type (controls which search plugin is used, default search if null)
+      };
+    }
+
     return a;
+  }
+  /**
+   * @summary If supplied argument, v, is a string and is longer then 0, return an encoded value of v. Else return undefined.
+   *
+   * @param {*} v
+   * @returns
+   * @memberof AppModel
+   */
+  returnStringOrUndefined(v) {
+    return typeof v === "string" && v.trim().length > 0 ? v : undefined;
   }
 
   overrideGlobalSearchConfig(searchTool, data) {
@@ -474,15 +516,15 @@ class AppModel {
       document.title = this.config.mapConfig.map.title; // TODO: add opt-out in admin to cancel this override behaviour.
     }
 
-    let layerSwitcherTool = this.config.mapConfig.tools.find(tool => {
+    const layerSwitcherTool = this.config.mapConfig.tools.find(tool => {
       return tool.type === "layerswitcher";
     });
 
-    let searchTool = this.config.mapConfig.tools.find(tool => {
+    const searchTool = this.config.mapConfig.tools.find(tool => {
       return tool.type === "search";
     });
 
-    let editTool = this.config.mapConfig.tools.find(tool => {
+    const editTool = this.config.mapConfig.tools.find(tool => {
       return tool.type === "edit";
     });
 

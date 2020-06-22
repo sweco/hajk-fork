@@ -1,44 +1,15 @@
 import React from "react";
 import { withStyles } from "@material-ui/core/styles";
+import clsx from "clsx";
+import { Button, Divider, Paper, Typography } from "@material-ui/core";
+import ExpandLessIcon from "@material-ui/icons/ExpandLess";
+import ExpandMoreIcon from "@material-ui/icons/ExpandMore";
+import Alert from "@material-ui/lab/Alert";
+import PlaceIcon from "@material-ui/icons/Place";
 import SearchResultGroup from "./SearchResultGroup.js";
-import IconButton from "@material-ui/core/IconButton";
-import Divider from "@material-ui/core/Divider";
-import Typography from "@material-ui/core/Typography";
-import Place from "@material-ui/icons/Place";
-import ExpandLess from "@material-ui/icons/ExpandLess";
-import ExpandMore from "@material-ui/icons/ExpandMore";
-import classNames from "classnames";
-import { Paper } from "@material-ui/core";
 
 const styles = theme => {
   return {
-    searchResultEmpty: {
-      padding: "10px"
-    },
-    searchResult: {
-      overflow: "auto",
-      padding: "5px",
-      position: "relative",
-      top: "9px",
-      background: "white",
-      border: "1px solid " + theme.palette.primary.main,
-      borderTop: "none",
-      [theme.breakpoints.down("xs")]: {
-        border: "none",
-        padding: 0
-      }
-    },
-    searchResultTop: {
-      overflow: "auto",
-      padding: "10px",
-      position: "relative",
-      top: "-4px",
-      background: "white",
-      border: "1px solid " + theme.palette.primary.main,
-      borderTop: "none",
-      borderBottomLeftRadius: "5px",
-      borderBottomRightRadius: "5px"
-    },
     searchResultContainer: {
       maxHeight: "calc(100vh - 380px)",
       overflow: "auto",
@@ -50,28 +21,29 @@ const styles = theme => {
         maxHeight: "calc(100vh - 200px)"
       }
     },
-    searchResultTopBarLeft: {
-      display: "flex"
-    },
-    searchResultTopBarRight: {
-      display: "flex",
-      alignItems: "center"
-    },
     searchResultTopBar: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "center",
-      margin: "5px"
+      padding: theme.spacing(1)
     },
-
+    searchResultTopBarLeft: {
+      display: "flex"
+    },
     hidden: {
       display: "none"
     },
     // New styles
     root: {
+      marginTop: 5,
       minWidth: 200,
       [theme.breakpoints.up("sm")]: {
         maxWidth: 520
+      },
+      [theme.breakpoints.down("xs")]: {
+        minWidth: "100%",
+        position: "absolute",
+        left: 0
       }
     }
   };
@@ -79,7 +51,6 @@ const styles = theme => {
 
 class SearchResultList extends React.PureComponent {
   state = {
-    visible: true, //is this really used?
     minimized: false,
     highlightedFeatures: []
   };
@@ -90,11 +61,11 @@ class SearchResultList extends React.PureComponent {
     });
   }
 
-  toggle() {
+  toggle = () => {
     this.setState({
       minimized: !this.state.minimized
     });
-  }
+  };
 
   renderResult() {
     const { result, target } = this.props;
@@ -135,60 +106,41 @@ class SearchResultList extends React.PureComponent {
   render() {
     const { classes, result } = this.props;
     const { minimized } = this.state;
-    let searchResultClass = classes.searchResult;
-    if (this.props.target === "top") {
-      searchResultClass = classes.searchResultTop;
-    }
 
     if (typeof result[0] === "string") {
       return (
-        <div className={searchResultClass}>
-          <div className={classes.searchResultEmpty}>
+        <Paper className={classes.root}>
+          <Alert severity="success">
             Information hittades i {result.length} kartlager.
-          </div>
-        </div>
+          </Alert>
+        </Paper>
       );
-    } else {
-      if (result.every(r => r.features.length === 0)) {
-        return (
-          <div className={searchResultClass}>
-            <div className={classes.searchResultEmpty}>
-              Sökningen gav inget resultat
-            </div>
-          </div>
-        );
-      }
-    }
-
-    if (!this.state.visible) {
-      return null;
+    } else if (result.every(r => r.features.length === 0)) {
+      return (
+        <Paper className={classes.root}>
+          <Alert severity="warning">Sökningen gav inget resultat.</Alert>
+        </Paper>
+      );
     } else {
       return (
         <Paper className={classes.root}>
-          {/* <div className={searchResultClass}> */}
           <div className={classes.searchResultTopBar}>
             <div className={classes.searchResultTopBarLeft}>
-              <Place />
-              <Typography>
+              <PlaceIcon />
+              <Typography variant="button">
                 {this.getNumberOfResults(result) + " sökträffar"}
               </Typography>
             </div>
             <div className={classes.searchResultTopBarRight}>
-              {!minimized ? (
-                <div>
-                  <IconButton onClick={() => this.toggle()}>
-                    <Typography color="primary">Dölj</Typography>
-                    <ExpandLess />
-                  </IconButton>
-                </div>
-              ) : (
-                <div>
-                  <IconButton onClick={() => this.toggle()}>
-                    <Typography color="primary">Visa</Typography>
-                    <ExpandMore />
-                  </IconButton>
-                </div>
-              )}
+              <Button
+                variant="text"
+                onClick={this.toggle}
+                color="default"
+                className={classes.button}
+                endIcon={minimized ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+              >
+                {minimized ? "Visa" : "Dölj"}
+              </Button>
             </div>
           </div>
           <Divider
@@ -196,7 +148,7 @@ class SearchResultList extends React.PureComponent {
             variant="fullWidth"
           />
           <div
-            className={classNames(
+            className={clsx(
               classes.searchResultContainer,
               this.state.minimized ? classes.hidden : null
             )}
@@ -206,7 +158,6 @@ class SearchResultList extends React.PureComponent {
             </div>
           </div>
         </Paper>
-        // </div>
       );
     }
   }

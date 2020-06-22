@@ -358,7 +358,7 @@ class Page extends Component {
             model={this.props.model}
             onChangeTool={() => {
               if (window.innerWidth < 600) {
-                this.props.model.observer.publish("minimizeWindow", true);
+                this.props.model.globalObserver.publish("core.minimizeWindow");
                 this.props.enqueueSnackbar(
                   "Klicka i kartan för att rita objekt"
                 );
@@ -428,9 +428,38 @@ class Page extends Component {
               );
             case "h6":
               return (
-                <Typography variant="h5" key={i}>
+                <Typography variant="h6" key={i}>
                   {this.renderFromJsonDom(child)}
                 </Typography>
+              );
+            case "a":
+              return (
+                <a
+                  key={i}
+                  href={child.attr["href"]}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  {this.renderFromJsonDom(child)}
+                </a>
+              );
+            case "ul":
+              return <ul key={i}>{this.renderFromJsonDom(child)}</ul>;
+            case "li":
+              return <li key={i}>{this.renderFromJsonDom(child)}</li>;
+            case "br":
+              return <br key={i} />;
+            case "img":
+              return (
+                <img
+                  key={i}
+                  src={child.attr["src"]}
+                  width={child.attr["width"]}
+                  height={child.attr["height"]}
+                  alt={child.attr["alt"]}
+                >
+                  {this.renderFromJsonDom(child)}
+                </img>
               );
             default:
               return null;
@@ -486,7 +515,7 @@ class Page extends Component {
 
   saveError = () => {
     this.props.model.globalObserver.publish(
-      "alert",
+      "core.alert",
       "Det gick inte att spara, försök igen senare."
     );
   };

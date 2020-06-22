@@ -62,13 +62,17 @@ export default class ConfigMapper {
       });
     }
 
-    function mapLayersInfo(layersInfo) {
+    function mapLayersInfo(layersInfo, infobox) {
       if (Array.isArray(layersInfo)) {
         return layersInfo.reduce((layersInfoObject, layerInfo) => {
           layersInfoObject[layerInfo.id] = layerInfo;
           if (!layerInfo.legend) {
             layersInfoObject[layerInfo.id].legend = getLegendUrl(layerInfo.id);
           }
+          if (infobox?.length) {
+            layersInfoObject[layerInfo.id].infobox = infobox;
+          }
+
           return layersInfoObject;
         }, {});
       }
@@ -124,6 +128,7 @@ export default class ConfigMapper {
         legend: getLegends(),
         params: {
           LAYERS: args.layers.join(","),
+          ...(args.cqlFilter && { CQL_FILTER: args.cqlFilter }), // nice way to add property only if needed
           FORMAT: args.imageFormat,
           INFO_FORMAT: args.infoFormat,
           VERSION: args.version || "1.1.1",
@@ -133,13 +138,14 @@ export default class ConfigMapper {
             ? args.layersInfo.map(l => l.style || "").join(",")
             : null
         },
-        layersInfo: mapLayersInfo(args.layersInfo),
+        layersInfo: mapLayersInfo(args.layersInfo, args.infobox),
         infoVisible: args.infoVisible || false,
         infoTitle: args.infoTitle,
         infoText: args.infoText,
         infoUrl: args.infoUrl,
         infoUrlText: args.infoUrlText,
-        infoOwner: args.infoOwner
+        infoOwner: args.infoOwner,
+        hideExpandArrow: args.hideExpandArrow
       }
     };
 
@@ -188,7 +194,8 @@ export default class ConfigMapper {
         infoText: args.infoText,
         infoUrl: args.infoUrl,
         infoUrlText: args.infoUrlText,
-        infoOwner: args.infoOwner
+        infoOwner: args.infoOwner,
+        hideExpandArrow: args.hideExpandArrow
       }
     };
     return config;
@@ -275,7 +282,8 @@ export default class ConfigMapper {
         infoText: args.infoText,
         infoUrl: args.infoUrl,
         infoUrlText: args.infoUrlText,
-        infoOwner: args.infoOwner
+        infoOwner: args.infoOwner,
+        hideExpandArrow: args.hideExpandArrow
       }
     };
 
@@ -324,7 +332,8 @@ export default class ConfigMapper {
         infoText: args.infoText,
         infoUrl: args.infoUrl,
         infoUrlText: args.infoUrlText,
-        infoOwner: args.infoOwner
+        infoOwner: args.infoOwner,
+        hideExpandArrow: args.hideExpandArrow
       }
     };
 

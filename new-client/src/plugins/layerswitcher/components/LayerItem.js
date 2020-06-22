@@ -120,13 +120,16 @@ class LayerItem extends React.PureComponent {
     // don't change it back to "ok": we'll get a response for each tile, so most of
     // the tiles might be "ok", but if only one of the tiles has "loaderror", we
     // consider that the layer has failed loading and want to inform the user.
-    this.props.app.globalObserver.subscribe("wmsLayerLoadStatus", d => {
-      this.state.status !== "loaderror" &&
-        this.state.name === d.id &&
-        this.setState({
-          status: d.status
-        });
-    });
+    this.props.app.globalObserver.subscribe(
+      "layerswitcher.wmsLayerLoadStatus",
+      d => {
+        this.state.status !== "loaderror" &&
+          this.state.name === d.id &&
+          this.setState({
+            status: d.status
+          });
+      }
+    );
   }
 
   /**
@@ -149,11 +152,14 @@ class LayerItem extends React.PureComponent {
    * @return {external:ReactElement}
    */
   renderStatus() {
+    const { classes } = this.props;
     return (
       this.state.status === "loaderror" && (
-        <Tooltip title="Lagret kunde inte laddas in. Kartservern svarar inte.">
-          <IconWarning />
-        </Tooltip>
+        <div className={classes.layerButton}>
+          <Tooltip title="Lagret kunde inte laddas in. Kartservern svarar inte.">
+            <IconWarning />
+          </Tooltip>
+        </div>
       )
     );
   }
@@ -259,6 +265,7 @@ class LayerItem extends React.PureComponent {
         <div className={classes.infoTextContainer}>
           <Typography variant="subtitle2">{infoTitle}</Typography>
           <Typography
+            variant="body2"
             dangerouslySetInnerHTML={{
               __html: infoText
             }}
@@ -292,9 +299,10 @@ class LayerItem extends React.PureComponent {
     if (infoOwner) {
       return (
         <div className={classes.infoTextContainer}>
-          <Typography>
-            <span dangerouslySetInnerHTML={{ __html: infoOwner }} />
-          </Typography>
+          <Typography
+            variant="body2"
+            dangerouslySetInnerHTML={{ __html: infoOwner }}
+          />
         </div>
       );
     } else {
@@ -331,6 +339,8 @@ class LayerItem extends React.PureComponent {
     const { classes, layer, model, app, chapters } = this.props;
     const { visible } = this.state;
     const caption = layer.get("caption");
+    const cqlFilterVisible =
+      this.props.app.config.mapConfig.map?.cqlFilterVisible || false;
 
     if (!caption) {
       return null;
@@ -343,6 +353,7 @@ class LayerItem extends React.PureComponent {
           layer={layer}
           model={model}
           chapters={chapters}
+          cqlFilterVisible={cqlFilterVisible}
           onOpenChapter={chapter => {
             const informativeWindow = app.windows.find(
               window => window.type === "informative"
@@ -372,17 +383,15 @@ class LayerItem extends React.PureComponent {
             </div>
           </div>
           <div className={classes.layerButtons}>
-            <div className={classes.layerButton}>
-              <DownloadLink
-                layer={this.props.layer}
-                appConfig={this.props.app.config.appConfig}
-              />
-            </div>
-            <div className={classes.layerButton}>{this.renderStatus()}</div>
-            <div className={classes.layerButton}>
-              <div className={classes.infoContainer}>
-                {!this.isInfoEmpty() &&
-                  (this.state.infoVisible ? (
+            <DownloadLink
+              layer={this.props.layer}
+              appConfig={this.props.app.config.appConfig}
+            />
+            {this.renderStatus()}
+            {!this.isInfoEmpty() && (
+              <div className={classes.layerButton}>
+                <div className={classes.infoContainer}>
+                  {this.state.infoVisible ? (
                     <RemoveCircleIcon
                       className={classes.infoButton}
                       onClick={() => this.toggleInfo()}
@@ -398,9 +407,10 @@ class LayerItem extends React.PureComponent {
                         borderRadius: "100%"
                       }}
                     />
-                  ))}
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             <div className={classes.layerButton}>
               {this.state.toggleSettings ? (
                 <CloseIcon onClick={() => this.toggleSettings()} />
@@ -425,6 +435,7 @@ class LayerItem extends React.PureComponent {
             toggled={this.state.toggleSettings}
             showOpacity={true}
             showLegend={true}
+            cqlFilterVisible={cqlFilterVisible}
           />
         </div>
       </div>

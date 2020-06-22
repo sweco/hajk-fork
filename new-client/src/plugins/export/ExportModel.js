@@ -121,7 +121,11 @@ class ExportModel {
   }
 
   findWMS() {
-    var exportable = layer =>
+    /**
+     * @summary Only allow export of layers according to some specific conditions.
+     * @param {object} layer
+     */
+    const exportable = layer =>
       (layer instanceof Tile || layer instanceof Image) &&
       (layer.getSource() instanceof TileWMS ||
         layer.getSource() instanceof ImageWMS) &&
@@ -132,12 +136,17 @@ class ExportModel {
       .getArray()
       .filter(exportable)
       .map((layer, i) => {
+        // Depending on type of LAYERS, either split the String or use Array directly.
+        const layers =
+          typeof layer.getSource().getParams().LAYERS === "string"
+            ? layer
+                .getSource()
+                .getParams()
+                .LAYERS.split(",")
+            : layer.getSource().getParams().LAYERS;
         return {
           url: layer.getSource().get("url"),
-          layers: layer
-            .getSource()
-            .getParams()
-            .LAYERS.split(","),
+          layers: layers,
           zIndex: i,
           workspacePrefix: null,
           coordinateSystemId: this.map

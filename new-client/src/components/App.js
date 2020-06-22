@@ -1,4 +1,5 @@
 import React from "react";
+
 import PropTypes from "prop-types";
 import { withStyles } from "@material-ui/core/styles";
 import cslx from "clsx";
@@ -8,10 +9,12 @@ import Observer from "react-event-observer";
 import AppModel from "./../models/AppModel.js";
 import Window from "./Window.js";
 import CookieNotice from "./CookieNotice";
+import Introduction from "./Introduction";
 import Alert from "./Alert";
 import PluginWindows from "./PluginWindows";
 
 import Zoom from "../controls/Zoom";
+import Rotate from "../controls/Rotate";
 import ScaleLine from "../controls/ScaleLine";
 import Attribution from "../controls/Attribution.js";
 import MapCleaner from "../controls/MapCleaner";
@@ -20,19 +23,23 @@ import MapSwitcher from "../controls/MapSwitcher";
 import Information from "../controls/Information";
 import PresetLinks from "../controls/PresetLinks";
 
+import DrawerToggleButtons from "../components/Drawer/DrawerToggleButtons";
+
 import {
   Backdrop,
+  Box,
   Divider,
   Drawer,
+  Grid,
   Hidden,
   IconButton,
   Tooltip,
-  Fab
+  Typography
 } from "@material-ui/core";
 
 import LockIcon from "@material-ui/icons/Lock";
 import LockOpenIcon from "@material-ui/icons/LockOpen";
-import MenuIcon from "@material-ui/icons/Menu";
+import MapIcon from "@material-ui/icons/Map";
 
 // A global that holds our windows, for use see components/Window.js
 document.windows = [];
@@ -74,9 +81,21 @@ const styles = theme => {
     },
     header: {
       zIndex: theme.zIndex.appBar,
-      height: theme.spacing(8),
+      maxHeight: theme.spacing(8),
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      "& > *": {
+        marginBottom: theme.spacing(2)
+      },
       [theme.breakpoints.down("xs")]: {
-        zIndex: 3
+        zIndex: 3,
+        marginLeft: -theme.spacing(2),
+        marginRight: -theme.spacing(2),
+        marginTop: -theme.spacing(2),
+        maxHeight: theme.spacing(6),
+        boxShadow: theme.shadows[3],
+        backgroundColor: theme.palette.background.default
       }
     },
     main: {
@@ -88,21 +107,17 @@ const styles = theme => {
       flex: 1
     },
     rightColumn: {
-      marginTop: theme.spacing(-8),
       paddingLeft: theme.spacing(2),
       paddingRight: theme.spacing(2),
-      flex: 0,
-      [theme.breakpoints.down("xs")]: {
-        marginTop: 0
-      }
+      flex: 0
     },
     controlsColumn: {
       flex: 0,
       display: "flex",
       flexDirection: "column",
-      marginTop: theme.spacing(-8),
+      marginTop: 0,
       [theme.breakpoints.down("xs")]: {
-        marginTop: 0
+        marginTop: theme.spacing(2)
       }
     },
     footer: {
@@ -114,16 +129,30 @@ const styles = theme => {
         marginLeft: theme.spacing(1)
       }
     },
-    drawerHeader: {
+    drawerBackground: {
       width: DRAWER_WIDTH,
+      backgroundColor: theme.palette.background.default
+    },
+    drawerHeader: {
       display: "flex",
       alignItems: "center",
       padding: theme.spacing(0, 2),
       ...theme.mixins.toolbar,
-      justifyContent: "space-between"
+      justifyContent: "space-between",
+      backgroundColor: theme.palette.background.paper
+    },
+    drawerContent: {
+      backgroundColor: theme.palette.background.paper
+    },
+    logoBox: {
+      padding: theme.spacing(1, 2)
     },
     logo: {
       maxHeight: 35
+    },
+    drawerGrid: {
+      padding: theme.spacing(0, 2),
+      backgroundColor: "#fff"
     },
     backdrop: {
       zIndex: theme.zIndex.drawer - 1 // Carefully selected to be above Window but below Drawer
@@ -156,18 +185,44 @@ class App extends React.PureComponent {
 
   constructor(props) {
     super(props);
+
+    const drawerPermanentFromLocalStorage =
+      window.localStorage.getItem("drawerPermanent") !== null
+        ? window.localStorage.getItem("drawerPermanent") === "true"
+          ? true
+          : false
+        : null;
+
+    const activeDrawerContentFromLocalStorage =
+      window.localStorage.getItem("activeDrawerContent") !== null
+        ? window.localStorage.getItem("activeDrawerContent")
+        : null;
+
     this.state = {
       alert: false,
+      drawerButtons: [],
       loading: false,
       mapClickDataResult: {},
 
       // Drawer-related states
-      drawerVisible: props.config.mapConfig.map.drawerVisible || false,
-      // For drawerPermanent===true, drawerVisible must be true too – we can't lock the Drawer if it's invisible at start.
+      // If cookie for "drawerPermanent" is not null, use it to control Drawer visibility,
+      // else fall back to value from config, or finally don't show Drawer.
+      drawerVisible:
+        drawerPermanentFromLocalStorage !== null
+          ? drawerPermanentFromLocalStorage
+          : props.config.mapConfig.map.drawerVisible || false,
+
+      // To check whether drawer is permanent, first take a look at the cookie.
+      // If cookie is not null, use it to show/hide Drawer.
+      // If cookie however is null, fall back to the values from config.
+      // Finally, fall back to "false" if no cookie or config is found.
       drawerPermanent:
-        (props.config.mapConfig.map.drawerVisible &&
-          props.config.mapConfig.map.drawerPermanent) ||
-        false,
+        drawerPermanentFromLocalStorage !== null
+          ? drawerPermanentFromLocalStorage
+          : (props.config.mapConfig.map.drawerVisible &&
+              props.config.mapConfig.map.drawerPermanent) ||
+            false,
+      activeDrawerContent: activeDrawerContentFromLocalStorage,
       drawerMouseOverLock: false
     };
     this.globalObserver = new Observer();
@@ -180,37 +235,91 @@ class App extends React.PureComponent {
       .addLayers()
       .loadPlugins(this.props.activeTools);
     Promise.all(promises).then(() => {
-      this.setState({
-        tools: this.appModel.getPlugins()
-      });
-      this.globalObserver.publish("appLoaded"); // Window.js subscribes to this event
+      this.setState(
+        {
+          tools: this.appModel.getPlugins()
+        },
+        () => {
+          // If there's at least one plugin that renders in the Drawer Map Tools List,
+          // tell the Drawer to add a toggle button for the map tools
+          this.appModel.getDrawerPlugins().length > 0 &&
+            this.globalObserver.publish("core.addDrawerToggleButton", {
+              value: "plugins",
+              ButtonIcon: MapIcon,
+              caption: "Kartverktyg",
+              order: 2,
+              renderDrawerContent: function() {
+                return null; // Nothing specific should be rendered - this is a special case!
+              }
+            });
+
+          // Tell everyone that we're done loading (in case someone listens)
+          this.globalObserver.publish("core.appLoaded");
+        }
+      );
     });
     this.bindHandlers();
   }
 
-  componentDidCatch(error) {
-    console.error(error);
-  }
+  componentDidCatch(error) {}
 
   bindHandlers() {
-    this.globalObserver.subscribe("mapClick", mapClickDataResult => {
+    this.globalObserver.subscribe("core.mapClick", mapClickDataResult => {
       this.appModel.highlight(false);
       this.setState({
         mapClickDataResult: mapClickDataResult
       });
     });
 
-    this.globalObserver.subscribe("alert", message => {
+    this.globalObserver.subscribe("core.alert", message => {
       this.setState({
         alert: true,
         alertMessage: message
       });
     });
 
-    this.globalObserver.subscribe("hideDrawer", () => {
-      this.state.drawerVisible &&
-        !this.state.drawerPermanent &&
+    this.globalObserver.subscribe("core.hideDrawer", () => {
+      // If Drawer is currently permanent,
+      // flip the permanent toggle. Please note that
+      // this will do some fixes, flip the state value
+      // and, finally, invoke this function (core.hideDrawer) again
+      // (but with new value for drawerPermanent this time!).
+      if (this.state.drawerPermanent) {
+        this.togglePermanent();
+      } else {
         this.setState({ drawerVisible: false });
+
+        // Also, tell the Drawer Buttons Component to unset active button
+        this.globalObserver.publish("core.unsetActiveButton");
+      }
+    });
+
+    this.globalObserver.subscribe("core.onlyHideDrawerIfNeeded", () => {
+      // Invoked when user clicks any of the Plugin buttons in Drawer,
+      // this is needed as we don't want to toggle the Drawer in this
+      // case, but only hide it IF it's not permanent.
+      // This differs from the "normal" hideDrawer event, that will
+      // ensure that Drawer is hidden - no matter the permanent state -
+      // as it will first flip the drawerPermanent value (if needed), prior
+      // to closing.
+      if (this.state.drawerPermanent === false) {
+        this.setState({ drawerVisible: false });
+        // Also, tell the Drawer Buttons Component to unset active button
+        this.globalObserver.publish("core.unsetActiveButton");
+      }
+    });
+
+    this.globalObserver.subscribe("core.drawerContentChanged", v => {
+      if (v !== null) {
+        this.setState({ drawerVisible: true, activeDrawerContent: v });
+      } else {
+        this.globalObserver.publish("core.hideDrawer");
+      }
+    });
+
+    this.globalObserver.subscribe("core.addDrawerToggleButton", button => {
+      const newState = [...this.state.drawerButtons, button];
+      this.setState({ drawerButtons: newState });
     });
 
     this.appModel
@@ -238,7 +347,7 @@ class App extends React.PureComponent {
       });
   }
 
-  renderSearchResultsWindow() {
+  renderInfoclickWindow() {
     const infoclickConfig = this.props.config.mapConfig.tools.find(
       t => t.type === "infoclick"
     );
@@ -282,17 +391,6 @@ class App extends React.PureComponent {
     );
   }
 
-  toggleDrawer = open => event => {
-    if (
-      event.type === "keydown" &&
-      (event.key === "Tab" || event.key === "Shift")
-    ) {
-      return;
-    }
-
-    this.setState({ drawerVisible: open });
-  };
-
   /**
    * Flip the @this.state.drawerPermanent switch, then preform some
    * more work to ensure the OpenLayers canvas has the correct
@@ -309,15 +407,21 @@ class App extends React.PureComponent {
       // If Drawer has been "(un)permanented", our #windows-container size has changed.
       // To ensure that our Windows still are inside the container, we dispach an
       // event that all Windows subscribe to.
-      this.globalObserver.publish("drawerToggled");
+      this.globalObserver.publish("core.drawerToggled");
+
+      // Save current state of drawerPermanent to LocalStorage, so app reloads to same state
+      window.localStorage.setItem(
+        "drawerPermanent",
+        this.state.drawerPermanent
+      );
 
       // If user clicked on Toggle Permanent and the result is,
       // that this.state.drawerPermanent===false, this means that we
       // have exited the permanent mode. In this case, we also
       // want to ensure that Drawer is hidden (otherwise we would
-      // just "unpermanent" the Drawer, but it would still be visible).
+      // just "un-permanent" the Drawer, but it would still be visible).
       this.state.drawerPermanent === false &&
-        this.setState({ drawerVisible: false });
+        this.globalObserver.publish("core.hideDrawer");
     });
   };
 
@@ -337,47 +441,11 @@ class App extends React.PureComponent {
           map={searchPlugin.map}
           app={searchPlugin.app}
           options={searchPlugin.options}
-          onMenuClick={this.toggleDrawer(!this.state.drawerVisible)}
-          menuButtonDisabled={this.state.drawerPermanent}
         />
       );
     } else {
       return null;
     }
-  }
-
-  /**
-   * In the case of a disabled Search plugin, we must
-   * ensure that the button that toggles Drawer is still visible.
-   * We do it by providing it as a standalone button.
-   *
-   * For the FAB to show, there are 2 conditions that must be met:
-   *  - There must be some plugins enabled in application, and
-   *  - Search plugin must be disabled
-   */
-  renderStandaloneDrawerToggler() {
-    const tooltipText = this.state.drawerPermanent
-      ? "Du måste först låsa upp verktygspanelen för kunna klicka på den här knappen. Tryck på hänglåset till vänster."
-      : "Visa verktygspanelen";
-    return (
-      Object.keys(this.appModel.plugins).length > 0 &&
-      this.appModel.plugins.search === undefined &&
-      this.appModel.config.mapConfig.map.clean !== true && (
-        <Tooltip title={tooltipText}>
-          <span>
-            <Fab
-              onClick={this.toggleDrawer(!this.state.drawerVisible)}
-              color="primary"
-              size="medium"
-              disabled={this.state.drawerPermanent}
-              aria-label="menu"
-            >
-              <MenuIcon />
-            </Fab>
-          </span>
-        </Tooltip>
-      )
-    );
   }
 
   renderCookieNotice() {
@@ -416,6 +484,97 @@ class App extends React.PureComponent {
     return s instanceof String || typeof s === "string";
   }
 
+  renderDrawerHeader = () => {
+    const { classes, config } = this.props;
+    const caption = this.state.drawerButtons.find(
+      db => db.value === this.state.activeDrawerContent
+    )?.caption;
+
+    return (
+      <>
+        <Box className={classes.logoBox}>
+          <img
+            alt="Logo"
+            src={config.mapConfig.map.logo}
+            className={classes.logo}
+          />
+        </Box>
+        <Divider />
+        <Grid
+          className={classes.drawerGrid}
+          item
+          container
+          direction="row"
+          justify="space-between"
+          alignItems="center"
+        >
+          <Grid item>
+            <Typography variant="button">{caption}</Typography>
+          </Grid>
+          {/** Hide Lock button in mobile mode - there's not screen estate to permanently lock Drawer on mobile viewports*/}
+          <Grid item>
+            <Hidden smDown>
+              <Tooltip
+                title={
+                  (this.state.drawerPermanent ? "Lås upp" : "Lås fast") +
+                  " verktygspanelen"
+                }
+              >
+                <IconButton
+                  aria-label="pin"
+                  onClick={this.togglePermanent}
+                  onMouseEnter={this.handleMouseEnter}
+                  onMouseLeave={this.handleMouseLeave}
+                >
+                  {this.state.drawerPermanent ? (
+                    this.state.drawerMouseOverLock ? (
+                      <LockOpenIcon />
+                    ) : (
+                      <LockIcon />
+                    )
+                  ) : this.state.drawerMouseOverLock ? (
+                    <LockIcon />
+                  ) : (
+                    <LockOpenIcon />
+                  )}
+                </IconButton>
+              </Tooltip>
+            </Hidden>
+          </Grid>
+        </Grid>
+      </>
+    );
+  };
+
+  renderAllDrawerContent = () => {
+    const { classes } = this.props;
+
+    return (
+      <div id="drawer-content" className={classes.drawerContent}>
+        <Box
+          key="plugins"
+          display={
+            this.state.activeDrawerContent === "plugins" ? "unset" : "none"
+          }
+        >
+          <div id="plugin-buttons" />
+        </Box>
+        {this.state.drawerButtons.map(db => {
+          return (
+            <Box
+              key={db.value}
+              display={
+                this.state.activeDrawerContent === db.value ? "unset" : "none"
+              }
+            >
+              {db.renderDrawerContent()}
+            </Box>
+          );
+        })}
+      </div>
+    );
+  };
+
   render() {
     const { classes, config } = this.props;
 
@@ -441,14 +600,22 @@ class App extends React.PureComponent {
             title="Meddelande"
           />
           <div
+            id="appBox"
             className={cslx(classes.flexBox, {
               [classes.shiftedLeft]: this.state.drawerPermanent
             })}
           >
             <header
+              id="header"
               className={cslx(classes.header, classes.pointerEventsOnChildren)}
             >
-              {clean === false && this.renderStandaloneDrawerToggler()}
+              {clean === false && (
+                <DrawerToggleButtons
+                  drawerButtons={this.state.drawerButtons}
+                  // drawerPermanent={this.state.drawerPermanent}
+                  globalObserver={this.globalObserver}
+                />
+              )}
               {clean === false && this.renderSearchPlugin()}
             </header>
             <main className={classes.main}>
@@ -475,6 +642,8 @@ class App extends React.PureComponent {
                 )}
               >
                 <Zoom map={this.appModel.getMap()} />
+                <div id="plugin-control-buttons"></div>
+                <Rotate map={this.appModel.getMap()} />
                 {clean === false && <MapSwitcher appModel={this.appModel} />}
                 {clean === false && <MapCleaner appModel={this.appModel} />}
                 {clean === false && <PresetLinks appModel={this.appModel} />}
@@ -510,7 +679,7 @@ class App extends React.PureComponent {
               }
             )}
           >
-            {this.renderSearchResultsWindow()}
+            {this.renderInfoclickWindow()}
             <PluginWindows
               plugins={this.appModel.getBothDrawerAndWidgetPlugins()}
             />
@@ -522,49 +691,29 @@ class App extends React.PureComponent {
             // re-mounts it the next time, so we would re-rendering
             // our plugins all the time.
             variant="persistent"
+            classes={{
+              paper: classes.drawerBackground
+            }}
           >
-            <div className={classes.drawerHeader}>
-              <img
-                alt="Logo"
-                className={classes.logo}
-                src={config.mapConfig.map.logo}
-              />
-              {/** Hide Lock button in mobile mode - there's not screen estate to permanently lock Drawer on mobile viewports*/}
-              <Hidden smDown>
-                <Tooltip
-                  title={
-                    (this.state.drawerPermanent ? "Lås upp" : "Lås fast") +
-                    " verktygspanelen"
-                  }
-                >
-                  <IconButton
-                    aria-label="pin"
-                    onClick={this.togglePermanent}
-                    onMouseEnter={this.handleMouseEnter}
-                    onMouseLeave={this.handleMouseLeave}
-                  >
-                    {this.state.drawerPermanent ? (
-                      this.state.drawerMouseOverLock ? (
-                        <LockOpenIcon />
-                      ) : (
-                        <LockIcon />
-                      )
-                    ) : this.state.drawerMouseOverLock ? (
-                      <LockIcon />
-                    ) : (
-                      <LockOpenIcon />
-                    )}
-                  </IconButton>
-                </Tooltip>
-              </Hidden>
-            </div>
+            {this.renderDrawerHeader()}
             <Divider />
-            <div id="plugin-buttons" />
+            {this.renderAllDrawerContent()}
           </Drawer>
           <Backdrop
             open={this.state.drawerVisible && !this.state.drawerPermanent}
             className={classes.backdrop}
-            onClick={this.toggleDrawer(!this.state.drawerVisible)}
+            onClick={e => {
+              this.globalObserver.publish("core.hideDrawer");
+            }}
+          />
+          <Introduction
+            experimentalIntroductionEnabled={
+              this.appModel.config.appConfig.experimentalIntroductionEnabled
+            }
+            experimentalIntroductionSteps={
+              this.appModel.config.appConfig.experimentalIntroductionSteps
+            }
+            globalObserver={this.globalObserver}
           />
         </>
       </SnackbarProvider>

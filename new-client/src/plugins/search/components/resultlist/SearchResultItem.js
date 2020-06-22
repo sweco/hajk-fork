@@ -85,9 +85,6 @@ class SearchResultItem extends Component {
 
     if (features.length > 0) {
       this.props.model.highlightFeatures(features);
-      /*if (window.innerWidth >= 600) {
-        this.props.searchResultList.hide();
-      }*/
     }
   };
 
@@ -95,6 +92,10 @@ class SearchResultItem extends Component {
   handleOnFeatureClick = feature => {
     var highlightedFeatures = this.props.highlightedFeatures;
     var indexOfHighlightedFeature = highlightedFeatures.indexOf(feature);
+
+    // If so configured, auto hide the search results list
+    this.props.model.options?.autoHideSearchResults &&
+      this.props.searchResultList.hide();
 
     if (indexOfHighlightedFeature > -1) {
       var newHighlightedFeaturesArray = [...highlightedFeatures];
