@@ -11,7 +11,7 @@ import {
   LinearProgress
 } from "@material-ui/core";
 import ArrowDownward from "@material-ui/icons/ArrowDownward";
-import PictureAsPdf from "@material-ui/icons/PictureAsPdf";
+import ImageIcon from "@material-ui/icons/Image";
 
 import { getCenter } from "ol/extent.js";
 const styles = theme => ({
@@ -36,7 +36,7 @@ const styles = theme => ({
   }
 });
 
-class ExportPdfSettings extends React.PureComponent {
+class ExportTiffSettings extends React.PureComponent {
   static propTypes = {
     classes: propTypes.object.isRequired,
     localObserver: propTypes.object.isRequired,
@@ -298,7 +298,7 @@ class ExportPdfSettings extends React.PureComponent {
     }
   }
 
-  exportPDF = e => {
+  exportTIFF = e => {
     this.setState({
       url: false,
       loading: true
@@ -311,10 +311,10 @@ class ExportPdfSettings extends React.PureComponent {
       resolution: this.getResolution()
     };
 
-    this.props.model.exportPDF(options, pdfUrl => {
+    this.props.model.exportTIFF(options, tiffUrl => {
       this.setState({
         loading: false,
-        url: pdfUrl
+        url: tiffUrl
       });
     });
   };
@@ -370,6 +370,7 @@ class ExportPdfSettings extends React.PureComponent {
         );
       }
     });
+
     if (this.state.previewLayerVisible === true) {
       this.addPreview(this.props.model.map);
     } else {
@@ -451,9 +452,9 @@ class ExportPdfSettings extends React.PureComponent {
             variant="contained"
             color="primary"
             fullWidth={true}
-            onClick={this.exportPDF}
+            onClick={this.exportTIFF}
           >
-            <PictureAsPdf className={classes.icon} /> Skapa PDF
+            <ImageIcon className={classes.icon} /> Skapa TIFF
           </Button>
         </FormControl>
         {this.state.url && (
@@ -473,4 +474,4 @@ class ExportPdfSettings extends React.PureComponent {
   }
 }
 
-export default withStyles(styles)(ExportPdfSettings);
+export default withStyles(styles)(ExportTiffSettings);

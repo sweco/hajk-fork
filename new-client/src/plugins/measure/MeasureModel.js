@@ -165,10 +165,6 @@ class MeasureModel {
     if (type === "circle") {
       let prefix = " m";
       let prefixSq = " m²";
-      if (value >= 1e3) {
-        prefix = " km";
-        value = value / 1e3;
-      }
       label =
         "R = " +
         value +
@@ -179,19 +175,11 @@ class MeasureModel {
     }
 
     if (type === "area") {
-      if (value > 10000) {
-        label = Math.round((value / 1000000) * 100) / 100 + " km²";
-      } else {
-        label = Math.round(value * 100) / 100 + " m²";
-      }
+      label = Math.round(value * 100) / 100 + " m²";
     }
 
     if (type === "length") {
       let prefix = " m";
-      if (value >= 1e3) {
-        prefix = " km";
-        value = value / 1e3;
-      }
       label = value + prefix;
     }
 

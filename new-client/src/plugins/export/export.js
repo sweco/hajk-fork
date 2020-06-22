@@ -5,8 +5,8 @@ import BaseWindowPlugin from "../BaseWindowPlugin";
 
 import PrintIcon from "@material-ui/icons/Print";
 
-import ExportPdfSettings from "./components/ExportPdfSettings.js";
 import ExportModel from "./ExportModel";
+import ExportView from "./ExportView";
 import Observer from "react-event-observer";
 
 class Export extends React.PureComponent {
@@ -52,18 +52,7 @@ class Export extends React.PureComponent {
           onWindowHide: this.onWindowHide
         }}
       >
-        {/**
-          * In the future, when we develop export for other formats,
-          * such as TIFF, we can use ExportView here. ExportView 
-          * will have tab buttons that will select between the different
-          * export modes. But for now, we can as well just render the
-          * PDF exporter here.
-        
         <ExportView
-          model={this.exportModel}
-          localObserver={this.localObserver}
-        /> */}
-        <ExportPdfSettings
           model={this.exportModel}
           localObserver={this.localObserver}
         />
