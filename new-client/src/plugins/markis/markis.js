@@ -15,7 +15,7 @@ class Markis extends React.PureComponent {
     this.sessionId = this.getUrlParams("sid");
 
     this.localObserver.subscribe("create-contract", message => {
-      props.app.globalObserver.publish("showMarkis", {
+      props.app.globalObserver.publish("markis.showWindow", {
         runCallBack: false,
         hideOtherPluginWindows: false
       });
@@ -52,7 +52,7 @@ class Markis extends React.PureComponent {
             icon: <DesktopWindowsIcon />,
             title: "Markiskoppling",
             description: "Markisanslutning",
-            height: 320,
+            height: 325,
             width: 290,
             top: undefined,
             left: undefined

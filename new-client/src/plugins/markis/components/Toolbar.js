@@ -42,7 +42,8 @@ const styles = theme => ({
     margin: theme.spacing(0),
     border: "1px solid #575757",
     color: "#575757",
-    width: 125
+    width: 125,
+    height: 50
   },
   centerElements: {
     textAlign: "center"
