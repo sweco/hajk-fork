@@ -13,6 +13,7 @@ import Button from "@material-ui/core/Button";
 import { withStyles } from "@material-ui/core/styles";
 import SaveIcon from "@material-ui/icons/Save";
 import CancelIcon from "@material-ui/icons/Cancel";
+import { Typography } from "@material-ui/core";
 
 const styles = theme => ({
   container: {
@@ -26,7 +27,11 @@ const styles = theme => ({
   },
   createButtons: {
     margin: theme.spacing(1),
+    marginTop: theme.spacing(12),
     width: 110
+  },
+  toolContainer: {
+    marginTop: theme.spacing(1)
   },
   clearSearchButton: {
     margin: theme.spacing(1),
@@ -34,22 +39,16 @@ const styles = theme => ({
     textAlign: "center"
   },
   styledButtonGroup: {
-    margin: theme.spacing(0),
-    display: "flex",
     width: "100%"
   },
   styledToggleButton: {
-    margin: theme.spacing(0),
-    border: "1px solid #575757",
-    color: "#575757",
-    width: 125,
-    height: 50
+    width: "100%"
   },
   centerElements: {
     textAlign: "center"
   },
   toolIcons: {
-    margin: theme.spacing(0.5)
+    marginRight: theme.spacing(0.5)
   }
 });
 
@@ -205,16 +204,25 @@ class Toolbar extends React.Component {
     }
   };
 
+  getLabelText(text) {
+    return <Typography variant="button">{text}</Typography>;
+  }
+
   renderButtons() {
     const { classes, model } = this.props;
     const editTools = (
-      <Grid container spacing={1} direction="column" alignItems="center">
-        <Grid item>
+      <Grid
+        className={classes.toolContainer}
+        container
+        spacing={1}
+        direction="row"
+      >
+        <Grid item xs={12}>
           <ToggleButtonGroup
             variant="contained"
             className={classes.styledButtonGroup}
-            size="medium"
             exclusive
+            size="small"
             onChange={this.handleChange("createMethod")}
             value={this.state.createMethod}
           >
@@ -226,7 +234,7 @@ class Toolbar extends React.Component {
               title="Skapa en ny yta."
             >
               <FormatShapesIcon className={classes.toolIcons} />
-              SKAPA YTA
+              {this.getLabelText("SKAPA YTA")}
             </ToggleButton>
             <ToggleButton
               className={classes.styledToggleButton}
@@ -235,18 +243,18 @@ class Toolbar extends React.Component {
               value="addLine"
               title="Skapa en ny linje."
             >
-              <TimelineIcon fontSize="large" className={classes.toolIcons} />
-              SKAPA LINJE
+              <TimelineIcon className={classes.toolIcons} />
+              {this.getLabelText("SKAPA LINJE")}
             </ToggleButton>
           </ToggleButtonGroup>
         </Grid>
-        <Grid item>
+        <Grid item xs={12}>
           <ToggleButtonGroup
             variant="contained"
             className={classes.styledButtonGroup}
             exclusive
+            size="small"
             onChange={this.handleChange("createMethod")}
-            size="medium"
             value={this.state.createMethod}
           >
             <ToggleButton
@@ -257,7 +265,7 @@ class Toolbar extends React.Component {
               disabled={!this.state.allowPolygon}
             >
               <TouchAppIcon className={classes.toolIcons} />
-              VÄLJ YTA
+              {this.getLabelText("VÄLJ YTA")}
             </ToggleButton>
             <ToggleButton
               className={classes.styledToggleButton}
@@ -267,17 +275,17 @@ class Toolbar extends React.Component {
               title="Redigera en yta genom att dra i kartan."
             >
               <EditIcon className={classes.toolIcons} />
-              REDIGERA
+              {this.getLabelText("REDIGERA")}
             </ToggleButton>
           </ToggleButtonGroup>
         </Grid>
-        <Grid item>
+        <Grid item xs={12}>
           <ToggleButtonGroup
             variant="contained"
             className={classes.styledButtonGroup}
             exclusive
+            size="small"
             onChange={this.handleChange("createMethod")}
-            size="medium"
             value={this.state.createMethod}
           >
             <ToggleButton
@@ -288,7 +296,7 @@ class Toolbar extends React.Component {
               title="Ta bort ett objekt genom att markera det i kartan."
             >
               <DeleteIcon className={classes.toolIcons} />
-              RADERA
+              {this.getLabelText("RADERA")}
             </ToggleButton>
             <ToggleButton
               className={classes.styledToggleButton}
@@ -298,7 +306,7 @@ class Toolbar extends React.Component {
               title="Ändra ytans attribut genom att markera den i kartan."
             >
               <TuneIcon className={classes.toolIcons} />
-              ÄNDRA ATTRIBUT
+              {this.getLabelText("ÄNDRA ATTRIBUT")}
             </ToggleButton>
           </ToggleButtonGroup>
         </Grid>
@@ -345,7 +353,7 @@ class Toolbar extends React.Component {
         <span>
           <Button
             variant="contained"
-            className={classes.createButtons}
+            className={classes.clearSearchButton}
             onClick={this.clearSearchResult}
             disabled={!model.markisParameters.objectId}
           >
