@@ -25,6 +25,9 @@ export default class MapViewModel {
   };
 
   bindSubscriptions = () => {
+    this.localObserver.subscribe("fly-to-print-view", ({ url, resolve }) => {
+      resolve(this.displayMap(this.convertMapSettingsUrlToOlSettings(url)));
+    });
     this.localObserver.subscribe("fly-to", (url) => {
       this.globalObserver.publish("core.minimizeWindow");
       this.displayMap(this.convertMapSettingsUrlToOlSettings(url));
@@ -67,14 +70,21 @@ export default class MapViewModel {
         })
     );
 
-    this.flyTo(this.map.getView(), mapSettings.center, mapSettings.zoom);
+    return this.flyTo(this.map.getView(), mapSettings.center, mapSettings.zoom);
   }
 
   flyTo(view, center, zoom) {
-    view.animate({
-      center: center,
-      zoom: zoom,
-      duration: 1500,
+    return new Promise((resolve) => {
+      view.animate(
+        {
+          center: center,
+          zoom: zoom,
+          duration: 1500,
+        },
+        () => {
+          resolve();
+        }
+      );
     });
   }
 }

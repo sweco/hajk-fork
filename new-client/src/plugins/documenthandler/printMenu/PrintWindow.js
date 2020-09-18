@@ -7,7 +7,8 @@ import Container from "@material-ui/core/Container";
 import Box from "@material-ui/core/Box";
 import { sizing } from "@material-ui/system";
 import Divider from "@material-ui/core/Divider";
-
+import PrintView from "../../print/PrintView";
+import { delay } from "../../../utils/Delay";
 import Button from "@material-ui/core/Button";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
 import Checkbox from "@material-ui/core/Checkbox";
@@ -56,6 +57,7 @@ class PrintWindow extends React.PureComponent {
   constructor(props) {
     super(props);
     this.printPages = [{ type: "TOC", availableHeight: 950, content: [] }];
+    this.mapLinksToPrint = [];
   }
 
   componentDidMount = () => {
@@ -333,17 +335,74 @@ class PrintWindow extends React.PureComponent {
     });
   };
 
-  removeTagsNotSelectedForPrint = (chapter) => {
-    const { printImages, printText } = this.state;
+  test = () => {
+    // Create the map canvas that will hold all of our map tiles
+    const mapCanvas = document.createElement("canvas");
+    // Set canvas dimensions to the newly calculated ones that take user's desired resolution etc into account
+    mapCanvas.width = 500;
+    mapCanvas.height = 500;
+
+    const mapContext = mapCanvas.getContext("2d");
+
+    // Each canvas element inside OpenLayer's viewport should get printed
+    document.querySelectorAll(".ol-viewport canvas").forEach((canvas) => {
+      if (canvas.width > 0) {
+        const opacity = canvas.parentNode.style.opacity;
+        mapContext.globalAlpha = opacity === "" ? 1 : Number(opacity);
+        // Get the transform parameters from the style's transform matrix
+
+        if (canvas.style.transform) {
+          const matrix = canvas.style.transform
+            .match(/^matrix\(([^(]*)\)$/)[1]
+            .split(",")
+            .map(Number);
+          // Apply the transform to the export map context
+          CanvasRenderingContext2D.prototype.setTransform.apply(
+            mapContext,
+            matrix
+          );
+        }
+        mapContext.drawImage(canvas, 0, 0);
+      }
+    });
+
+    return mapCanvas;
+  };
+
+  handleMapElement = async (div) => {
+    Array.from(div.getElementsByTagName("a")).forEach((element) => {
+      new Promise((resolve) => {
+        this.props.localObserver.publish("fly-to-print-view", {
+          url: element.getAttribute("data-maplink"),
+          resolve: resolve,
+        });
+      }).then(async () => {
+        await delay(3000);
+        element.parentNode.replaceChild(this.test(), element);
+      });
+    });
+  };
+
+  removeTagsNotSelectedForPrint = async (chapter) => {
+    const { printImages, printText, printMaps } = this.state;
+
+    this.mapLinksToPrint = [];
 
     let elementsToRemove = [];
     const div = document.createElement("div");
     div.innerHTML = chapter.html;
+    if (printMaps) {
+      await this.handleMapElement(div);
+    }
+
+    Array.from(div.getElementsByTagName("a")).forEach((element) => {
+      if (!element.getAttribute("data-maplink")) {
+        elementsToRemove.push(element);
+      }
+    });
 
     //A-tags should always be removed before printing
-    Array.from(div.getElementsByTagName("a")).forEach((element) => {
-      elementsToRemove.push(element);
-    });
+
     if (!printImages) {
       Array.from(div.getElementsByTagName("figure")).forEach((element) => {
         elementsToRemove.push(element);
