@@ -652,7 +652,8 @@ class MarkisModel {
                   let intersectionFeature = parser.readFeature(interSection);
                   if (
                     intersectionFeature.getGeometry().getType() ===
-                    GeometryType.POLYGON
+                      GeometryType.POLYGON ||
+                    GeometryType.MULTI_POLYGON
                   ) {
                     affectedArea += Math.floor(
                       intersectionFeature.getGeometry().getArea()
