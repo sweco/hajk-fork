@@ -172,6 +172,42 @@ class SearchModel {
     return rawResults;
   };
 
+  #getAllSearchCombinations = (searchString) => {
+    let searchWords = searchString.split(",").join(" ").split(" ");
+
+    let searchCombinations = [];
+
+    for (var i = 0; i < searchWords.length; i++) {
+      let currentWord = searchWords[i];
+
+      for (var j = 1; j <= searchWords.length - i; j++) {
+        searchCombinations.push(currentWord);
+        currentWord = currentWord.concat(` ${searchWords[i + j]}`);
+      }
+    }
+
+    return searchCombinations;
+  };
+
+  getAndFilter = (wordsArray, searchSource, searchOptions) => {
+    return new And(
+      ...wordsArray.map((word) => {
+        return new Or(
+          ...searchSource.searchFields.map((searchField) => {
+            return new IsLike(
+              searchField,
+              word,
+              "*", // wildcard char
+              ".", // single char
+              "!", // escape char
+              searchOptions.matchCase // match case
+            );
+          })
+        );
+      })
+    );
+  };
+
   #lookup = (searchString, searchSource, searchOptions) => {
     const srsName = this.#map.getView().getProjection().getCode();
     const geometryName =
@@ -180,6 +216,8 @@ class SearchModel {
     let comparisonFilters = null;
     let spatialFilters = null;
     let finalFilters = null;
+
+    //let searchWords = this.#getAllSearchCombinations(searchString);
 
     //if (searchString?.length > 0) {
     // If search string contains only numbers, let's do an EqualTo search
@@ -191,35 +229,46 @@ class SearchModel {
       // Else, let's do a IsLike search
       else {*/
     // Should the search string be surrounded by wildcard?
-    let pattern = searchString;
-    pattern = searchOptions.wildcardAtStart ? `*${pattern}` : pattern;
-    pattern = searchOptions.wildcardAtEnd ? `${pattern}*` : pattern;
+    let wordsInTextField = searchString.split(",").join(" ").split(" ");
+    let searchArrays = [];
+    searchArrays.push(wordsInTextField.join(" "));
+
+    for (var i = 0; i < wordsInTextField.length; i++) {
+      searchArrays.push([
+        wordsInTextField.slice(0, i),
+        wordsInTextField.slice(i + 1).join(" "),
+      ]);
+    }
+
+    console.log("searchArrays: ", searchArrays);
+
+    let wordsArray = wordsInTextField.map((searchWord) => {
+      let pattern = searchWord;
+      pattern = searchOptions.wildcardAtStart ? `*${pattern}` : pattern;
+      pattern = searchOptions.wildcardAtEnd ? `${pattern}*` : pattern;
+      return pattern;
+    });
+
+    let allAndFilters = [];
+
+    /*allAndFilters.push(
+      this.getAndFilter([searchString], searchSource, searchOptions)
+    );*/
+    /*
+    allAndFilters.push(
+      this.getAndFilter(wordsArray, searchSource, searchOptions)
+    );
+*/
 
     // Each searchSource (e.g. WFS layer) will have its own searchFields
     // defined (e.g. columns in the data table, such as "name" or "address").
     // Let's loop through the searchFields and create an IsLike filter
     // for each one of them (e.g. "name=bla", "address=bla").
-    comparisonFilters = searchSource.searchFields.map((propertyName) => {
-      return new IsLike(
-        propertyName,
-        pattern,
-        "*", // wildcard char
-        ".", // single char
-        "!", // escape char
-        searchOptions.matchCase // match case
-      );
-    });
-    //}
 
     // Depending on the searchSource configuration, we will now have 1 or more
     // IsLike filters created. If we just have one, let's use it. But if we have
     // many, we must combine them using an Or filter, so we tell the WFS to search
     // where "name=bla OR address=bla OR etc...".
-    comparisonFilters =
-      comparisonFilters.length > 1
-        ? new Or(...comparisonFilters)
-        : comparisonFilters[0];
-    //}
 
     // If searchOptions contain any features, we should filter the results
     // using those features.
