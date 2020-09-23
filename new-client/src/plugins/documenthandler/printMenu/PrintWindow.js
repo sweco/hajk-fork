@@ -400,9 +400,10 @@ class PrintWindow extends React.PureComponent {
     });
   };
 
-  test = () => {
+  getCanvas = () => {
     // Create the map canvas that will hold all of our map tiles
     const mapCanvas = document.createElement("canvas");
+
     // Set canvas dimensions to the newly calculated ones that take user's desired resolution etc into account
     mapCanvas.width = 500;
     mapCanvas.height = 500;
@@ -434,17 +435,40 @@ class PrintWindow extends React.PureComponent {
     return mapCanvas;
   };
 
-  handleMapElement = async (div) => {
-    Array.from(div.getElementsByTagName("a")).forEach((element) => {
-      new Promise((resolve) => {
-        this.props.localObserver.publish("fly-to-print-view", {
-          url: element.getAttribute("data-maplink"),
-          resolve: resolve,
+  changeATagsToMapImage = async (chapter) => {
+    const div = document.createElement("div");
+    div.innerHTML = chapter.html;
+
+    let aTags = Array.from(div.getElementsByTagName("a"));
+
+    let promiseArray = aTags.map((element) => {
+      if (element.hasAttribute("data-maplink")) {
+        return new Promise((resolve, reject) => {
+          this.props.localObserver.publish("fly-to-print-view", {
+            url: element.getAttribute("data-maplink"),
+            resolve: resolve,
+          });
+        }).then(() => {
+          let mapCanvas = this.getCanvas();
+
+          var img = document.createElement("img");
+          var imgSrc = mapCanvas.toDataURL();
+          img.src = imgSrc;
+          img.width = "200px";
+          img.height = maxHeight;
+          console.log(img, "img");
+          element.parentNode.appendChild(img);
+          console.log("appendeing");
         });
-      }).then(async () => {
-        await delay(3000);
-        element.parentNode.replaceChild(this.test(), element);
-      });
+      } else {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      }
+    });
+    return Promise.all(promiseArray).then(() => {
+      console.log("RESOLVE=?");
+      return chapter;
     });
   };
 
@@ -456,9 +480,6 @@ class PrintWindow extends React.PureComponent {
     let elementsToRemove = [];
     const div = document.createElement("div");
     div.innerHTML = chapter.html;
-    if (printMaps) {
-      await this.handleMapElement(div);
-    }
 
     Array.from(div.getElementsByTagName("a")).forEach((element) => {
       if (!element.getAttribute("data-maplink")) {
@@ -490,38 +511,66 @@ class PrintWindow extends React.PureComponent {
     return chapter;
   };
 
+  hasSubChapters = (chapter) => {
+    return chapter.chapters && chapter.chapters.length > 0;
+  };
+
+  stripChapterInformation = (chapter) => {
+    chapter.html = "";
+    chapter.header = "";
+  };
+
+  cleanChapter = (chapter) => {
+    if (!chapter.chosenForPrint) {
+      this.stripChapterInformation(chapter);
+    } else {
+      chapter = this.removeTagsNotSelectedForPrint(chapter);
+    }
+  };
+
   prepareChapterForPrint = (chapter) => {
-    if (chapter.chapters && chapter.chapters.length > 0) {
+    if (this.hasSubChapters(chapter)) {
       chapter.chapters.forEach((subChapter) => {
         if (subChapter.chapters && subChapter.chapters.length > 0) {
           return this.prepareChapterForPrint(subChapter);
         }
-        if (!subChapter.chosenForPrint) {
-          subChapter.html = "";
-          subChapter.header = "";
-        } else {
-          subChapter = this.removeTagsNotSelectedForPrint(subChapter);
-        }
+        this.cleanChapter(subChapter);
       });
     }
-    if (!chapter.chosenForPrint) {
-      chapter.html = "";
-      chapter.header = "";
-    } else {
-      chapter = this.removeTagsNotSelectedForPrint(chapter);
+    return this.cleanChapter(chapter);
+  };
+
+  prepareChaptersWithMaps = (chapter) => {
+    if (this.hasSubChapters(chapter)) {
+      return Promise.all(
+        [
+          this.changeATagsToMapImage(chapter),
+          ...chapter.chapters.map((subChapter) => {
+            if (this.hasSubChapters(subChapter)) {
+              return this.prepareChaptersWithMaps(subChapter);
+            }
+            return this.changeATagsToMapImage(subChapter);
+          }),
+        ].flat()
+      );
     }
-    return chapter;
+    return this.changeATagsToMapImage(chapter);
   };
 
   getChaptersToPrint = () => {
     let chaptersToPrint = JSON.parse(
       JSON.stringify(this.state.chapterInformation)
     );
-    chaptersToPrint.forEach((chapter) => {
-      chapter = this.prepareChapterForPrint(chapter);
-    });
 
-    return chaptersToPrint;
+    return Promise.all(
+      chaptersToPrint.map((chapter) => {
+        this.prepareChapterForPrint(chapter);
+        return this.prepareChaptersWithMaps(chapter);
+      })
+    ).then((x) => {
+      console.log(x, "x");
+      return x;
+    });
   };
 
   checkIfChaptersSelected = (chapter) => {
@@ -560,11 +609,13 @@ class PrintWindow extends React.PureComponent {
       );
     } else {
       this.setState({ pdfLoading: true });
-      const chaptersToPrint = this.getChaptersToPrint();
-      this.props.localObserver.publish(
-        "append-chapter-components",
-        chaptersToPrint
-      );
+      this.getChaptersToPrint().then((chaptersToPrint) => {
+        console.log("ARE WE HERE?");
+        this.props.localObserver.publish(
+          "append-chapter-components",
+          chaptersToPrint.flat()
+        );
+      });
     }
   };
 

@@ -82,7 +82,9 @@ export default class MapViewModel {
           duration: 1500,
         },
         () => {
-          resolve();
+          this.map.on("rendercomplete", () => {
+            resolve();
+          });
         }
       );
     });
