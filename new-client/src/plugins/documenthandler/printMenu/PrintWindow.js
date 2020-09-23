@@ -1,13 +1,11 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { withStyles } from "@material-ui/core/styles";
 import { withSnackbar } from "notistack";
 import Grid from "@material-ui/core/Grid";
 import { Typography } from "@material-ui/core";
-import Container from "@material-ui/core/Container";
-import Box from "@material-ui/core/Box";
-import { sizing } from "@material-ui/system";
+import ReactDOM from "react-dom";
 import Divider from "@material-ui/core/Divider";
-import PrintView from "../../print/PrintView";
 import { delay } from "../../../utils/Delay";
 import Button from "@material-ui/core/Button";
 import ArrowBackIcon from "@material-ui/icons/ArrowBack";
@@ -15,33 +13,39 @@ import Checkbox from "@material-ui/core/Checkbox";
 import FormControlLabel from "@material-ui/core/FormControlLabel";
 import OpenInNewIcon from "@material-ui/icons/OpenInNew";
 import PrintList from "./PrintList";
-import PrintPreview from "./PrintPreview";
 import TableOfContents from "./TableOfContents";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import CircularProgress from "@material-ui/core/CircularProgress";
+
+import {
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+} from "@material-ui/core";
 
 const styles = (theme) => ({
   gridContainer: {
     padding: theme.spacing(4),
-    width: "100%",
-    height: "80%",
+    height: "100%",
   },
-  middleSectionHeader: {
-    height: "10%",
+  middleContainer: {
+    overflowX: "auto",
+    flexBasis: "100%",
+    marginTop: theme.spacing(2),
   },
-  middleSectionMain: {
-    height: "90%",
-    paddingTop: 10,
-    overflowY: "auto",
+  headerContainer: {
+    marginBottom: theme.spacing(2),
   },
   footerContainer: {
-    padding: theme.spacing(2),
-    maxWidth: "100%",
-
+    flexBasis: "10%",
     borderTop: "1px solid grey",
   },
 });
+
+const maxHeight = 950;
+const imageResizeRatio = 0.7;
 
 class PrintWindow extends React.PureComponent {
   state = {
@@ -56,8 +60,11 @@ class PrintWindow extends React.PureComponent {
 
   constructor(props) {
     super(props);
-    this.printPages = [{ type: "TOC", availableHeight: 950, content: [] }];
     this.mapLinksToPrint = [];
+
+    this.printPages = [
+      { type: "TOC", availableHeight: maxHeight, content: [] },
+    ];
   }
 
   componentDidMount = () => {
@@ -85,11 +92,8 @@ class PrintWindow extends React.PureComponent {
   };
 
   checkIfTagIsTitle = (node) => {
-    let tagName = "";
-    if (node.hasChildNodes() && node.children.length === 1) {
-      tagName = node.children[0].tagName;
-    }
-    return ["H2", "H3"].includes(tagName);
+    let tagName = node.tagName;
+    return ["H1", "H2", "H3", "H4", "H5"].includes(tagName);
   };
 
   contentFitsCurrentPage = (content) => {
@@ -120,67 +124,73 @@ class PrintWindow extends React.PureComponent {
     });
   };
 
-  divideContentOnPages = (content, type) => {
-    const maxHeight = 950;
-    if (this.checkIfTagIsTitle(content)) {
-      if (this.getAvailableHeight() >= 0.4 * maxHeight) {
-        this.addContentToCurrentPage(content, maxHeight);
-      } else {
-        this.addContentToNewPage(content, maxHeight, type);
-      }
-
-      if (content.children && content.children.length > 0) {
-        [...content.children].forEach((child) => {
-          this.divideContentOnPages(child, type);
-        });
-      }
+  appendHeaderToPdf = (content, type) => {
+    if (this.getAvailableHeight() >= 0.4 * maxHeight) {
+      this.addContentToCurrentPage(content);
     } else {
-      if (
-        !this.contentFitsCurrentPage(content) &&
-        content.children &&
-        content.children.length > 0 &&
-        !(type === "TOC" && content.tagName === "LI")
-      ) {
-        [...content.children].forEach((child) => {
-          this.divideContentOnPages(child, type);
-        });
-      } else if (
-        (!this.contentFitsCurrentPage(content) &&
-          !(content.children && content.children.length > 0)) ||
-        (!this.contentFitsCurrentPage(content) &&
-          type === "TOC" &&
-          content.tagName === "LI")
-      ) {
-        this.addContentToNewPage(content, maxHeight, type);
+      this.addContentToNewPage(content, maxHeight, type);
+    }
+  };
+
+  isTocListElement = (type, content) => {
+    return type === "TOC" && content.tagName === "LI";
+  };
+
+  distributeContentOnPages = (content, type) => {
+    if (this.checkIfTagIsTitle(content)) {
+      this.appendHeaderToPdf(content, type);
+    } else {
+      if (this.contentFitsCurrentPage(content)) {
+        this.addContentToCurrentPage(content);
       } else {
-        this.addContentToCurrentPage(content, maxHeight);
+        if (!content.hasChildNodes() || this.isTocListElement(type, content)) {
+          this.addContentToNewPage(content, maxHeight, type);
+        } else {
+          [...content.children].forEach((child) => {
+            this.distributeContentOnPages(child, type);
+          });
+        }
       }
     }
   };
 
   getCanvasFromContent = (page) => {
-    let sWidth = Math.round((210 * 90) / 25.4);
-    let sHeight = Math.round((297 * 90) / 25.4);
-    let dWidth = Math.round((210 * 90) / 25.4);
-    let dHeight = Math.round((297 * 90) / 25.4);
+    let sWidth = Math.round((210 * 96) / 25.4);
+    let sHeight = Math.round((297 * 96) / 25.4);
+    let dWidth = Math.round((210 * 96) / 25.4);
+    let dHeight = Math.round((297 * 96) / 25.4);
     let pR = window.devicePixelRatio;
     let onePageDiv = document.createElement("div");
-    document.body.appendChild(onePageDiv);
+
+    onePageDiv.style.position = "absolute";
+    onePageDiv.style.left = "-10000px";
     onePageDiv.style.width = `${210}mm`;
     onePageDiv.style.padding = "50px";
+
+    document.body.appendChild(onePageDiv);
 
     page.content.forEach((child) => {
       onePageDiv.appendChild(child);
     });
 
-    return html2canvas(onePageDiv, {}).then((canvas) => {
+    return html2canvas(onePageDiv, {
+      allowTaint: false,
+      logging: false,
+    }).then((canvas) => {
       let onePageCanvas = document.createElement("canvas");
-      onePageCanvas.width = Math.round((210 * 90) / 25.4);
-      onePageCanvas.height = Math.round((297 * 90) / 25.4);
+
+      onePageCanvas.width = Math.round((210 * 96) / 25.4);
+      onePageCanvas.height = Math.round((297 * 96) / 25.4);
 
       let ctx = onePageCanvas.getContext("2d");
+
       ctx.fillStyle = "white";
-      ctx.fillRect(0, 0, onePageCanvas.width * pR, onePageCanvas.height * pR);
+      ctx.fillRect(
+        0,
+        0,
+        onePageCanvas.width + 200 * pR, //Just add 200px to fix edge-bug
+        onePageCanvas.height + 200 * pR //Just add 200px to fix edge-bug
+      );
 
       ctx.drawImage(
         canvas,
@@ -194,13 +204,29 @@ class PrintWindow extends React.PureComponent {
         dHeight
       );
       document.body.removeChild(onePageDiv);
-      return onePageCanvas.toDataURL("image/png");
+      return onePageCanvas;
     });
+  };
+
+  resizeImage = (img) => {
+    img.height = img.clientHeight * imageResizeRatio;
+    img.width = img.clientWidth * imageResizeRatio;
+  };
+
+  imageFitsOnePage = (img) => {
+    return img.clientHeight < maxHeight * 0.9;
   };
 
   loadImage = (img) => {
     return new Promise((resolve, reject) => {
-      img.onload = () => resolve(img);
+      img.onload = () => {
+        if (this.imageFitsOnePage(img)) {
+          resolve(img);
+        } else {
+          this.resizeImage(img);
+          resolve(img);
+        }
+      };
       img.onerror = () => reject(img);
     });
   };
@@ -235,48 +261,87 @@ class PrintWindow extends React.PureComponent {
     return pdf;
   };
 
-  printContents = () => {
-    const tocElement = document.getElementById("printPreviewTOC");
-    const printContent = document.getElementById("printPreviewContent");
-
-    var allImages = [...printContent.getElementsByTagName("img")].map((img) => {
-      return this.loadImage(img);
-    });
-
-    Promise.allSettled(allImages).then((imageArray) => {
-      this.printPages = [{ type: "TOC", availableHeight: 950, content: [] }];
-      this.divideContentOnPages(tocElement, "TOC");
-      this.addNewPage("CONTENT", 950);
-      this.divideContentOnPages(printContent, "CONTENT");
-      let numToc = this.printPages.filter((page) => page.type === "TOC").length;
-
-      let pdf = new jsPDF("p", "pt", "a4");
-      let promises = [];
-
-      this.printPages.forEach((page, index) => {
-        promises.push(this.getCanvasFromContent(page));
+  customRender = (element, container) => {
+    return new Promise((resolve) => {
+      ReactDOM.render(element, container, (e) => {
+        resolve();
       });
+    });
+  };
 
-      Promise.all(promises).then((canvases) => {
-        canvases.forEach((canvas, index) => {
-          if (index > 0) {
-            pdf.addPage();
-          }
-          //! now we declare that we're working on that page
-          pdf.setPage(index + 1);
-          pdf.addImage(canvas, "PNG", 0, 0);
+  createPrintElement = (id) => {
+    let div = document.createElement("div");
+    div.style = "position : absolute; left : -10000px; width : 210mm";
+    div.id = id;
+    return div;
+  };
+
+  renderToc = () => {
+    this.toc = this.createPrintElement("toc");
+    return this.customRender(
+      <TableOfContents chapters={this.state.chapterInformation} />,
+      this.toc
+    ).then(() => {
+      document.body.appendChild(this.toc);
+    });
+  };
+
+  renderContent = () => {
+    this.content = this.createPrintElement("content");
+    return this.customRender(this.state.printContent, this.content).then(() => {
+      document.body.appendChild(this.content);
+    });
+  };
+
+  areAllImagesLoaded = () => {
+    return Promise.allSettled(
+      [...this.content.getElementsByTagName("img")].map((img) => {
+        return this.loadImage(img);
+      })
+    );
+  };
+
+  printContents = () => {
+    Promise.all([this.renderToc(), this.renderContent()]).then(() => {
+      this.areAllImagesLoaded().then(() => {
+        this.printPages = [{ type: "TOC", availableHeight: 950, content: [] }];
+        this.distributeContentOnPages(this.toc, "TOC");
+        this.addNewPage("CONTENT", 950);
+        this.content.children.forEach((child) => {
+          this.distributeContentOnPages(child, "CONTENT");
         });
-        pdf = this.addFooters(pdf, numToc);
-        window.open(
-          pdf.output("bloburl", {
-            filename: `oversiktsplan-${new Date().toLocaleString()}.pdf`,
-          })
-        );
-        this.toggleAllDocuments(false);
-        this.setState({
-          pdfLoading: false,
-          printContent: undefined,
-          printMaps: false,
+
+        console.log("this.printPages: ", this.printPages);
+        let canvasPromises = this.printPages.map((page, index) => {
+          return this.getCanvasFromContent(page);
+        });
+
+        Promise.all(canvasPromises).then((canvases) => {
+          let pdf = new jsPDF("p", "pt");
+          let numToc = this.printPages.filter((page) => page.type === "TOC")
+            .length;
+          canvases.forEach((canvas, index) => {
+            if (index > 0) {
+              pdf.addPage();
+            }
+            //! now we declare that we're working on that page
+            pdf.setPage(index + 1);
+            pdf.addImage(canvas, "PNG", 0, 0);
+          });
+          pdf = this.addFooters(pdf, numToc);
+          pdf.save(`oversiktsplan-${new Date().toLocaleString()}.pdf`);
+
+          document.body.removeChild(this.toc);
+          if (document.body.contains(this.content)) {
+            document.body.removeChild(this.content);
+          }
+
+          this.toggleAllDocuments(false);
+          this.setState({
+            pdfLoading: false,
+            printContent: undefined,
+            printMaps: false,
+          });
         });
       });
     });
@@ -459,74 +524,111 @@ class PrintWindow extends React.PureComponent {
     return chaptersToPrint;
   };
 
+  checkIfChaptersSelected = (chapter) => {
+    let subChapters = chapter.chapters;
+    if (chapter.chosenForPrint) {
+      return true;
+    } else if (subChapters && subChapters.length > 0) {
+      for (let i = 0; i < subChapters.length; i++) {
+        let subChapter = subChapters[i];
+        if (this.checkIfChaptersSelected(subChapter)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  isAnyChapterSelected = () => {
+    const { chapterInformation } = this.state;
+    for (let i = 0; i < chapterInformation.length; i++) {
+      if (this.checkIfChaptersSelected(chapterInformation[i])) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   createPDF = () => {
-    this.setState({ pdfLoading: true });
-    const chaptersToPrint = this.getChaptersToPrint();
-    this.props.localObserver.publish(
-      "append-chapter-components",
-      chaptersToPrint
-    );
+    if (!this.isAnyChapterSelected()) {
+      this.props.enqueueSnackbar(
+        "Du måste välja minst ett kapitel för att kunna skapa en PDF.",
+        {
+          variant: "warning",
+          persist: false,
+        }
+      );
+    } else {
+      this.setState({ pdfLoading: true });
+      const chaptersToPrint = this.getChaptersToPrint();
+      this.props.localObserver.publish(
+        "append-chapter-components",
+        chaptersToPrint
+      );
+    }
   };
 
   renderCheckboxes() {
     return (
-      <Grid container item alignItems="center" spacing={2}>
-        <Grid item xs={12}>
-          <Typography variant="h6">Innehåll</Typography>
-        </Grid>
-        <Grid item xs align="center">
-          <FormControlLabel
-            value="Texter"
-            control={
-              <Checkbox
-                color="primary"
-                checked={this.state.printText}
-                onChange={() => {
-                  this.setState({
-                    printText: !this.state.printText,
-                  });
-                }}
-              />
-            }
-            label="Texter"
-            labelPlacement="end"
-          />
-        </Grid>
-        <Grid item xs align="center">
-          <FormControlLabel
-            value="Bilder"
-            control={
-              <Checkbox
-                color="primary"
-                checked={this.state.printImages}
-                onChange={() => {
-                  this.setState({
-                    printImages: !this.state.printImages,
-                  });
-                }}
-              />
-            }
-            label="Bilder"
-            labelPlacement="end"
-          />
-        </Grid>
-        <Grid item xs align="center">
-          <FormControlLabel
-            value="Kartor"
-            control={
-              <Checkbox
-                color="primary"
-                checked={this.state.printMaps}
-                onChange={() => {
-                  this.setState({
-                    printMaps: !this.state.printMaps,
-                  });
-                }}
-              />
-            }
-            label="Kartor"
-            labelPlacement="end"
-          />
+      <Grid container>
+        <Grid container item alignItems="center" spacing={2}>
+          <Grid item xs={12}>
+            <Typography variant="h6">Innehåll</Typography>
+          </Grid>
+          <Grid item xs align="center">
+            <FormControlLabel
+              value="Texter"
+              control={
+                <Checkbox
+                  color="primary"
+                  checked={this.state.printText}
+                  onChange={() => {
+                    this.setState({
+                      printText: !this.state.printText,
+                    });
+                  }}
+                />
+              }
+              label="Texter"
+              labelPlacement="end"
+            />
+          </Grid>
+          <Grid item xs align="center">
+            <FormControlLabel
+              value="Bilder"
+              control={
+                <Checkbox
+                  color="primary"
+                  checked={this.state.printImages}
+                  onChange={() => {
+                    this.setState({
+                      printImages: !this.state.printImages,
+                    });
+                  }}
+                />
+              }
+              label="Bilder"
+              labelPlacement="end"
+            />
+          </Grid>
+          <Grid item xs align="center">
+            <FormControlLabel
+              value="Kartor"
+              control={
+                <Checkbox
+                  color="primary"
+                  checked={this.state.printMaps}
+                  onChange={() => {
+                    this.setState({
+                      printMaps: !this.state.printMaps,
+                    });
+                  }}
+                />
+              }
+              label="Kartor"
+              labelPlacement="end"
+            />
+          </Grid>
         </Grid>
       </Grid>
     );
@@ -535,49 +637,55 @@ class PrintWindow extends React.PureComponent {
   renderCreatePDFButton() {
     const { classes } = this.props;
     return (
-      <Grid container item className={classes.footerContainer}>
-        <Grid
-          item
-          xs={12}
-          container
-          alignContent="center"
-          alignItems="center"
-          justify="center"
+      <Grid
+        item
+        className={classes.footerContainer}
+        container
+        alignContent="center"
+        alignItems="center"
+        justify="center"
+      >
+        <Button
+          color="primary"
+          variant="contained"
+          disabled={this.state.pdfLoading}
+          startIcon={<OpenInNewIcon />}
+          onClick={this.createPDF}
         >
-          {!this.state.pdfLoading ? (
-            <Button
-              color="primary"
-              variant="contained"
-              startIcon={<OpenInNewIcon />}
-              onClick={this.createPDF}
-            >
-              <Typography
-                style={{ marginRight: "20px", marginLeft: "20px" }}
-                justify="center"
-              >
-                Skapa PDF-utskrift
-              </Typography>
-            </Button>
-          ) : (
-            <CircularProgress size={"2rem"} />
-          )}
-        </Grid>
+          <Typography
+            style={{ marginRight: "20px", marginLeft: "20px" }}
+            justify="center"
+          >
+            Skapa PDF-utskrift
+          </Typography>
+        </Button>
       </Grid>
     );
   }
 
-  renderPrintPreview = () => {
+  renderLoadingDialog = () => {
     return (
-      <PrintPreview>
-        <Grid style={{ padding: "50px" }} container>
-          <Grid id={"printPreviewTOC"} item>
-            <TableOfContents chapters={this.state.chapterInformation} />
-          </Grid>
-          <Grid id={"printPreviewContent"} item>
-            {this.state.printContent}
-          </Grid>
-        </Grid>
-      </PrintPreview>
+      <>
+        {createPortal(
+          <Dialog
+            disableBackdropClick={true}
+            disableEscapeKeyDown={true}
+            open={this.state.pdfLoading}
+          >
+            <LinearProgress />
+            <DialogTitle>Din PDF skapas</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                Det här kan ta en stund, speciellt om du har att skriva ut många
+                dokument.
+                <br />
+                <br />
+              </DialogContentText>
+            </DialogContent>
+          </Dialog>,
+          document.getElementById("root")
+        )}
+      </>
     );
   };
 
@@ -590,103 +698,94 @@ class PrintWindow extends React.PureComponent {
     } = this.props;
     const { chapterInformation } = this.state;
     return (
-      <Box boxSizing={"content-box"} height={"100%"}>
-        <Box
-          boxSizing={"content-box"}
-          paddingTop={3}
-          paddingLeft={3}
-          paddingRight={3}
+      <Grid
+        container
+        className={classes.gridContainer}
+        wrap="nowrap"
+        direction="column"
+      >
+        <Grid
+          className={classes.headerContainer}
+          alignItems="center"
+          item
+          container
         >
-          <Grid alignItems="center" container>
-            <Grid item xs={4}>
-              <Button
-                color="primary"
-                style={{ paddingLeft: 0 }}
-                startIcon={<ArrowBackIcon />}
-                onClick={togglePrintWindow}
-              >
-                <Typography justify="center">Tillbaka</Typography>
-              </Button>
-            </Grid>
-            <Grid item xs={4}>
-              <Typography align="center" variant="h6">
-                Skapa PDF
-              </Typography>
-            </Grid>
+          <Grid item xs={4}>
+            <Button
+              color="primary"
+              style={{ paddingLeft: 0 }}
+              startIcon={<ArrowBackIcon />}
+              onClick={togglePrintWindow}
+            >
+              <Typography justify="center">Tillbaka</Typography>
+            </Button>
           </Grid>
-          <Divider></Divider>
-        </Box>
-        <Box boxSizing={"content-box"} height={"70%"} padding={3}>
-          <Grid
-            className={classes.middleSectionHeader}
-            alignItems="center"
-            alignContent="center"
-            justify={"center"}
-            container
-            item
-          >
-            <Grid xs={6} item>
-              <Grid xs={12} item>
-                <Typography variant="h6">Dokument</Typography>
-              </Grid>
+          <Grid item xs={4}>
+            <Typography align="center" variant="h6">
+              Skapa PDF
+            </Typography>
+          </Grid>
+        </Grid>
+        <Divider></Divider>
 
-              <Grid xs={12} item>
-                {" "}
-                <FormControlLabel
-                  value="Välj alla dokument"
-                  control={
-                    <Checkbox
-                      color="primary"
-                      checked={this.state.allDocumentsToggled}
-                      onChange={() =>
-                        this.toggleAllDocuments(!this.state.allDocumentsToggled)
-                      }
-                    />
-                  }
-                  label="Välj alla dokument"
-                  labelPlacement="end"
-                />
-              </Grid>
+        <Grid container item>
+          <Grid xs={6} item>
+            <Grid xs={12} item>
+              <Typography variant="h6">Dokument</Typography>
             </Grid>
-            <Grid xs={6} item>
-              <Grid xs={12} item>
-                <Typography variant="h6">Innehåll</Typography>
-              </Grid>
-              <Grid xs={12} item>
-                {" "}
-                <FormControlLabel
-                  value="Inkludera kartor"
-                  control={
-                    <Checkbox
-                      color="primary"
-                      checked={this.state.printMaps}
-                      onChange={() =>
-                        this.setState({ printMaps: !this.state.printMaps })
-                      }
-                    />
-                  }
-                  label="Inkludera kartor"
-                  labelPlacement="end"
-                />
-              </Grid>
-            </Grid>
-          </Grid>
-          <Grid className={classes.middleSectionMain} container>
-            <PrintList
-              chapters={chapterInformation}
-              handleCheckboxChange={this.handleCheckboxChange}
-              localObserver={localObserver}
-            />
-          </Grid>
-        </Box>
-        <Box boxSizing={"content-box"} padding={3}>
-          <Grid container>
-            {this.state.printContent && this.renderPrintPreview()}
 
-            {documentWindowMaximized && this.renderCreatePDFButton()}
+            <Grid xs={12} item>
+              {" "}
+              <FormControlLabel
+                value="Välj alla dokument"
+                control={
+                  <Checkbox
+                    color="primary"
+                    checked={this.state.allDocumentsToggled}
+                    onChange={() =>
+                      this.toggleAllDocuments(!this.state.allDocumentsToggled)
+                    }
+                  />
+                }
+                label="Välj alla dokument"
+                labelPlacement="end"
+              />
+            </Grid>
           </Grid>
-        </Box>
-      </Box>
+          <Grid xs={6} item>
+            <Grid xs={12} item>
+              <Typography variant="h6">Innehåll</Typography>
+            </Grid>
+            <Grid xs={12} item>
+              {" "}
+              <FormControlLabel
+                value="Inkludera kartor"
+                control={
+                  <Checkbox
+                    color="primary"
+                    checked={this.state.printMaps}
+                    onChange={() =>
+                      this.setState({ printMaps: !this.state.printMaps })
+                    }
+                  />
+                }
+                label="Inkludera kartor"
+                labelPlacement="end"
+              />
+            </Grid>
+          </Grid>
+        </Grid>
+        <Grid className={classes.middleContainer} item container>
+          <PrintList
+            chapters={chapterInformation}
+            handleCheckboxChange={this.handleCheckboxChange}
+            localObserver={localObserver}
+          />
+        </Grid>
+
+        {documentWindowMaximized && this.renderCreatePDFButton()}
+        {this.renderLoadingDialog()}
+      </Grid>
     );
   }
 }
