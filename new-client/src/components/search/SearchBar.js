@@ -116,32 +116,123 @@ class SearchBar extends React.PureComponent {
     return matchedIndexes;
   };
 
-  getHighlightedAutoCompleteEntryElement = (
-    lastHighlightInformation,
+  removeDuplicateHighlightMatches = (highlightMatches) => {
+    let cleanedMatches = [];
+    //throw away duplicate matches within highlightInformation - otherwise parts of the matched phrase may show multiple times.
+    highlightMatches.sort(function (a, b) {
+      return a.startIndex - b.startIndex;
+    });
+    let minIndex = highlightMatches[0].startIndex;
+    let maxIndex = highlightMatches[highlightMatches.length - 1].startIndex;
+
+    //for each match that begins at the same startIndex, keep only the longest.
+    for (let i = minIndex; i <= maxIndex; i++) {
+      let tempArray = [];
+      highlightMatches.forEach((h) => {
+        if (h.startIndex === i) {
+          tempArray.push(h);
+        }
+      });
+      if (tempArray.length > 0) {
+        tempArray.sort(function (a, b) {
+          return a.matchLength - b.matchLength;
+        });
+
+        cleanedMatches.push(tempArray.pop());
+      }
+    }
+    return cleanedMatches;
+  };
+
+  getMultipleHighlightedAutoCompleteEntryElements = (
+    highlightInformation,
     autocompleteEntry
   ) => {
-    let { index, length } = lastHighlightInformation;
+    let stringPartObjects = [];
+
+    highlightInformation.forEach((currentHighlight, i, array) => {
+      let strongText = autocompleteEntry.slice(
+        currentHighlight.startIndex,
+        currentHighlight.startIndex + currentHighlight.matchLength
+      );
+      stringPartObjects.push({ text: strongText, bold: true });
+
+      let nextHighlight = array[i + 1] || null;
+      if (nextHighlight) {
+        let normalText = autocompleteEntry.slice(
+          currentHighlight.startIndex + currentHighlight.matchLength,
+          nextHighlight.startIndex
+        );
+        stringPartObjects.push({ text: normalText, bold: false });
+      } else {
+        let normalText = autocompleteEntry.slice(
+          currentHighlight.startIndex + currentHighlight.matchLength
+        );
+        stringPartObjects.push({ text: normalText, bold: false });
+      }
+    });
+
     return (
       <>
-        <strong>{autocompleteEntry.slice(0, index + length)}</strong>
-        {autocompleteEntry.slice(index + length)}
+        {stringPartObjects.map((obj, index) => {
+          if (obj.bold) {
+            return <strong key={index}>{obj.text}</strong>;
+          } else {
+            return obj.text;
+          }
+        })}
       </>
     );
   };
 
-  //Highlights everything in autocompleteentry up until the last occurence of a match in string.
+  getSingleHighlightedAutoCompleteEntryElement = (
+    highlightInformation,
+    autocompleteEntry
+  ) => {
+    let { startIndex, matchLength } = highlightInformation[0];
+    //if the match is not at the beginning of the string, return the non matched part first.
+    if (startIndex > 0) {
+      return (
+        <>
+          {autocompleteEntry.slice(0, startIndex)}
+          <strong>
+            {autocompleteEntry.slice(startIndex, startIndex + matchLength)}
+          </strong>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <strong>
+            {autocompleteEntry.slice(0, startIndex + matchLength)}
+          </strong>
+          {autocompleteEntry.slice(startIndex + matchLength)}
+        </>
+      );
+    }
+  };
+
+  //Highlights everything in autocomplete entry up until the last occurrence of a match in string.
   renderHighlightedAutocompleteEntry = (
     highlightInformation,
     autocompleteEntry
   ) => {
     const countOfHighlightInformation = highlightInformation.length;
-    //We get last higligtInformation because we want to higlight everything up to last word that matches
-    const lastHighlightInformation =
-      highlightInformation[countOfHighlightInformation - 1];
 
-    if (countOfHighlightInformation > 0) {
-      return this.getHighlightedAutoCompleteEntryElement(
-        lastHighlightInformation,
+    //get autocomplete entry element based on highlight information, if there are multiple matches, get highlight information for all matches.
+    if (countOfHighlightInformation === 1) {
+      return this.getSingleHighlightedAutoCompleteEntryElement(
+        highlightInformation,
+        autocompleteEntry
+      );
+    }
+
+    if (countOfHighlightInformation > 1) {
+      highlightInformation = this.removeDuplicateHighlightMatches(
+        highlightInformation
+      );
+      return this.getMultipleHighlightedAutoCompleteEntryElements(
+        highlightInformation,
         autocompleteEntry
       );
     }
@@ -157,8 +248,8 @@ class SearchBar extends React.PureComponent {
           searchWord
         ).map((index) => {
           return {
-            index: index,
-            length: searchWord.length,
+            startIndex: index,
+            matchLength: searchWord.length,
           };
         });
       })
@@ -199,7 +290,7 @@ class SearchBar extends React.PureComponent {
       searchActive,
       classes,
       loading,
-      handleOnAutompleteInputChange,
+      handleOnAutoCompleteInputChange,
       handleSearchInput,
     } = this.props;
     return (
@@ -219,7 +310,7 @@ class SearchBar extends React.PureComponent {
         open={autoCompleteOpen}
         disableClearable
         onChange={handleSearchInput}
-        onInputChange={handleOnAutompleteInputChange}
+        onInputChange={handleOnAutoCompleteInputChange}
         getOptionSelected={(option, value) =>
           option.autocompleteEntry === value.autocompleteEntry
         }

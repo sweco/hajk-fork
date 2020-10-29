@@ -193,9 +193,9 @@ class Search extends React.PureComponent {
     }
   };
 
-  handleOnAutompleteInputChange = (event, searchString, reason) => {
+  handleOnAutoCompleteInputChange = (event, searchString, reason) => {
     this.localObserver.publish("clear-search-results");
-
+    searchString = searchString.trim();
     this.setState(
       {
         autoCompleteOpen: searchString.length >= 3,
@@ -572,7 +572,9 @@ class Search extends React.PureComponent {
             handleOnClickOrKeyboardSearch={this.handleOnClickOrKeyboardSearch}
             autoCompleteOpen={autoCompleteOpen}
             showSearchResults={showSearchResults}
-            handleOnAutompleteInputChange={this.handleOnAutompleteInputChange}
+            handleOnAutoCompleteInputChange={
+              this.handleOnAutoCompleteInputChange
+            }
             handleOnClear={this.handleOnClear}
             autocompleteList={autocompleteList}
             doSearch={this.doSearch.bind(this)}
