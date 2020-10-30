@@ -117,16 +117,18 @@ class SearchBar extends React.PureComponent {
   };
 
   removeDuplicateHighlightMatches = (highlightMatches) => {
-    let cleanedMatches = [];
     //throw away duplicate matches within highlightInformation - otherwise parts of the matched phrase may show multiple times.
-    highlightMatches.sort(function (a, b) {
-      return a.startIndex - b.startIndex;
+    let cleanedMatches = [];
+    let startIndexes = [];
+    highlightMatches.forEach((match) => {
+      if (!startIndexes.includes(match.startIndex)) {
+        startIndexes.push(match.startIndex);
+      }
     });
-    let minIndex = highlightMatches[0].startIndex;
-    let maxIndex = highlightMatches[highlightMatches.length - 1].startIndex;
+    highlightMatches.sort((a, b) => a.startIndex - b.startIndex);
 
-    //for each match that begins at the same startIndex, keep only the longest.
-    for (let i = minIndex; i <= maxIndex; i++) {
+    //keep only the longest match for each different start index.
+    startIndexes.forEach((i) => {
       let tempArray = [];
       highlightMatches.forEach((h) => {
         if (h.startIndex === i) {
@@ -134,14 +136,12 @@ class SearchBar extends React.PureComponent {
         }
       });
       if (tempArray.length > 0) {
-        tempArray.sort(function (a, b) {
-          return a.matchLength - b.matchLength;
-        });
-
+        tempArray.sort((a, b) => a.matchLength - b.matchLength);
         cleanedMatches.push(tempArray.pop());
       }
-    }
-    return cleanedMatches;
+    });
+
+    return cleanedMatches.sort((a, b) => a.startIndex - b.startIndex);
   };
 
   getMultipleHighlightedAutoCompleteEntryElements = (
