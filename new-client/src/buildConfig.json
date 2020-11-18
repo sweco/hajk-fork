@@ -16,7 +16,8 @@
     "routing",
     "search",
     "streetview",
-    "documenthandler"
+    "documenthandler",
+    "legend"
   ],
   "allTools": [
     "anchor",
@@ -36,6 +37,7 @@
     "search",
     "streetview",
     "suggest",
-    "documenthandler"
+    "documenthandler",
+    "legend"
   ]
 }
