@@ -253,61 +253,6 @@ class PrintWindow extends React.PureComponent {
       brHeight.substr(0, brHeight.length - 2) * 1.2;
   };
 
-  getCanvasFromContent = (page) => {
-    let sWidth = Math.round((210 * 96) / 25.4);
-    let sHeight = Math.round((297 * 96) / 25.4);
-    let dWidth = Math.round((210 * 96) / 25.4);
-    let dHeight = Math.round((297 * 96) / 25.4);
-    let pR = window.devicePixelRatio;
-    let onePageDiv = document.createElement("div");
-
-    //Moving div outside viewport - hack
-    onePageDiv.style.position = "absolute";
-    onePageDiv.style.left = "-10000px";
-    onePageDiv.style.width = `${210}mm`;
-    onePageDiv.style.padding = "50px";
-
-    document.body.appendChild(onePageDiv);
-
-    page.content.forEach((child) => {
-      onePageDiv.appendChild(child);
-    });
-
-    return html2canvas(onePageDiv, {
-      allowTaint: false,
-      logging: false,
-    }).then((canvas) => {
-      let onePageCanvas = document.createElement("canvas");
-
-      onePageCanvas.width = Math.round((210 * 96) / 25.4);
-      onePageCanvas.height = Math.round((297 * 96) / 25.4);
-
-      let ctx = onePageCanvas.getContext("2d");
-
-      ctx.fillStyle = "white";
-      ctx.fillRect(
-        0,
-        0,
-        onePageCanvas.width + 200 * pR, //Just add 200px to fix edge-bug
-        onePageCanvas.height + 200 * pR //Just add 200px to fix edge-bug
-      );
-
-      ctx.drawImage(
-        canvas,
-        0,
-        0,
-        sWidth * pR,
-        sHeight * pR,
-        0,
-        0,
-        dWidth,
-        dHeight
-      );
-      document.body.removeChild(onePageDiv);
-      return onePageCanvas;
-    });
-  };
-
   resizeImage = (img) => {
     img.height = img.getBoundingClientRect().height * imageResizeRatio;
     img.width = img.clientWidth * imageResizeRatio;
@@ -407,17 +352,6 @@ class PrintWindow extends React.PureComponent {
     );
   };
 
-  //Bug in html2canvas so we need to delay
-  delayCanvasCreate = (page, index) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        this.getCanvasFromContent(page).then((x) => {
-          resolve(x);
-        });
-      }, 500 * index + 1);
-    });
-  };
-
   printContents = () => {
     Promise.all([this.renderToc(), this.renderContent()]).then(() => {
       this.areAllImagesLoaded().then(() => {
@@ -427,37 +361,39 @@ class PrintWindow extends React.PureComponent {
           const previousContent = index === 0 ? null : children[index - 1];
           this.distributeContentOnPages(child, "CONTENT", previousContent);
         });
-
-        let canvasPromises = this.printPages.map((page, index) => {
-          return this.delayCanvasCreate(page, index);
+        let container = document.createElement("div");
+        this.printPages.forEach((page) => {
+          const pageBreak = document.createElement("div");
+          pageBreak.style.pageBreakBefore = "always";
+          container.appendChild(pageBreak);
+          page.content.forEach((child) => {
+            container.appendChild(child);
+          });
         });
 
-        Promise.all(canvasPromises).then((canvases) => {
-          let pdf = new jsPDF("p", "pt");
-          let numToc = this.printPages.filter((page) => page.type === "TOC")
-            .length;
-          canvases.forEach((canvas, index) => {
-            if (index > 0) {
-              pdf.addPage();
-            }
-            //! now we declare that we're working on that page
-            pdf.setPage(index + 1);
-            pdf.addImage(canvas, "PNG", 0, 0);
-          });
-          pdf = this.addFooters(pdf, numToc);
-          pdf.save(`oversiktsplan-${new Date().toLocaleString()}.pdf`);
-
-          document.body.removeChild(this.toc);
-          if (document.body.contains(this.content)) {
-            document.body.removeChild(this.content);
+        const styleTags = [];
+        [...document.head.children].forEach((c) => {
+          if (c.nodeName === "STYLE") {
+            styleTags.push(c.cloneNode(true));
           }
+        });
 
-          this.toggleAllDocuments(false);
-          this.setState({
-            pdfLoading: false,
-            printContent: undefined,
-            printMaps: false,
-          });
+        var printWindow = window.open("", "");
+
+        printWindow.document.write("<html>");
+        printWindow.document.write("<head>");
+        printWindow.document.write("</head>");
+        printWindow.document.write("<body>");
+        styleTags.forEach((s) => {
+          printWindow.document.head.appendChild(s);
+        });
+        printWindow.document.write(container.innerHTML);
+        printWindow.document.write("</body></html>");
+        printWindow.document.close();
+
+        printWindow.print();
+        printWindow.addEventListener("afterprint", function (event) {
+          printWindow.close();
         });
       });
     });
@@ -822,7 +758,6 @@ class PrintWindow extends React.PureComponent {
         </Grid>
 
         {documentWindowMaximized && this.renderCreatePDFButton()}
-        {this.renderLoadingDialog()}
       </Grid>
     );
   }
