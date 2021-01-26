@@ -108,13 +108,13 @@ class SearchResultsContainer extends React.PureComponent {
       name: "Rensa",
       type: "clear",
       render: () => this.renderClearTool(),
-      disabled: this.props.options.clearDisabled ?? false,
+      disabled: this.props.options.clearDisabled ?? true,
     },
     {
       name: "Ladda ner",
       type: "download",
       render: () => this.renderDownloadTool(),
-      disabled: this.props.options.downloadDisabled ?? false,
+      disabled: this.props.options.downloadDisabled ?? true,
     },
   ];
 

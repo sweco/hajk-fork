@@ -78,7 +78,7 @@ class Search extends React.PureComponent {
       name: "Sök med yta",
       icon: <TouchAppIcon />,
       type: "Select",
-      disabled: this.props.options.selectSearchDisabled ?? false,
+      disabled: this.props.options.selectSearchDisabled ?? true,
       toolTipTitle:
         "Genomför en sökning genom att välja en eller flera områden i kartan.",
       onClickEventName: "search.spatialSearchActivated",
