@@ -112,16 +112,13 @@ class LayerItem extends React.PureComponent {
       toggleSettings: false,
     };
   }
+
   /**
    * Triggered when the component is successfully mounted into the DOM.
    * @instance
    */
   componentDidMount() {
-    this.props.layer.on("change:visible", (e) => {
-      this.setState({
-        visible: !e.oldValue,
-      });
-    });
+    this.props.layer.on("change:visible", this.layerVisibilityChanged);
 
     // Set load status by subscribing to a global event. Expect ID (int) of layer
     // and status (string "ok"|"loaderror"). Also, once status was set to "loaderror",
@@ -130,15 +127,31 @@ class LayerItem extends React.PureComponent {
     // consider that the layer has failed loading and want to inform the user.
     this.props.app.globalObserver.subscribe(
       "layerswitcher.wmsLayerLoadStatus",
-      (d) => {
-        this.state.status !== "loaderror" &&
-          this.state.name === d.id &&
-          this.setState({
-            status: d.status,
-          });
-      }
+      this.wmsLayerLoadStatus
     );
   }
+
+  componentWillUnmount() {
+    this.props.layer.un("change:visible", this.layerVisibilityChanged);
+    this.props.app.globalObserver.unsubscribe(
+      "layerswitcher.wmsLayerLoadStatus",
+      this.wmsLayerLoadStatus
+    );
+  }
+
+  layerVisibilityChanged = (e) => {
+    this.setState({
+      visible: !e.oldValue,
+    });
+  };
+
+  wmsLayerLoadStatus = (d) => {
+    this.state.status !== "loaderror" &&
+      this.state.name === d.id &&
+      this.setState({
+        status: d.status,
+      });
+  };
 
   /**
    * Toggle visibility of this layer item.
@@ -148,9 +161,6 @@ class LayerItem extends React.PureComponent {
    */
   toggleVisible = (layer) => (e) => {
     const visible = !this.state.visible;
-    this.setState({
-      visible,
-    });
     layer.setVisible(visible);
   };
 

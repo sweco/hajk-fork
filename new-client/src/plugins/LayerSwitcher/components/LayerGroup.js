@@ -107,7 +107,12 @@ class LayerGroup extends React.PureComponent {
   constructor(props) {
     super(props);
     this.model = this.props.model;
+  }
 
+  componentDidMount() {
+    this.setState({
+      ...this.props.group,
+    });
     // Setup a listener on every layer that will force re-render on this component
     // FIXME: The problem with this approach is that we forceUpdate ONCE PER EVERY LAYERGROUP.
     this.props.app
@@ -115,18 +120,25 @@ class LayerGroup extends React.PureComponent {
       .getLayers()
       .getArray()
       .forEach((layer) => {
-        layer.on("change:visible", () => {
-          //
-          this.forceUpdate();
-        });
+        layer.on("change:visible", this.layerVisibilityChanged);
       });
   }
 
-  componentDidMount() {
-    this.setState({
-      ...this.props.group,
-    });
+  componentWillUnmount() {
+    this.props.app
+      .getMap()
+      .getLayers()
+      .getArray()
+      .forEach((layer) => {
+        layer.un("change:visible", this.layerVisibilityChanged);
+      });
   }
+
+  layerVisibilityChanged = () => {
+    //console.log('layerVisibilityChanged');
+    // TODO: local visibility flag?
+    this.forceUpdate();
+  };
 
   handleChange = (panel) => (event, expanded) => {
     this.setState({
@@ -272,6 +284,12 @@ class LayerGroup extends React.PureComponent {
             this.model.observer.publish("hideLayer", mapLayer);
           }
         }
+        console.log(
+          "LayerGroup: toggleLayers: setVisible(" +
+            visibility +
+            ") on " +
+            mapLayer.get("name")
+        );
         mapLayer.setVisible(visibility);
       });
   }

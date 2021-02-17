@@ -332,7 +332,9 @@ class LayerGroupItem extends Component {
             visibleSubLayers: [],
           },
           () => {
-            layer.setVisible(false);
+            if (layer.getVisible()) {
+              layer.setVisible(false);
+            }
           }
         );
       }, 200);
@@ -340,9 +342,12 @@ class LayerGroupItem extends Component {
   };
 
   setVisible = (l) => {
+    //console.log("LayerGroupItem setVisible");
     const { layer } = this.props;
     if (l === layer) {
-      layer.setVisible(true);
+      if (!layer.getVisible()) {
+        layer.setVisible(true);
+      }
 
       this.props.layer.getSource().updateParams({
         LAYERS: this.props.layer.subLayers,

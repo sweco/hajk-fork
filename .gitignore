@@ -7,6 +7,8 @@ node_modules/
 #!.vscode/launch.json
 #!.vscode/extensions.json
 
+# Workspace files are user-specific
+*.code-workspace
 
 
 ### Sublime Text ###
