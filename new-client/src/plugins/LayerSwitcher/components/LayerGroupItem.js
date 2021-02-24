@@ -284,6 +284,7 @@ class LayerGroupItem extends Component {
   }
 
   toggleVisible = (layer) => (e) => {
+    console.log("LayerGroupItem toggleVisible on: ", e);
     var visible = !this.state.visible;
     this.setState({
       visible: visible,

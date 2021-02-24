@@ -113,14 +113,18 @@ class LayerGroup extends React.PureComponent {
     this.setState({
       ...this.props.group,
     });
-    // Setup a listener on every layer that will force re-render on this component
-    // FIXME: The problem with this approach is that we forceUpdate ONCE PER EVERY LAYERGROUP.
+
+    // Setup a listener on every layer that will force a re-render on this component
     this.props.app
       .getMap()
       .getLayers()
       .getArray()
+      .filter((mapLayer) => {
+        // TODO: Filter here on only affected layers for this group!
+        return false;
+      })
       .forEach((layer) => {
-        layer.on("change:visible", this.layerVisibilityChanged);
+        layer.on("change:visible", this.layerVisibilityChanged.bind(this));
       });
   }
 
@@ -129,14 +133,19 @@ class LayerGroup extends React.PureComponent {
       .getMap()
       .getLayers()
       .getArray()
+      .filter((mapLayer) => {
+        // TODO: Filter here on only affected layers for this group!
+        return false;
+      })
       .forEach((layer) => {
-        layer.un("change:visible", this.layerVisibilityChanged);
+        layer.un("change:visible", this.layerVisibilityChanged.bind(this));
       });
   }
 
-  layerVisibilityChanged = () => {
-    //console.log('layerVisibilityChanged');
-    // TODO: local visibility flag?
+  layerVisibilityChanged = (e) => {
+    //const changedLayerName = e.target.get("name");
+    //console.log("LayerGroup " + this.state.name + " layer change:visible handler for: ", changedLayerName);
+    //console.log("!!! LayerGroup forcing React component update !!!");
     this.forceUpdate();
   };
 
@@ -279,8 +288,16 @@ class LayerGroup extends React.PureComponent {
       .forEach((mapLayer) => {
         if (mapLayer.layerType === "group") {
           if (visibility === true) {
+            console.log(
+              "LayerGroup publishing model observer showLayer for:",
+              mapLayer.get("name")
+            );
             this.model.observer.publish("showLayer", mapLayer);
           } else {
+            console.log(
+              "LayerGroup publishing model observer hideLayer for:",
+              mapLayer.get("name")
+            );
             this.model.observer.publish("hideLayer", mapLayer);
           }
         }
@@ -349,6 +366,7 @@ class LayerGroup extends React.PureComponent {
   }
 
   render() {
+    //console.log("LayerGroup render");
     const { classes, child } = this.props;
     const { expanded } = this.state;
     var groupClass = "";

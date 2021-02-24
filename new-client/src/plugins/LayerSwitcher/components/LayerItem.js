@@ -140,6 +140,7 @@ class LayerItem extends React.PureComponent {
   }
 
   layerVisibilityChanged = (e) => {
+    //console.log("LayerItem layer change:visible handler for: ", e.target.get("name"));
     this.setState({
       visible: !e.oldValue,
     });

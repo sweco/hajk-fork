@@ -75,12 +75,16 @@ export default class SnapHelper {
    * @param {*} e Event that contains the layer who's visibility has changed.
    */
   #handleLayerVisibilityChanged = (e) => {
+    //console.log("SnapHelper layer change:visible handler for: ", e.target.get("name"));
     if (
       this.activePlugins.size === 0 || // Abort if no plugin is interested of snap interactions
       this.updatePending === true || // Abort if there already is a pending update
       this.#isVectorSource(e.target.getSource()) === false // Abort if event was triggered on a non-vector source
-    )
+    ) {
+      //console.log("SnapHelper disabled");
       return;
+    }
+    //console.log("SnapHelper enabled");
 
     // Switch the pending flag to true, this will avoid multiple invokations
     this.updatePending = true;
