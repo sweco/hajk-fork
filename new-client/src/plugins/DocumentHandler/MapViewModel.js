@@ -32,66 +32,49 @@ export default class MapViewModel {
   };
 
   displayMap(mapSettings) {
-    console.log("displayMap");
+    //console.log("MapViewModel displayMap");
     let visibleLayers = mapSettings.layers.split(",");
     const layers = this.map.getLayers().getArray();
 
-    visibleLayers.forEach((arrays) =>
-      layers
-        .filter(
-          (layer) =>
-            layer.getProperties()["layerInfo"] &&
-            layer.getProperties()["layerInfo"]["layerType"]
-        )
-        .forEach((layer) => {
-          if (layer.getProperties()["name"] === arrays) {
-            console.log(
-              "displayMap publish layerswitcher.showLayer on " +
-                layer.getProperties()["name"]
-            );
-            this.globalObserver.publish("layerswitcher.showLayer", layer);
-            //layer.setVisible(true);
-          } else {
-            if (
-              visibleLayers.some(
-                (arrays) => arrays === layer.getProperties()["name"]
-              )
-            ) {
-              if (layer.layerType === "group") {
-                console.log(
-                  "displayMap publish layerswitcher.showLayer on " +
-                    layer.getProperties()["name"]
-                );
-                this.globalObserver.publish("layerswitcher.showLayer", layer);
-              } else {
-                if (!layer.getVisible()) {
-                  console.log(
-                    "displayMap setting visible on " +
-                      layer.getProperties()["name"]
-                  );
-                  layer.setVisible(true);
-                }
-              }
-            } else {
-              if (layer.layerType === "group") {
-                console.log(
-                  "displayMap publish layerswitcher.showLayer on " +
-                    layer.getProperties()["name"]
-                );
-                this.globalObserver.publish("layerswitcher.hideLayer", layer);
-              } else {
-                if (layer.getVisible()) {
-                  console.log(
-                    "displayMap setting hidden on " +
-                      layer.getProperties()["name"]
-                  );
-                  layer.setVisible(false);
-                }
-              }
-            }
-          }
-        })
-    );
+    //console.log("MapViewModel visibleLayers=", visibleLayers);
+    layers
+      .filter(
+        (layer) =>
+          layer.getProperties()["layerInfo"] &&
+          layer.getProperties()["layerInfo"]["layerType"] &&
+          visibleLayers.includes(layer.getProperties()["name"])
+      )
+      .forEach((mapLayerToShow) => {
+        if (mapLayerToShow.layerType === "group") {
+          //console.log("MapViewModel displayMap publishing global observer layerswitcher.showLayer on " + mapLayerToShow.getProperties()["name"]);
+          this.globalObserver.publish(
+            "layerswitcher.showLayer",
+            mapLayerToShow
+          );
+        } else if (!mapLayerToShow.getVisible()) {
+          //console.log("MapViewModel setVisible(true) on " + mapLayerToShow.getProperties()["name"]);
+          mapLayerToShow.setVisible(true);
+        }
+      });
+    layers
+      .filter(
+        (layer) =>
+          layer.getProperties()["layerInfo"] &&
+          layer.getProperties()["layerInfo"]["layerType"] &&
+          !visibleLayers.includes(layer.getProperties()["name"])
+      )
+      .forEach((mapLayerToHide) => {
+        if (mapLayerToHide.layerType === "group") {
+          //console.log("MapViewModel displayMap publishing global observer layerswitcher.hideLayer on " + mapLayerToHide.getProperties()["name"]);
+          this.globalObserver.publish(
+            "layerswitcher.hideLayer",
+            mapLayerToHide
+          );
+        } else if (mapLayerToHide.getVisible()) {
+          //console.log("MapViewModel setVisible(false) on " + mapLayerToHide.getProperties()["name"]);
+          mapLayerToHide.setVisible(false);
+        }
+      });
 
     this.flyTo(this.map.getView(), mapSettings.center, mapSettings.zoom);
   }
