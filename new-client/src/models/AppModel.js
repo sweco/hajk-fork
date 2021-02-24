@@ -312,8 +312,11 @@ class AppModel {
     switch (layer.type) {
       case "wms":
         layerConfig = configMapper.mapWMSConfig(layer, this.config);
+        let options = layerConfig.options;
+        // TODO: REMOVE: Only for perfomance test. This should be handled in backend!
+        options.params.FORMAT = "image/png8";
         layerItem = new WMSLayer(
-          layerConfig.options,
+          options,
           this.config.appConfig.proxy,
           this.globalObserver
         );
