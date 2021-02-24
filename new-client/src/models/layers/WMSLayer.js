@@ -26,6 +26,7 @@ class WMSLayer {
       attributions: config.attribution,
       cacheSize: this.subLayers.length > 1 ? 32 : 2048,
       transition: this.subLayers.length > 1 ? 0 : 100,
+      hidpi: false, // Work around Chrome slow image decoding
     };
 
     if (
